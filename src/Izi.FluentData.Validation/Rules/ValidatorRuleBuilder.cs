@@ -41,8 +41,8 @@ public class ValidatorRuleBuilder<T>
     }
 
 
-    /// <summary>Appends a failure message to the most recently added rule.</summary>
-    /// <param name="message">The message to append.</param>
+    /// <summary>Replaces the failure message of the most recently added rule (overriding its default).</summary>
+    /// <param name="message">The message to report on failure.</param>
     /// <returns>The same builder, for chaining.</returns>
     /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
     public ValidatorRuleBuilder<T> WithMessage(string message)
@@ -52,8 +52,8 @@ public class ValidatorRuleBuilder<T>
         return this;
     }
 
-    /// <summary>Appends several failure messages to the most recently added rule.</summary>
-    /// <param name="messages">The messages to append.</param>
+    /// <summary>Replaces the failure messages of the most recently added rule (overriding its default).</summary>
+    /// <param name="messages">The messages to report on failure.</param>
     /// <returns>The same builder, for chaining.</returns>
     /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
     public ValidatorRuleBuilder<T> WithMessages(IEnumerable<string> messages)
