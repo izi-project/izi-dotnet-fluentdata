@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Version>1.0.4</Version>
+    <Title>Izi.FluentData Transformer</Title>
+    <Description>Fluent, dependency-free object transformation and normalization pipelines for .NET. Compose per-property steps (trim, case, replace, parse/convert, round, clamp) that run as an allocation-light, type-changing pipeline.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Izi.FluentData.Transformer.Tests" />
+    <InternalsVisibleTo Include="Izi.FluentData.Transformer.Benchmarks" />
+  </ItemGroup>
+
+</Project>
