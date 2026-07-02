@@ -99,8 +99,8 @@ public class ValidatorRuleBuilder<T>
     }
 
     /// <summary>
-    /// Attaches dependent rules, configured inline on a nested builder, to the most recently added rule; every
-    /// rule chained onto <paramref name="configure"/>'s builder runs against the same value only if that rule passes.
+    /// Attaches dependent rules, configured inline on a nested builder, to the most recently added rule; each
+    /// dependent runs against the same value only if the parent rule passes.
     /// </summary>
     /// <param name="configure">Chains the dependent rules onto the supplied builder, e.g. <c>x =&gt; x.MinLength(3).MaxLength(50)</c>.</param>
     /// <returns>The same builder, for chaining.</returns>
