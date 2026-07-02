@@ -15,6 +15,9 @@ public class ValidatorRuleBuilder<T>
     // The last rule added; the target that WithMessage/WithDependent refinements apply to.
     private ValidatorRule<T>? _current;
 
+    // The accumulated rules, exposed for a parent rule to adopt them as dependents (see WithDependent overloads).
+    internal IReadOnlyList<ValidatorRule<T>> Rules => _rules;
+
 
     /// <summary>Adds a rule from a predicate.</summary>
     /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
@@ -41,8 +44,8 @@ public class ValidatorRuleBuilder<T>
     }
 
 
-    /// <summary>Appends a failure message to the most recently added rule.</summary>
-    /// <param name="message">The message to append.</param>
+    /// <summary>Replaces the failure message of the most recently added rule (overriding its default).</summary>
+    /// <param name="message">The message to report on failure.</param>
     /// <returns>The same builder, for chaining.</returns>
     /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
     public ValidatorRuleBuilder<T> WithMessage(string message)
@@ -52,8 +55,8 @@ public class ValidatorRuleBuilder<T>
         return this;
     }
 
-    /// <summary>Appends several failure messages to the most recently added rule.</summary>
-    /// <param name="messages">The messages to append.</param>
+    /// <summary>Replaces the failure messages of the most recently added rule (overriding its default).</summary>
+    /// <param name="messages">The messages to report on failure.</param>
     /// <returns>The same builder, for chaining.</returns>
     /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
     public ValidatorRuleBuilder<T> WithMessages(IEnumerable<string> messages)
@@ -64,13 +67,24 @@ public class ValidatorRuleBuilder<T>
     }
 
 
-    /// <summary>Attaches a dependent rule (built from a predicate) to the most recently added rule.</summary>
+    /// <summary>Attaches a dependent rule (built from a predicate and its failure message) to the most recently added rule.</summary>
     /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
+    /// <param name="message">The message reported when the dependent fails.</param>
     /// <returns>The same builder, for chaining.</returns>
     /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
-    public ValidatorRuleBuilder<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc)
+    public ValidatorRuleBuilder<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, string message)
     {
-        return WithDependent(new ValidatorRule<T>(evaluateFunc));
+        return WithDependent(new ValidatorRule<T>(evaluateFunc, message));
+    }
+
+    /// <summary>Attaches a dependent rule (built from a predicate and its failure messages) to the most recently added rule.</summary>
+    /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
+    /// <param name="messages">The messages reported when the dependent fails.</param>
+    /// <returns>The same builder, for chaining.</returns>
+    /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
+    public ValidatorRuleBuilder<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, IEnumerable<string> messages)
+    {
+        return WithDependent(new ValidatorRule<T>(evaluateFunc, messages));
     }
 
     /// <summary>Attaches a dependent rule to the most recently added rule (runs only if the parent passes).</summary>
@@ -81,6 +95,20 @@ public class ValidatorRuleBuilder<T>
     {
         if (_current is null) throw new InvalidOperationException("No rule to add dependent to. Call AddRule first.");
         _current.WithDependent(dependent);
+        return this;
+    }
+
+    /// <summary>
+    /// Attaches dependent rules, configured inline on a nested builder, to the most recently added rule; each
+    /// dependent runs against the same value only if the parent rule passes.
+    /// </summary>
+    /// <param name="configure">Chains the dependent rules onto the supplied builder, e.g. <c>x =&gt; x.MinLength(3).MaxLength(50)</c>.</param>
+    /// <returns>The same builder, for chaining.</returns>
+    /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
+    public ValidatorRuleBuilder<T> WithDependent(Action<ValidatorRuleBuilder<T>> configure)
+    {
+        if (_current is null) throw new InvalidOperationException("No rule to add dependent to. Call AddRule first.");
+        _current.WithDependent(configure);
         return this;
     }
 

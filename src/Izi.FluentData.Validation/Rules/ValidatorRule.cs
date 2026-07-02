@@ -44,31 +44,44 @@ public class ValidatorRule<T>
     }
 
 
-    /// <summary>Adds a failure message to this rule.</summary>
-    /// <param name="message">The message to append.</param>
+    /// <summary>Replaces this rule's failure message, overriding any default supplied at construction.</summary>
+    /// <param name="message">The message to report on failure.</param>
     /// <returns>The same rule, for chaining.</returns>
     public ValidatorRule<T> WithMessage(string message)
     {
+        _messages.Clear();
         _messages.Add(message);
         return this;
     }
 
-    /// <summary>Adds several failure messages to this rule.</summary>
-    /// <param name="messages">The messages to append.</param>
+    /// <summary>Replaces this rule's failure messages, overriding any default supplied at construction.</summary>
+    /// <param name="messages">The messages to report on failure.</param>
     /// <returns>The same rule, for chaining.</returns>
-    public ValidatorRule<T> WithMessages(IEnumerable<string> messages)
+public ValidatorRule<T> WithMessages(IEnumerable<string> messages)
+{
+    ArgumentNullException.ThrowIfNull(messages);
+    _messages.Clear();
+    _messages.AddRange(messages);
+    return this;
+}
+
+    /// <summary>Attaches a dependent rule, built from a predicate and its failure message, that runs only if this rule passes.</summary>
+    /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
+    /// <param name="message">The message reported when the dependent fails.</param>
+    /// <returns>The same rule, for chaining.</returns>
+    public ValidatorRule<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, string message)
     {
-        _messages.AddRange(messages);
+        _dependents.Add(new ValidatorRule<T>(evaluateFunc, message));
         return this;
     }
 
-
-    /// <summary>Attaches a dependent rule, built from a predicate, that runs only if this rule passes.</summary>
+    /// <summary>Attaches a dependent rule, built from a predicate and its failure messages, that runs only if this rule passes.</summary>
     /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
+    /// <param name="messages">The messages reported when the dependent fails.</param>
     /// <returns>The same rule, for chaining.</returns>
-    public ValidatorRule<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc)
+    public ValidatorRule<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, IEnumerable<string> messages)
     {
-        _dependents.Add(new ValidatorRule<T>(evaluateFunc));
+        _dependents.Add(new ValidatorRule<T>(evaluateFunc, messages));
         return this;
     }
 
@@ -78,6 +91,21 @@ public class ValidatorRule<T>
     public ValidatorRule<T> WithDependent(ValidatorRule<T> dependent)
     {
         _dependents.Add(dependent);
+        return this;
+    }
+
+    /// <summary>
+    /// Attaches dependent rules configured inline on a <see cref="ValidatorRuleBuilder{T}"/>; every rule chained
+    /// onto the builder becomes a dependent that runs against the same value only if this rule passes.
+    /// </summary>
+    /// <param name="configure">Chains the dependent rules onto the supplied builder, e.g. <c>x =&gt; x.MinLength(3).MaxLength(50)</c>.</param>
+    /// <returns>The same rule, for chaining.</returns>
+    public ValidatorRule<T> WithDependent(Action<ValidatorRuleBuilder<T>> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        var builder = new ValidatorRuleBuilder<T>();
+        configure(builder);
+        _dependents.AddRange(builder.Rules);
         return this;
     }
 

@@ -6,7 +6,7 @@ namespace Izi.FluentData.Validation.Rules;
 /// Factory methods that create the built-in <see cref="ValidatorRule{T}"/> instances. Each rule has a
 /// default-message overload and a custom-message overload, and the returned <see cref="ValidatorRule{T}"/> can be
 /// further refined (<c>WithMessage</c>, <c>WithDependent(s)</c>). These are also surfaced as fluent
-/// builder methods on <see cref="RuleBuilder{T}"/> (see <c>RuleBuilderExtensions</c>).
+/// builder methods on <see cref="ValidatorRuleBuilder{T}"/> (see <c>ValidatorRuleBuilderExtensions</c>).
 /// </summary>
 public static partial class ValidatorRules
 {
