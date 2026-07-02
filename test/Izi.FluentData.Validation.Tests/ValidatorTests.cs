@@ -122,7 +122,7 @@ public class ValidatorTests
     public async Task Dependent_rule_passes_when_both_satisfied()
         => Assert.Empty(await new DependentNameValidator().ValidateAsync(new Person { Name = "abc" }));
 
-    // ---- Dependent rules authored inline via the builder lambda: WithDependent(x => x.Rule()...) ----
+    // ---- Dependent rules authored inline via the builder lambda: WithDependent(x => { x.MinLength(...); x.MaxLength(...); }) ----
     public sealed class InlineDependentValidator : Validator<Person>
     {
         public InlineDependentValidator()
