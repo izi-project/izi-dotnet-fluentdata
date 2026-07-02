@@ -148,5 +148,19 @@ public class ValidatorTests
 
     [Fact]
     public async Task Inline_dependent_rules_skipped_when_parent_fails()
-        => Assert.Single(await new InlineDependentValidator().ValidateAsync(new Person { Name = "" })); // only NotEmpty
+    {
+        Assert.Single(await new InlineDependentValidator().ValidateAsync(new Person { Name = "" })); // only NotEmpty
+
+        // Predicate + message overloads:
+        var parent = ValidatorRules.NotEmpty<string>("not empty");
+        parent.WithDependent((v, _) => new ValueTask<bool>(v.Length >= 3), "too short");
+        parent.WithDependent((v, _) => new ValueTask<bool>(v.Length <= 5), new[] { "too long" });
+
+        Assert.Contains(await parent.ValidateAsync("ab"), e => e.Contains("too short"));
+        Assert.Empty(await parent.ValidateAsync("abcd"));
+        Assert.Contains(await parent.ValidateAsync("abcdef"), e => e.Contains("too long"));
+
+        // Parent failure should still skip dependents.
+        Assert.Equal("not empty", Assert.Single(await parent.ValidateAsync("")));
+    }
 }
