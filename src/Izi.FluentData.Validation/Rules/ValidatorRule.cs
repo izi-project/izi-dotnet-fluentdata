@@ -66,9 +66,18 @@ public class ValidatorRule<T>
     /// <summary>Attaches a dependent rule, built from a predicate, that runs only if this rule passes.</summary>
     /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
     /// <returns>The same rule, for chaining.</returns>
-    public ValidatorRule<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc)
+    public ValidatorRule<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, string message)
     {
-        _dependents.Add(new ValidatorRule<T>(evaluateFunc));
+        _dependents.Add(new ValidatorRule<T>(evaluateFunc, message));
+        return this;
+    }
+
+    /// <summary>Attaches a dependent rule, built from a predicate, that runs only if this rule passes.</summary>
+    /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
+    /// <returns>The same rule, for chaining.</returns>
+    public ValidatorRule<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, IEnumerable<string> messages)
+    {
+        _dependents.Add(new ValidatorRule<T>(evaluateFunc, messages));
         return this;
     }
 
