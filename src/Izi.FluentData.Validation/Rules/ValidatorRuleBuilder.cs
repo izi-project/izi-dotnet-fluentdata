@@ -68,9 +68,18 @@ public class ValidatorRuleBuilder<T>
     /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
     /// <returns>The same builder, for chaining.</returns>
     /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
-    public ValidatorRuleBuilder<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc)
+    public ValidatorRuleBuilder<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, string message)
     {
-        return WithDependent(new ValidatorRule<T>(evaluateFunc));
+        return WithDependent(new ValidatorRule<T>(evaluateFunc, message));
+    }
+
+    /// <summary>Attaches a dependent rule (built from a predicate) to the most recently added rule.</summary>
+    /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
+    /// <returns>The same builder, for chaining.</returns>
+    /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
+    public ValidatorRuleBuilder<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, IEnumerable<string> messages)
+    {
+        return WithDependent(new ValidatorRule<T>(evaluateFunc, messages));
     }
 
     /// <summary>Attaches a dependent rule to the most recently added rule (runs only if the parent passes).</summary>
