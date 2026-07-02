@@ -44,23 +44,26 @@ public class ValidatorRule<T>
     }
 
 
-    /// <summary>Adds a failure message to this rule.</summary>
-    /// <param name="message">The message to append.</param>
+    /// <summary>Replaces this rule's failure message, overriding any default supplied at construction.</summary>
+    /// <param name="message">The message to report on failure.</param>
     /// <returns>The same rule, for chaining.</returns>
     public ValidatorRule<T> WithMessage(string message)
     {
+        _messages.Clear();
         _messages.Add(message);
         return this;
     }
 
-    /// <summary>Adds several failure messages to this rule.</summary>
-    /// <param name="messages">The messages to append.</param>
+    /// <summary>Replaces this rule's failure messages, overriding any default supplied at construction.</summary>
+    /// <param name="messages">The messages to report on failure.</param>
     /// <returns>The same rule, for chaining.</returns>
-    public ValidatorRule<T> WithMessages(IEnumerable<string> messages)
-    {
-        _messages.AddRange(messages);
-        return this;
-    }
+public ValidatorRule<T> WithMessages(IEnumerable<string> messages)
+{
+    ArgumentNullException.ThrowIfNull(messages);
+    _messages.Clear();
+    _messages.AddRange(messages);
+    return this;
+}
 
 
     /// <summary>Attaches a dependent rule, built from a predicate, that runs only if this rule passes.</summary>
