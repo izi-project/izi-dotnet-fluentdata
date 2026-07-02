@@ -155,7 +155,19 @@ RuleFor(x => x.Name).AddRule(
         .WithDependent(ValidatorRules.MinLength<string>(3, "Name must be at least 3 characters.")));
 ```
 
-`WithDependent` also accepts a predicate directly — `WithDependent((value, ct) => …)` — when you don't need a named rule.
+`WithDependent` also accepts a predicate plus its message — `WithDependent((value, ct) => …, "message")` — when you don't need a named rule.
+
+Or declare several dependents inline on a builder; each runs against the same value once the parent passes:
+
+```csharp
+RuleFor(x => x.Name)
+    .NotEmpty()
+    .WithDependent(x =>
+    {
+        x.MinLength(3, "Name must be at least 3 characters.");
+        x.MaxLength(50);
+    });
+```
 
 ### Asynchronous rules
 

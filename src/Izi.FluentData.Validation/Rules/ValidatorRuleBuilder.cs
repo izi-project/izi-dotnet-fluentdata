@@ -67,8 +67,9 @@ public class ValidatorRuleBuilder<T>
     }
 
 
-    /// <summary>Attaches a dependent rule (built from a predicate) to the most recently added rule.</summary>
+    /// <summary>Attaches a dependent rule (built from a predicate and its failure message) to the most recently added rule.</summary>
     /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
+    /// <param name="message">The message reported when the dependent fails.</param>
     /// <returns>The same builder, for chaining.</returns>
     /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
     public ValidatorRuleBuilder<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, string message)
@@ -76,8 +77,9 @@ public class ValidatorRuleBuilder<T>
         return WithDependent(new ValidatorRule<T>(evaluateFunc, message));
     }
 
-    /// <summary>Attaches a dependent rule (built from a predicate) to the most recently added rule.</summary>
+    /// <summary>Attaches a dependent rule (built from a predicate and its failure messages) to the most recently added rule.</summary>
     /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
+    /// <param name="messages">The messages reported when the dependent fails.</param>
     /// <returns>The same builder, for chaining.</returns>
     /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
     public ValidatorRuleBuilder<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, IEnumerable<string> messages)
@@ -96,17 +98,6 @@ public class ValidatorRuleBuilder<T>
         return this;
     }
 
-    /// <summary>Attaches several dependent rules to the most recently added rule.</summary>
-    /// <param name="dependents">The dependent rules.</param>
-    /// <returns>The same builder, for chaining.</returns>
-    /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
-    public ValidatorRuleBuilder<T> WithDependents(IEnumerable<ValidatorRule<T>> dependents)
-    {
-        if (_current is null) throw new InvalidOperationException("No rule to add dependents to. Call AddRule first.");
-        _current.WithDependents(dependents);
-        return this;
-    }
-
     /// <summary>
     /// Attaches dependent rules, configured inline on a nested builder, to the most recently added rule; every
     /// rule chained onto <paramref name="configure"/>'s builder runs against the same value only if that rule passes.
@@ -118,6 +109,17 @@ public class ValidatorRuleBuilder<T>
     {
         if (_current is null) throw new InvalidOperationException("No rule to add dependent to. Call AddRule first.");
         _current.WithDependent(configure);
+        return this;
+    }
+
+    /// <summary>Attaches several dependent rules to the most recently added rule.</summary>
+    /// <param name="dependents">The dependent rules.</param>
+    /// <returns>The same builder, for chaining.</returns>
+    /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
+    public ValidatorRuleBuilder<T> WithDependents(IEnumerable<ValidatorRule<T>> dependents)
+    {
+        if (_current is null) throw new InvalidOperationException("No rule to add dependents to. Call AddRule first.");
+        _current.WithDependents(dependents);
         return this;
     }
 

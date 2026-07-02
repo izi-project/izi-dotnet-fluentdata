@@ -62,9 +62,9 @@ public class ValidatorRule<T>
         return this;
     }
 
-
-    /// <summary>Attaches a dependent rule, built from a predicate, that runs only if this rule passes.</summary>
+    /// <summary>Attaches a dependent rule, built from a predicate and its failure message, that runs only if this rule passes.</summary>
     /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
+    /// <param name="message">The message reported when the dependent fails.</param>
     /// <returns>The same rule, for chaining.</returns>
     public ValidatorRule<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, string message)
     {
@@ -72,8 +72,9 @@ public class ValidatorRule<T>
         return this;
     }
 
-    /// <summary>Attaches a dependent rule, built from a predicate, that runs only if this rule passes.</summary>
+    /// <summary>Attaches a dependent rule, built from a predicate and its failure messages, that runs only if this rule passes.</summary>
     /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
+    /// <param name="messages">The messages reported when the dependent fails.</param>
     /// <returns>The same rule, for chaining.</returns>
     public ValidatorRule<T> WithDependent(Func<T, CancellationToken, ValueTask<bool>> evaluateFunc, IEnumerable<string> messages)
     {
@@ -90,15 +91,6 @@ public class ValidatorRule<T>
         return this;
     }
 
-    /// <summary>Attaches several dependent rules that run only if this rule passes.</summary>
-    /// <param name="dependents">The rules to run after this one succeeds.</param>
-    /// <returns>The same rule, for chaining.</returns>
-    public ValidatorRule<T> WithDependents(IEnumerable<ValidatorRule<T>> dependents)
-    {
-        _dependents.AddRange(dependents);
-        return this;
-    }
-
     /// <summary>
     /// Attaches dependent rules configured inline on a <see cref="ValidatorRuleBuilder{T}"/>; every rule chained
     /// onto the builder becomes a dependent that runs against the same value only if this rule passes.
@@ -111,6 +103,15 @@ public class ValidatorRule<T>
         var builder = new ValidatorRuleBuilder<T>();
         configure(builder);
         _dependents.AddRange(builder.Rules);
+        return this;
+    }
+
+    /// <summary>Attaches several dependent rules that run only if this rule passes.</summary>
+    /// <param name="dependents">The rules to run after this one succeeds.</param>
+    /// <returns>The same rule, for chaining.</returns>
+    public ValidatorRule<T> WithDependents(IEnumerable<ValidatorRule<T>> dependents)
+    {
+        _dependents.AddRange(dependents);
         return this;
     }
 
