@@ -15,6 +15,9 @@ public class ValidatorRuleBuilder<T>
     // The last rule added; the target that WithMessage/WithDependent refinements apply to.
     private ValidatorRule<T>? _current;
 
+    // The accumulated rules, exposed for a parent rule to adopt them as dependents (see WithDependent overloads).
+    internal IReadOnlyList<ValidatorRule<T>> Rules => _rules;
+
 
     /// <summary>Adds a rule from a predicate.</summary>
     /// <param name="evaluateFunc">Returns <see langword="true"/> when the value is valid.</param>
@@ -101,6 +104,20 @@ public class ValidatorRuleBuilder<T>
     {
         if (_current is null) throw new InvalidOperationException("No rule to add dependents to. Call AddRule first.");
         _current.WithDependents(dependents);
+        return this;
+    }
+
+    /// <summary>
+    /// Attaches dependent rules, configured inline on a nested builder, to the most recently added rule; every
+    /// rule chained onto <paramref name="configure"/>'s builder runs against the same value only if that rule passes.
+    /// </summary>
+    /// <param name="configure">Chains the dependent rules onto the supplied builder, e.g. <c>x =&gt; x.MinLength(3).MaxLength(50)</c>.</param>
+    /// <returns>The same builder, for chaining.</returns>
+    /// <exception cref="InvalidOperationException">No rule has been added yet.</exception>
+    public ValidatorRuleBuilder<T> WithDependent(Action<ValidatorRuleBuilder<T>> configure)
+    {
+        if (_current is null) throw new InvalidOperationException("No rule to add dependent to. Call AddRule first.");
+        _current.WithDependent(configure);
         return this;
     }
 

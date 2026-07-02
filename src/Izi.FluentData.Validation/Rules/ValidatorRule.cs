@@ -99,6 +99,21 @@ public class ValidatorRule<T>
         return this;
     }
 
+    /// <summary>
+    /// Attaches dependent rules configured inline on a <see cref="ValidatorRuleBuilder{T}"/>; every rule chained
+    /// onto the builder becomes a dependent that runs against the same value only if this rule passes.
+    /// </summary>
+    /// <param name="configure">Chains the dependent rules onto the supplied builder, e.g. <c>x =&gt; x.MinLength(3).MaxLength(50)</c>.</param>
+    /// <returns>The same rule, for chaining.</returns>
+    public ValidatorRule<T> WithDependent(Action<ValidatorRuleBuilder<T>> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        var builder = new ValidatorRuleBuilder<T>();
+        configure(builder);
+        _dependents.AddRange(builder.Rules);
+        return this;
+    }
+
 
     /// <summary>
     /// Evaluates the rule against <paramref name="value"/>. On failure the rule's own messages are returned and
