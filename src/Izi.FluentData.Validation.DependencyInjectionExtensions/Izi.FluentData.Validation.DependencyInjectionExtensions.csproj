@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.5</Version>
+    <Version>1.1.0</Version>
     <Title>Izi.FluentData Validation - DI Extensions</Title>
     <Description>Microsoft.Extensions.DependencyInjection registration helpers (AddValidator, AddValidators) for Izi.FluentData.Validation.</Description>
     <PackageTags>fluent;validation;dependencyinjection;di;dotnet</PackageTags>

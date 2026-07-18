@@ -155,19 +155,15 @@ RuleFor(x => x.Email)
 
 // Or attach a pre-built nested validator directly.
 RuleFor(x => x.Name).NotEmpty().WithDependents(new Validator<string>().MinLength(3));
-```
 
-`WithDependent` also accepts a predicate plus its message — `WithDependent((value, ct) => …, "message")` — when you don't need a named rule.
-
-Or declare several dependents inline on a builder; each runs against the same value once the parent passes:
-
-```csharp
+// The configure callback can declare several dependent rules at once;
+// all of them run against the same value once the parent passes.
 RuleFor(x => x.Name)
     .NotEmpty()
-    .WithDependent(x =>
+    .WithDependents(v =>
     {
-        x.MinLength(3, "Name must be at least 3 characters.");
-        x.MaxLength(50);
+        v.MinLength(3, "Name must be at least 3 characters.");
+        v.MaxLength(50);
     });
 ```
 

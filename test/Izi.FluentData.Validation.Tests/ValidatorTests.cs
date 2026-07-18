@@ -1,5 +1,3 @@
-using Izi.FluentData.Validation.Rules;
-
 namespace Izi.FluentData.Validation.Tests;
 
 /// <summary>
@@ -123,13 +121,13 @@ public class ValidatorTests
     public async Task Dependent_rule_passes_when_both_satisfied()
         => Assert.Empty(await new DependentNameValidator().ValidateAsync(new Person { Name = "abc" }));
 
-    // ---- Dependent rules authored inline via the builder lambda: WithDependent(x => { x.MinLength(...); x.MaxLength(...); }) ----
+    // ---- Dependent rules authored inline via the WithDependents(Action<Validator<T>>) lambda ----
     public sealed class InlineDependentValidator : Validator<Person>
     {
         public InlineDependentValidator()
             => RuleFor(x => x.Name)
                 .NotEmpty()
-                .WithDependent(x =>
+                .WithDependents(x =>
                 {
                     x.MinLength(3);
                     x.MaxLength(5);
@@ -149,19 +147,5 @@ public class ValidatorTests
 
     [Fact]
     public async Task Inline_dependent_rules_skipped_when_parent_fails()
-    {
-        Assert.Single(await new InlineDependentValidator().ValidateAsync(new Person { Name = "" })); // only NotEmpty
-
-        // Predicate + message overloads:
-        var parent = ValidatorRules.NotEmpty<string>("not empty");
-        parent.WithDependent((v, _) => new ValueTask<bool>(v.Length >= 3), "too short");
-        parent.WithDependent((v, _) => new ValueTask<bool>(v.Length <= 5), new[] { "too long" });
-
-        Assert.Contains(await parent.ValidateAsync("ab"), e => e.Contains("too short"));
-        Assert.Empty(await parent.ValidateAsync("abcd"));
-        Assert.Contains(await parent.ValidateAsync("abcdef"), e => e.Contains("too long"));
-
-        // Parent failure should still skip dependents.
-        Assert.Equal("not empty", Assert.Single(await parent.ValidateAsync("")));
-    }
+        => Assert.Single(await new InlineDependentValidator().ValidateAsync(new Person { Name = "" })); // only NotEmpty
 }
