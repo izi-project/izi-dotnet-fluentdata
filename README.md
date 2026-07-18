@@ -36,7 +36,7 @@ Most apps need the same two things at their boundaries: **normalise** incoming d
 
 ## Architecture
 
-The two domains are symmetric. Each exposes a base class you subclass, an interface you depend on, a fluent builder, and an internal rule engine that composes small, single-purpose steps.
+The two domains are symmetric. Each exposes a base class you subclass, an interface you depend on, and small, single-purpose rule/step objects that the base class composes.
 
 ```
                          ┌──────────────────────────────────────────────┐
@@ -50,12 +50,14 @@ The two domains are symmetric. Each exposes a base class you subclass, an interf
                                 ┌─────────▼───┐      ┌───▼─────────┐
                                 │ Validator<T> │      │ Transformer<T>│
                                 └─────────┬───┘      └───┬─────────┘
-                                          │ builds       │ builds
-                       CompositeValidatorRule<T>   CompositeTransformerRule<TSource,TDest>
+                                          │ holds        │ builds
+                       rules + dependent Validator<T>s   CompositeTransformerRule<TSource,TDest>
                                           │              │
-                                  ValidatorRule<T>   TransformerRule<TSource,TDest>
-                                   (predicate)         (transform step)
+                                 IValidatorRule<T>   TransformerRule<TSource,TDest>
+                                (single predicate)     (transform step)
 ```
+
+`Validator<T>` needs no separate builder: `RuleFor<TProperty>` creates and wires in a nested `Validator<TProperty>` directly, and rules chain straight onto it. See [Izi.FluentData.Validation's README](src/Izi.FluentData.Validation/README.md#design--technical-specifications) for the full design notes, including how the rules-then-dependents tiers short-circuit.
 
 ### Repository structure
 
@@ -125,8 +127,8 @@ public sealed class CustomerValidator : Validator<Customer>
     public CustomerValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaxLength(50);
-        RuleFor(x => x.Email).NotEmpty().EmailAddress();
-        RuleFor(x => x.Age).InRange(18, 120);
+        RuleFor(x => x.Email).NotEmpty().Email();
+        RuleFor(x => x.Age).Range(18, 120);
     }
 }
 

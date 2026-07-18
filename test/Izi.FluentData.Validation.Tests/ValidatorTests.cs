@@ -23,7 +23,7 @@ public class ValidatorTests
         {
             RuleFor(x => x.Name).NotEmpty().MaxLength(5);
             RuleFor(x => x.Age).GreaterThan(0);
-            RuleFor(x => x.Email).EmailAddress();
+            RuleFor(x => x.Email).Email();
         }
     }
 
@@ -93,14 +93,15 @@ public class ValidatorTests
         Assert.Empty(await new ConsistencyValidator().ValidateAsync(new Person { Age = 10, Email = "" }));
     }
 
-    // ---- Dependent rules (only run if the parent rule passed) ----
-    // Rules2 attaches dependents on the rule itself via ValidatorRule<T>.WithDependent.
+    // ---- Dependent rules (only run if the parent's own rules passed) ----
+    // RuleFor(...) returns a nested Validator<string>; WithDependents attaches a second nested
+    // validator that only runs once NotEmpty (declared directly on the first) has passed.
     public sealed class DependentNameValidator : Validator<Person>
     {
         public DependentNameValidator()
-            => RuleFor(x => x.Name).AddRule(
-                new ValidatorRule<string>((v, _) => ValueTask.FromResult(!string.IsNullOrWhiteSpace(v)), "Value cannot be empty.")
-                    .WithDependent(ValidatorRules.MinLength<string>(3)));
+            => RuleFor(x => x.Name)
+                .NotEmpty("Value cannot be empty.")
+                .WithDependents(v => v.MinLength(3));
     }
 
     [Fact]

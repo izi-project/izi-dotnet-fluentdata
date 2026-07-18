@@ -1,5 +1,4 @@
 using BenchmarkDotNet.Attributes;
-using Izi.FluentData.Validation.Rules;
 
 namespace Izi.FluentData.Validation.Benchmarks;
 
@@ -24,7 +23,7 @@ public class ValidatorBenchmarks
         {
             RuleFor(x => x.Name).NotEmpty().MaxLength(50);
             RuleFor(x => x.Age).GreaterThan(0).LessThan(150);
-            RuleFor(x => x.Email).EmailAddress();
+            RuleFor(x => x.Email).Email();
         }
     }
 
