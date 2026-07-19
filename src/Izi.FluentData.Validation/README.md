@@ -10,7 +10,7 @@ dotnet add package Izi.FluentData.Validation
 
 - **Target framework:** `net10.0`
 - **Dependencies:** none (zero transitive packages)
-- **Thread-safety:** a validator builds its rule set once in the constructor and is stateless afterward, so it's safe to share as a singleton
+- **Thread-safety:** safe to share as a singleton *after configuration* (i.e., don’t call `AddRule`/`WithDependents` after construction)
 
 ---
 
