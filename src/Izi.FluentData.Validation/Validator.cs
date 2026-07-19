@@ -67,12 +67,13 @@ public class Validator<T> : IValidator<T>
     /// <typeparam name="TProperty">The property type.</typeparam>
     /// <param name="propertySelector">Selects the value to validate, e.g. <c>x =&gt; x.Name</c>.</param>
     /// <returns>The nested validator to chain rules onto.</returns>
-    public Validator<TProperty> RuleFor<TProperty>(Func<T, TProperty> propertySelector)
-    {
-        var dependent = new Validator<TProperty>();
-        WithDependents(new PropertyAdapter<TProperty>(propertySelector, dependent));
-        return dependent;
-    }
+public Validator<TProperty> RuleFor<TProperty>(Func<T, TProperty> propertySelector)
+{
+    ArgumentNullException.ThrowIfNull(propertySelector);
+    var dependent = new Validator<TProperty>();
+    WithDependents(new PropertyAdapter<TProperty>(propertySelector, dependent));
+    return dependent;
+}
 
     // Bridges a Validator<TProperty> into the parent's IValidator<T> dependents list by extracting
     // the property value on each call; this is what lets RuleFor erase TProperty back to T.
