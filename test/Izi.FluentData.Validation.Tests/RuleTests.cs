@@ -172,4 +172,14 @@ public class RuleTests
         var error = await Eval(ValidatorRules.NotNull<string?>("Name is required."), null);
         Assert.Equal("Name is required.", error);
     }
+
+    [Fact]
+    public async Task ValidateAsync_throws_when_canceled_before_sync_rule_evaluation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            async () => await ValidatorRules.NotNull<string?>().ValidateAsync("x", cancellation.Token));
+    }
 }

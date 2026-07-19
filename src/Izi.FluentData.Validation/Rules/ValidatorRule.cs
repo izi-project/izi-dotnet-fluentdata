@@ -26,6 +26,7 @@ public class ValidatorRule<T> : IValidatorRule<T>
     /// <returns>The failure message, or <see langword="null"/> when the value is valid.</returns>
     public ValueTask<string?> ValidateAsync(T instance, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var pending = _evaluateFunc(instance, cancellationToken);
         // Fast path: synchronous predicates (all the built-ins) skip the async state machine entirely.
         if (pending.IsCompletedSuccessfully)
