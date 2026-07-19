@@ -92,6 +92,8 @@ public Validator<TProperty> RuleFor<TProperty>(Func<T, TProperty> propertySelect
     /// <returns>The aggregated failure messages; an empty list means valid.</returns>
     public ValueTask<IReadOnlyList<string>> ValidateAsync(T instance, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         List<string>? messages = null;
 
         for (int i = 0; i < _rules.Count; i++)
