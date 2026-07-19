@@ -52,6 +52,7 @@ public class Validator<T> : IValidator<T>
     /// <returns>The same validator, for chaining.</returns>
     public Validator<T> WithDependents(Action<Validator<T>> configure)
     {
+        ArgumentNullException.ThrowIfNull(configure);
         var dependent = new Validator<T>();
         configure(dependent);
         return WithDependents(dependent);
