@@ -1,14 +1,13 @@
 using BenchmarkDotNet.Attributes;
-using Izi.FluentData.Transformer;
 using Izi.FluentData.Transformer.Rules;
-using static Izi.FluentData.Transformer.Rules.Rules;
 
 namespace Izi.FluentData.Transformer.Benchmarks;
 
 /// <summary>
-/// Measures throughput and allocations of the transformer pipeline across three granularities: a single rule,
-/// a freestanding composed pipeline, and a full object transformer. <see cref="MemoryDiagnoserAttribute"/>
-/// tracks allocations so the synchronous fast paths can be verified to stay allocation-light.
+/// Measures throughput and allocations of the transformer pipeline at three granularities: a single rule, a
+/// freestanding multi-step pipeline, and a full object transformer over several property pipelines.
+/// <see cref="MemoryDiagnoserAttribute"/> tracks allocations so the synchronous fast path can be verified to stay
+/// allocation-light (and the object transform allocation-free) in steady state.
 /// </summary>
 [MemoryDiagnoser]
 public class TransformerBenchmarks
@@ -26,21 +25,23 @@ public class TransformerBenchmarks
     {
         public PersonTransformer()
         {
-            RuleFor(x => x.Name, b => b.Trim().ToUpper());
-            RuleFor(x => x.Description, b => b.Trim().Truncate(50).DefaultIfEmpty("N/A"));
-            RuleFor(x => x.Total, b => b.Round(2).Clamp(0m, 1000m));
+            RuleFor(x => x.Name).Trim().ToUpper();
+            RuleFor(x => x.Description).Trim().Truncate(50).DefaultIfEmpty("N/A");
+            RuleFor(x => x.Total).Round(2).Clamp(0m, 1000m);
         }
     }
 
     private readonly PersonTransformer _transformer = new();
 
-    // Freestanding pipeline built from the public composite API (string -> string).
-    private readonly TransformerRule<string, string> _pipeline =
-        new CompositeTransformerRule<string, string>(Trim())
-            .Then(ToUpper())
-            .Then(Truncate(50));
+    // A freestanding multi-step string pipeline, built once from the fluent extensions.
+    private readonly Transformer<string> _stringPipeline =
+        new Transformer<string>().Trim().ToUpper().Truncate(50);
 
-    private readonly TransformerRule<string> _singleRule = Trim();
+    // A freestanding date/time pipeline over the new calendar rules.
+    private readonly Transformer<DateTime> _dateTimePipeline =
+        new Transformer<DateTime>().StartOfMonth().AddDays(9).WithHour(9);
+
+    private readonly TransformerRule<string> _singleRule = TransformerRules.Trim();
 
     private Person _person = null!;
 
@@ -54,9 +55,13 @@ public class TransformerBenchmarks
     [Benchmark(Baseline = true)]
     public ValueTask<string> SingleRule() => _singleRule.TransformAsync("  hello world  ");
 
-    /// <summary>A multi-step string pipeline composed directly from the public composite API.</summary>
+    /// <summary>A multi-step string pipeline composed from the fluent extensions.</summary>
     [Benchmark]
-    public ValueTask<string> FreestandingPipeline() => _pipeline.TransformAsync("  hello world  ");
+    public ValueTask<string> StringPipeline() => _stringPipeline.TransformAsync("  hello world  ");
+
+    /// <summary>A multi-step date/time pipeline over the calendar rules.</summary>
+    [Benchmark]
+    public ValueTask<DateTime> DateTimePipeline() => _dateTimePipeline.TransformAsync(new DateTime(2024, 3, 25, 14, 0, 0));
 
     /// <summary>A full object transformer running every property pipeline over an instance.</summary>
     [Benchmark]
