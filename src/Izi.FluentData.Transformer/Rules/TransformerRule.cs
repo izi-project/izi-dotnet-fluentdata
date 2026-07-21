@@ -1,58 +1,40 @@
 namespace Izi.FluentData.Transformer.Rules;
 
 /// <summary>
-/// The atomic unit of a transformation pipeline: a single step that maps a <typeparamref name="TSource"/>
-/// value to a <typeparamref name="TDestination"/> value, optionally asynchronously. Steps are composed into
-/// a pipeline by <see cref="CompositeTransformerRule{TSource, TDestination}"/>.
+/// The leaf transformation step: adapts a plain <c>(value, token) =&gt; ValueTask&lt;value&gt;</c> delegate into an
+/// <see cref="ITransformer{T}"/>. Every built-in rule on <see cref="TransformerRules"/> is one of these, and custom
+/// steps can be created by constructing one directly.
 /// </summary>
-/// <typeparam name="TSource">The input type of this step.</typeparam>
-/// <typeparam name="TDestination">The output type produced by this step.</typeparam>
-public class TransformerRule<TSource, TDestination>
+/// <remarks>
+/// The token is checked once on entry, then the delegate runs. When it completes synchronously (the common case for
+/// the built-ins) the underlying <see cref="ValueTask{TResult}"/> is returned as-is, so no async state machine is
+/// built; the awaiting <see cref="TransformSlowAsync"/> tail is reached only when the delegate genuinely yields.
+/// </remarks>
+/// <typeparam name="T">The type transformed.</typeparam>
+public class TransformerRule<T> : ITransformer<T>
 {
-    private readonly Func<TSource, CancellationToken, ValueTask<TDestination>> _transformFunc;
+    private readonly Func<T, CancellationToken, ValueTask<T>> _transformFunc;
 
-    /// <summary>Creates a step backed by <paramref name="transformFunc"/>.</summary>
-    /// <param name="transformFunc">The delegate that maps a source value to a destination value.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="transformFunc"/> is <see langword="null"/>.</exception>
-    public TransformerRule(Func<TSource, CancellationToken, ValueTask<TDestination>> transformFunc)
+    /// <summary>Creates a rule backed by <paramref name="transformFunc"/>.</summary>
+    /// <param name="transformFunc">The transformation to run; receives the current value and a cancellation token.</param>
+    public TransformerRule(Func<T, CancellationToken, ValueTask<T>> transformFunc)
     {
-        _transformFunc = transformFunc ?? throw new ArgumentNullException(nameof(transformFunc));
+        _transformFunc = transformFunc;
     }
 
-    /// <summary>Runs the step against <paramref name="source"/>.</summary>
-    /// <param name="source">The value to transform.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>The transformed value.</returns>
-    public ValueTask<TDestination> TransformAsync(TSource source, CancellationToken cancellationToken = default)
-    {
-        var pending = _transformFunc(source, cancellationToken);
-        // Fast path: the vast majority of built-in steps complete synchronously. Returning the
-        // already-completed ValueTask directly avoids building an async state machine for them.
-        if (pending.IsCompletedSuccessfully)
-        {
-            return pending;
-        }
-        return TransformSlowAsync(_transformFunc, source, cancellationToken);
-    }
-
-    // Static so the awaiting state machine captures no `this`; reached only when the delegate genuinely yields.
-    private static async ValueTask<TDestination> TransformSlowAsync(Func<TSource, CancellationToken, ValueTask<TDestination>> transformFunc, TSource source, CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public ValueTask<T> TransformAsync(T instance, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return await transformFunc(source, cancellationToken);
+        var pendingTask = _transformFunc(instance, cancellationToken);
+        return pendingTask.IsCompletedSuccessfully ? pendingTask : TransformSlowAsync(pendingTask, cancellationToken);
     }
-}
 
-/// <summary>
-/// A transformation step whose output type matches its input type — the common case for in-place
-/// normalisation steps (trim, round, clamp, …) that refine a value without changing its type.
-/// </summary>
-/// <typeparam name="TSource">The input and output type of this step.</typeparam>
-public class TransformerRule<TSource> : TransformerRule<TSource, TSource>
-{
-    /// <summary>Creates a same-type step backed by <paramref name="transformFunc"/>.</summary>
-    /// <param name="transformFunc">The delegate that refines a value of type <typeparamref name="TSource"/>.</param>
-    public TransformerRule(Func<TSource, CancellationToken, ValueTask<TSource>> transformFunc) : base(transformFunc)
+    // Async tail reached only when the delegate did not complete synchronously; kept separate so the common
+    // synchronous path above never builds a state machine.
+    private static async ValueTask<T> TransformSlowAsync(ValueTask<T> transformTask, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        return await transformTask.ConfigureAwait(false);
     }
 }

@@ -50,14 +50,14 @@ The two domains are symmetric. Each exposes a base class you subclass, an interf
                                 ┌─────────▼───┐      ┌───▼─────────┐
                                 │ Validator<T> │      │ Transformer<T>│
                                 └─────────┬───┘      └───┬─────────┘
-                                          │ holds        │ builds
-                       rules + dependent Validator<T>s   CompositeTransformerRule<TSource,TDest>
+                                          │ holds        │ holds
+                       rules + dependent Validator<T>s   steps + nested Transformer<T>s
                                           │              │
-                                 IValidatorRule<T>   TransformerRule<TSource,TDest>
-                                (single predicate)     (transform step)
+                                 IValidatorRule<T>       TransformerRule<T>
+                                (single predicate)       (transform step)
 ```
 
-`Validator<T>` needs no separate builder: `RuleFor<TProperty>` creates and wires in a nested `Validator<TProperty>` directly, and rules chain straight onto it. See [Izi.FluentData.Validation's README](src/Izi.FluentData.Validation/README.md#design--technical-specifications) for the full design notes, including how the rules-then-dependents tiers short-circuit.
+Both cores follow the same shape: `RuleFor<TProperty>` creates and wires in a nested `Validator<TProperty>` / `Transformer<TProperty>` directly, and rules or steps chain straight onto it — no separate builder type. See each library's README ([Validation](src/Izi.FluentData.Validation/README.md#design--technical-specifications), [Transformer](src/Izi.FluentData.Transformer/README.md#design--how-it-works)) for the full design notes.
 
 ### Repository structure
 
@@ -91,7 +91,7 @@ instance ──selector──▶ value ──▶ rule₁ ─┐
 
 ```
 instance ──getter──▶ value ──▶ step₁ ──▶ step₂ ──▶ … ──▶ stepₙ ──setter──▶ instance
-                              └────────── CompositeTransformerRule ─────────┘
+                              └──── each step's output feeds the next ─────┘
 ```
 
 ### How the pieces interconnect
@@ -136,9 +136,9 @@ public sealed class CustomerTransformer : Transformer<Customer>
 {
     public CustomerTransformer()
     {
-        RuleFor(x => x.Name,  b => b.Trim().ToUpper());
-        RuleFor(x => x.Email, b => b.Trim().ToLower());
-        RuleFor(x => x.Total, b => b.Round(2).Clamp(0m, 10_000m));
+        RuleFor(x => x.Name).Trim().ToUpper();
+        RuleFor(x => x.Email).Trim().ToLower();
+        RuleFor(x => x.Total).Round(2).Clamp(0m, 10_000m);
     }
 }
 
