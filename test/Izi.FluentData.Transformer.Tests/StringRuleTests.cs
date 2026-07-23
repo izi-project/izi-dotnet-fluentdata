@@ -1,12 +1,12 @@
 using System.Globalization;
-using static Izi.FluentData.Transformer.Rules.Rules;
+using static Izi.FluentData.Transformer.Rules.TransformerRules;
 
 namespace Izi.FluentData.Transformer.Tests;
 
 /// <summary>
-/// Covers the string rules: trimming, casing (with explicit and invariant cultures), replace, substring,
-/// truncate, padding, prepend/append, and the blank/empty default-substitution rules — including their
-/// null-coalescing behaviour.
+/// Covers the string rules: trimming, casing (invariant and explicit culture), title-casing, replace, substring,
+/// truncate, padding, and prepend/append — including the null-coalescing behaviour every string rule shares
+/// (a null source is treated as the empty string).
 /// </summary>
 public class StringRuleTests
 {
@@ -77,6 +77,10 @@ public class StringRuleTests
         => Assert.Equal(string.Empty, await Truncate(3).TransformAsync(null!));
 
     [Fact]
+    public async Task Truncate_negative_is_empty()
+        => Assert.Equal(string.Empty, await Truncate(-1).TransformAsync("hello"));
+
+    [Fact]
     public async Task PadLeft_pads_with_char()
         => Assert.Equal("005", await PadLeft(3, '0').TransformAsync("5"));
 
@@ -95,19 +99,4 @@ public class StringRuleTests
     [Fact]
     public async Task Append_adds_suffix()
         => Assert.Equal("x-post", await Append("-post").TransformAsync("x"));
-
-    [Theory]
-    [InlineData("", "fallback")]
-    [InlineData("   ", "fallback")]
-    [InlineData(null, "fallback")]
-    [InlineData("value", "value")]
-    public async Task DefaultIfNullOrWhitespace_replaces_blank(string? input, string expected)
-        => Assert.Equal(expected, await DefaultIfNullOrWhitespace("fallback").TransformAsync(input!));
-
-    [Theory]
-    [InlineData("", "fallback")]
-    [InlineData(null, "fallback")]
-    [InlineData("value", "value")]
-    public async Task DefaultIfEmpty_replaces_null_or_empty(string? input, string expected)
-        => Assert.Equal(expected, await DefaultIfEmpty("fallback").TransformAsync(input!));
 }

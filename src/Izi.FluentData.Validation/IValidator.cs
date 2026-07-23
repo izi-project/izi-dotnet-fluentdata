@@ -1,11 +1,13 @@
 namespace Izi.FluentData.Validation;
 
 /// <summary>
-/// Validates an instance of <typeparamref name="T"/>, returning the messages for any rules
-/// that failed.
+/// Validates an instance of <typeparamref name="T"/>, returning the messages for any rules that failed.
 /// </summary>
-/// <typeparam name="T">The type whose instances are validated.</typeparam>
-public interface IValidator<T>
+/// <typeparam name="T">
+/// The type whose instances are validated. Contravariant (<see langword="in"/>) so an
+/// <see cref="IValidator{T}"/> for a base type can stand in for a validator of a derived type.
+/// </typeparam>
+public interface IValidator<in T>
 {
     /// <summary>Runs every configured rule against <paramref name="instance"/>.</summary>
     /// <param name="instance">The instance to validate.</param>
