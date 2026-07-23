@@ -36,7 +36,7 @@ Most apps need the same two things at their boundaries: **normalise** incoming d
 
 ## Architecture
 
-The two domains are symmetric. Each exposes a base class you subclass, an interface you depend on, a fluent builder, and an internal rule engine that composes small, single-purpose steps.
+The two domains are symmetric. Each exposes a base class you subclass, an interface you depend on, and small, single-purpose rule/step objects that the base class composes.
 
 ```
                          ┌──────────────────────────────────────────────┐
@@ -50,12 +50,14 @@ The two domains are symmetric. Each exposes a base class you subclass, an interf
                                 ┌─────────▼───┐      ┌───▼─────────┐
                                 │ Validator<T> │      │ Transformer<T>│
                                 └─────────┬───┘      └───┬─────────┘
-                                          │ builds       │ builds
-                       CompositeValidatorRule<T>   CompositeTransformerRule<TSource,TDest>
+                                          │ holds        │ holds
+                       rules + dependent Validator<T>s   steps + nested Transformer<T>s
                                           │              │
-                                  ValidatorRule<T>   TransformerRule<TSource,TDest>
-                                   (predicate)         (transform step)
+                                 IValidatorRule<T>       TransformerRule<T>
+                                (single predicate)       (transform step)
 ```
+
+Both cores follow the same shape: `RuleFor<TProperty>` creates and wires in a nested `Validator<TProperty>` / `Transformer<TProperty>` directly, and rules or steps chain straight onto it — no separate builder type. See each library's README ([Validation](src/Izi.FluentData.Validation/README.md#design--technical-specifications), [Transformer](src/Izi.FluentData.Transformer/README.md#design--how-it-works)) for the full design notes.
 
 ### Repository structure
 
@@ -89,7 +91,7 @@ instance ──selector──▶ value ──▶ rule₁ ─┐
 
 ```
 instance ──getter──▶ value ──▶ step₁ ──▶ step₂ ──▶ … ──▶ stepₙ ──setter──▶ instance
-                              └────────── CompositeTransformerRule ─────────┘
+                              └──── each step's output feeds the next ─────┘
 ```
 
 ### How the pieces interconnect
@@ -125,8 +127,8 @@ public sealed class CustomerValidator : Validator<Customer>
     public CustomerValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaxLength(50);
-        RuleFor(x => x.Email).NotEmpty().EmailAddress();
-        RuleFor(x => x.Age).InRange(18, 120);
+        RuleFor(x => x.Email).NotEmpty().Email();
+        RuleFor(x => x.Age).Range(18, 120);
     }
 }
 
@@ -134,9 +136,9 @@ public sealed class CustomerTransformer : Transformer<Customer>
 {
     public CustomerTransformer()
     {
-        RuleFor(x => x.Name,  b => b.Trim().ToUpper());
-        RuleFor(x => x.Email, b => b.Trim().ToLower());
-        RuleFor(x => x.Total, b => b.Round(2).Clamp(0m, 10_000m));
+        RuleFor(x => x.Name).Trim().ToUpper();
+        RuleFor(x => x.Email).Trim().ToLower();
+        RuleFor(x => x.Total).Round(2).Clamp(0m, 10_000m);
     }
 }
 

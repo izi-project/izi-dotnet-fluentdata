@@ -1,4 +1,3 @@
-using Izi.FluentData.Transformer.Rules;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Izi.FluentData.Transformer.Tests;
@@ -17,7 +16,7 @@ public class DependencyInjectionTests
 
     public sealed class SampleTransformer : Transformer<Sample>
     {
-        public SampleTransformer() => RuleFor(x => x.Name, b => b.Trim().ToUpper());
+        public SampleTransformer() => RuleFor(x => x.Name).Trim().ToUpper();
     }
 
     [Fact]

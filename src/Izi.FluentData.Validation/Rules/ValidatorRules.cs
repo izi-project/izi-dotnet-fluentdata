@@ -3,10 +3,9 @@ using System.Text.RegularExpressions;
 namespace Izi.FluentData.Validation.Rules;
 
 /// <summary>
-/// Factory methods that create the built-in <see cref="ValidatorRule{T}"/> instances. Each rule has a
-/// default-message overload and a custom-message overload, and the returned <see cref="ValidatorRule{T}"/> can be
-/// further refined (<c>WithMessage</c>, <c>WithDependent(s)</c>). These are also surfaced as fluent
-/// builder methods on <see cref="RuleBuilder{T}"/> (see <c>RuleBuilderExtensions</c>).
+/// Factory methods that create the built-in <see cref="IValidatorRule{T}"/> instances. Each rule has a
+/// default-message overload and a custom-message overload. These are also surfaced as fluent extension methods
+/// on <see cref="Validator{T}"/> (see <c>ValidatorExtensions</c>).
 /// </summary>
 public static partial class ValidatorRules
 {
@@ -15,19 +14,19 @@ public static partial class ValidatorRules
     // =============================
 
     /// <summary>Requires the value to be non-null.</summary>
-    public static ValidatorRule<T> NotNull<T>() => NotNull<T>("Value cannot be null.");
+    public static IValidatorRule<T> NotNull<T>() => NotNull<T>("Value cannot be null.");
     /// <summary>Requires the value to be non-null, with a custom message.</summary>
-    public static ValidatorRule<T> NotNull<T>(string message) => new((value, _) => ValueTask.FromResult(value != null), message);
+    public static IValidatorRule<T> NotNull<T>(string message) => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value != null), message);
 
     /// <summary>Requires the value to be null.</summary>
-    public static ValidatorRule<T> Null<T>() => Null<T>("Value must be null.");
+    public static IValidatorRule<T> Null<T>() => Null<T>("Value must be null.");
     /// <summary>Requires the value to be null, with a custom message.</summary>
-    public static ValidatorRule<T> Null<T>(string message) => new((value, _) => ValueTask.FromResult(value == null), message);
+    public static IValidatorRule<T> Null<T>(string message) => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value == null), message);
 
     /// <summary>Requires a non-empty value (non-blank string or non-empty collection).</summary>
-    public static ValidatorRule<T> NotEmpty<T>() => NotEmpty<T>("Value cannot be empty.");
+    public static IValidatorRule<T> NotEmpty<T>() => NotEmpty<T>("Value cannot be empty.");
     /// <summary>Requires a non-empty value (non-blank string or non-empty collection), with a custom message.</summary>
-    public static ValidatorRule<T> NotEmpty<T>(string message) => new((value, _) =>
+    public static IValidatorRule<T> NotEmpty<T>(string message) => new ValidatorRule<T>((value, _) =>
     {
         if (value is null) return ValueTask.FromResult(false);
         if (value is string str) return ValueTask.FromResult(!string.IsNullOrWhiteSpace(str));
@@ -36,9 +35,9 @@ public static partial class ValidatorRules
     }, message);
 
     /// <summary>Requires an empty value (null/blank string or empty collection).</summary>
-    public static ValidatorRule<T> Empty<T>() => Empty<T>("Value must be empty.");
+    public static IValidatorRule<T> Empty<T>() => Empty<T>("Value must be empty.");
     /// <summary>Requires an empty value (null/blank string or empty collection), with a custom message.</summary>
-    public static ValidatorRule<T> Empty<T>(string message) => new((value, _) =>
+    public static IValidatorRule<T> Empty<T>(string message) => new ValidatorRule<T>((value, _) =>
     {
         if (value is null) return ValueTask.FromResult(true);
         if (value is string str) return ValueTask.FromResult(string.IsNullOrWhiteSpace(str));
@@ -51,43 +50,43 @@ public static partial class ValidatorRules
     // =============================
 
     /// <summary>Requires the value to equal <paramref name="expectedValue"/>.</summary>
-    public static ValidatorRule<T> Equal<T>(T expectedValue) => Equal(expectedValue, $"Value must be equal to {expectedValue}.");
+    public static IValidatorRule<T> Equal<T>(T expectedValue) => Equal(expectedValue, $"Value must be equal to {expectedValue}.");
     /// <summary>Requires the value to equal <paramref name="expectedValue"/>, with a custom message.</summary>
-    public static ValidatorRule<T> Equal<T>(T expectedValue, string message) => new((value, _) => ValueTask.FromResult(EqualityComparer<T>.Default.Equals(value, expectedValue)), message);
+    public static IValidatorRule<T> Equal<T>(T expectedValue, string message) => new ValidatorRule<T>((value, _) => ValueTask.FromResult(EqualityComparer<T>.Default.Equals(value, expectedValue)), message);
 
     /// <summary>Requires the value to differ from <paramref name="expectedValue"/>.</summary>
-    public static ValidatorRule<T> NotEqual<T>(T expectedValue) => NotEqual(expectedValue, $"Value must not be equal to {expectedValue}.");
+    public static IValidatorRule<T> NotEqual<T>(T expectedValue) => NotEqual(expectedValue, $"Value must not be equal to {expectedValue}.");
     /// <summary>Requires the value to differ from <paramref name="expectedValue"/>, with a custom message.</summary>
-    public static ValidatorRule<T> NotEqual<T>(T expectedValue, string message) => new((value, _) => ValueTask.FromResult(!EqualityComparer<T>.Default.Equals(value, expectedValue)), message);
+    public static IValidatorRule<T> NotEqual<T>(T expectedValue, string message) => new ValidatorRule<T>((value, _) => ValueTask.FromResult(!EqualityComparer<T>.Default.Equals(value, expectedValue)), message);
 
     /// <summary>Requires the value to be strictly less than <paramref name="threshold"/>.</summary>
-    public static ValidatorRule<T> LessThan<T>(T threshold) where T : IComparable<T> => LessThan(threshold, $"Value must be less than {threshold}.");
+    public static IValidatorRule<T> LessThan<T>(T threshold) where T : IComparable<T> => LessThan(threshold, $"Value must be less than {threshold}.");
     /// <summary>Requires the value to be strictly less than <paramref name="threshold"/>, with a custom message.</summary>
-    public static ValidatorRule<T> LessThan<T>(T threshold, string message) where T : IComparable<T> => new((value, _) => ValueTask.FromResult(value.CompareTo(threshold) < 0), message);
+    public static IValidatorRule<T> LessThan<T>(T threshold, string message) where T : IComparable<T> => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value.CompareTo(threshold) < 0), message);
 
     /// <summary>Requires the value to be less than or equal to <paramref name="threshold"/>.</summary>
-    public static ValidatorRule<T> LessThanOrEqual<T>(T threshold) where T : IComparable<T> => LessThanOrEqual(threshold, $"Value must be less than or equal to {threshold}.");
+    public static IValidatorRule<T> LessThanOrEqual<T>(T threshold) where T : IComparable<T> => LessThanOrEqual(threshold, $"Value must be less than or equal to {threshold}.");
     /// <summary>Requires the value to be less than or equal to <paramref name="threshold"/>, with a custom message.</summary>
-    public static ValidatorRule<T> LessThanOrEqual<T>(T threshold, string message) where T : IComparable<T> => new((value, _) => ValueTask.FromResult(value.CompareTo(threshold) <= 0), message);
+    public static IValidatorRule<T> LessThanOrEqual<T>(T threshold, string message) where T : IComparable<T> => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value.CompareTo(threshold) <= 0), message);
 
     /// <summary>Requires the value to be strictly greater than <paramref name="threshold"/>.</summary>
-    public static ValidatorRule<T> GreaterThan<T>(T threshold) where T : IComparable<T> => GreaterThan(threshold, $"Value must be greater than {threshold}.");
+    public static IValidatorRule<T> GreaterThan<T>(T threshold) where T : IComparable<T> => GreaterThan(threshold, $"Value must be greater than {threshold}.");
     /// <summary>Requires the value to be strictly greater than <paramref name="threshold"/>, with a custom message.</summary>
-    public static ValidatorRule<T> GreaterThan<T>(T threshold, string message) where T : IComparable<T> => new((value, _) => ValueTask.FromResult(value.CompareTo(threshold) > 0), message);
+    public static IValidatorRule<T> GreaterThan<T>(T threshold, string message) where T : IComparable<T> => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value.CompareTo(threshold) > 0), message);
 
     /// <summary>Requires the value to be greater than or equal to <paramref name="threshold"/>.</summary>
-    public static ValidatorRule<T> GreaterThanOrEqual<T>(T threshold) where T : IComparable<T> => GreaterThanOrEqual(threshold, $"Value must be greater than or equal to {threshold}.");
+    public static IValidatorRule<T> GreaterThanOrEqual<T>(T threshold) where T : IComparable<T> => GreaterThanOrEqual(threshold, $"Value must be greater than or equal to {threshold}.");
     /// <summary>Requires the value to be greater than or equal to <paramref name="threshold"/>, with a custom message.</summary>
-    public static ValidatorRule<T> GreaterThanOrEqual<T>(T threshold, string message) where T : IComparable<T> => new((value, _) => ValueTask.FromResult(value.CompareTo(threshold) >= 0), message);
+    public static IValidatorRule<T> GreaterThanOrEqual<T>(T threshold, string message) where T : IComparable<T> => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value.CompareTo(threshold) >= 0), message);
 
     // =============================
     // Length & Range Checks
     // =============================
 
     /// <summary>Requires a string or collection to have an exact length/count of <paramref name="expectedLength"/>.</summary>
-    public static ValidatorRule<T> Length<T>(int expectedLength) => Length<T>(expectedLength, $"Value must have a length of {expectedLength}.");
+    public static IValidatorRule<T> Length<T>(int expectedLength) => Length<T>(expectedLength, $"Value must have a length of {expectedLength}.");
     /// <summary>Requires a string or collection to have an exact length/count of <paramref name="expectedLength"/>, with a custom message.</summary>
-    public static ValidatorRule<T> Length<T>(int expectedLength, string message) => new((value, _) =>
+    public static IValidatorRule<T> Length<T>(int expectedLength, string message) => new ValidatorRule<T>((value, _) =>
     {
         if (value is null) return ValueTask.FromResult(false);
         if (value is string str) return ValueTask.FromResult(str.Length == expectedLength);
@@ -96,9 +95,9 @@ public static partial class ValidatorRules
     }, message);
 
     /// <summary>Requires a string or collection to meet a minimum length/count of <paramref name="minLength"/>.</summary>
-    public static ValidatorRule<T> MinLength<T>(int minLength) => MinLength<T>(minLength, $"Value must have a minimum length of {minLength}.");
+    public static IValidatorRule<T> MinLength<T>(int minLength) => MinLength<T>(minLength, $"Value must have a minimum length of {minLength}.");
     /// <summary>Requires a string or collection to meet a minimum length/count of <paramref name="minLength"/>, with a custom message.</summary>
-    public static ValidatorRule<T> MinLength<T>(int minLength, string message) => new((value, _) =>
+    public static IValidatorRule<T> MinLength<T>(int minLength, string message) => new ValidatorRule<T>((value, _) =>
     {
         if (value is null) return ValueTask.FromResult(false);
         if (value is string str) return ValueTask.FromResult(str.Length >= minLength);
@@ -107,9 +106,9 @@ public static partial class ValidatorRules
     }, message);
 
     /// <summary>Requires a string or collection to stay within a maximum length/count of <paramref name="maxLength"/>.</summary>
-    public static ValidatorRule<T> MaxLength<T>(int maxLength) => MaxLength<T>(maxLength, $"Value must have a maximum length of {maxLength}.");
+    public static IValidatorRule<T> MaxLength<T>(int maxLength) => MaxLength<T>(maxLength, $"Value must have a maximum length of {maxLength}.");
     /// <summary>Requires a string or collection to stay within a maximum length/count of <paramref name="maxLength"/>, with a custom message.</summary>
-    public static ValidatorRule<T> MaxLength<T>(int maxLength, string message) => new((value, _) =>
+    public static IValidatorRule<T> MaxLength<T>(int maxLength, string message) => new ValidatorRule<T>((value, _) =>
     {
         if (value is null) return ValueTask.FromResult(false);
         if (value is string str) return ValueTask.FromResult(str.Length <= maxLength);
@@ -118,23 +117,23 @@ public static partial class ValidatorRules
     }, message);
 
     /// <summary>Requires the value to fall within the inclusive range <c>[<paramref name="minValue"/>, <paramref name="maxValue"/>]</c>.</summary>
-    public static ValidatorRule<T> Range<T>(T minValue, T maxValue) where T : IComparable<T> => Range(minValue, maxValue, $"Value must be between {minValue} and {maxValue}.");
+    public static IValidatorRule<T> Range<T>(T minValue, T maxValue) where T : IComparable<T> => Range(minValue, maxValue, $"Value must be between {minValue} and {maxValue}.");
     /// <summary>Requires the value to fall within the inclusive range <c>[<paramref name="minValue"/>, <paramref name="maxValue"/>]</c>, with a custom message.</summary>
-    public static ValidatorRule<T> Range<T>(T minValue, T maxValue, string message) where T : IComparable<T> => new((value, _) => ValueTask.FromResult(value.CompareTo(minValue) >= 0 && value.CompareTo(maxValue) <= 0), message);
+    public static IValidatorRule<T> Range<T>(T minValue, T maxValue, string message) where T : IComparable<T> => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value.CompareTo(minValue) >= 0 && value.CompareTo(maxValue) <= 0), message);
 
     /// <summary>Requires the value to fall outside the inclusive range <c>[<paramref name="minValue"/>, <paramref name="maxValue"/>]</c>.</summary>
-    public static ValidatorRule<T> NotRange<T>(T minValue, T maxValue) where T : IComparable<T> => NotRange(minValue, maxValue, $"Value must not be between {minValue} and {maxValue}.");
+    public static IValidatorRule<T> NotRange<T>(T minValue, T maxValue) where T : IComparable<T> => NotRange(minValue, maxValue, $"Value must not be between {minValue} and {maxValue}.");
     /// <summary>Requires the value to fall outside the inclusive range <c>[<paramref name="minValue"/>, <paramref name="maxValue"/>]</c>, with a custom message.</summary>
-    public static ValidatorRule<T> NotRange<T>(T minValue, T maxValue, string message) where T : IComparable<T> => new((value, _) => ValueTask.FromResult(value.CompareTo(minValue) < 0 || value.CompareTo(maxValue) > 0), message);
+    public static IValidatorRule<T> NotRange<T>(T minValue, T maxValue, string message) where T : IComparable<T> => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value.CompareTo(minValue) < 0 || value.CompareTo(maxValue) > 0), message);
 
     // =============================
     // Format & Pattern Matching
     // =============================
 
     /// <summary>Requires a decimal value to respect a maximum scale and precision.</summary>
-    public static ValidatorRule<T> ScalePrecision<T>(int maxScale, int maxPrecision) => ScalePrecision<T>(maxScale, maxPrecision, $"Value must have a maximum scale of {maxScale} and a maximum precision of {maxPrecision}.");
+    public static IValidatorRule<T> ScalePrecision<T>(int maxScale, int maxPrecision) => ScalePrecision<T>(maxScale, maxPrecision, $"Value must have a maximum scale of {maxScale} and a maximum precision of {maxPrecision}.");
     /// <summary>Requires a decimal value to respect a maximum scale and precision, with a custom message.</summary>
-    public static ValidatorRule<T> ScalePrecision<T>(int maxScale, int maxPrecision, string message) => new((value, _) =>
+    public static IValidatorRule<T> ScalePrecision<T>(int maxScale, int maxPrecision, string message) => new ValidatorRule<T>((value, _) =>
     {
         if (value is decimal dec)
         {
@@ -146,52 +145,52 @@ public static partial class ValidatorRules
     }, message);
 
     /// <summary>Requires a string to match the regular expression <paramref name="pattern"/>.</summary>
-    public static ValidatorRule<T> Matches<T>(string pattern) => Matches<T>(pattern, $"Value must match the pattern: {pattern}.");
+    public static IValidatorRule<T> Matches<T>(string pattern) => Matches<T>(pattern, $"Value must match the pattern: {pattern}.");
     /// <summary>Requires a string to match the regular expression <paramref name="pattern"/>, with a custom message.</summary>
-    public static ValidatorRule<T> Matches<T>(string pattern, string message) => Matches<T>(new Regex(pattern), message);
+    public static IValidatorRule<T> Matches<T>(string pattern, string message) => Matches<T>(new Regex(pattern), message);
     /// <summary>Requires a string to match the precompiled regular expression <paramref name="regex"/>, with a custom message.</summary>
-    public static ValidatorRule<T> Matches<T>(Regex regex, string message) => new((value, _) => ValueTask.FromResult(value is string str && regex.IsMatch(str)), message);
+    public static IValidatorRule<T> Matches<T>(Regex regex, string message) => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value is string str && regex.IsMatch(str)), message);
 
     /// <summary>Requires a string to not match the regular expression <paramref name="pattern"/>.</summary>
-    public static ValidatorRule<T> NotMatches<T>(string pattern) => NotMatches<T>(pattern, $"Value must not match the pattern: {pattern}.");
+    public static IValidatorRule<T> NotMatches<T>(string pattern) => NotMatches<T>(pattern, $"Value must not match the pattern: {pattern}.");
     /// <summary>Requires a string to not match the regular expression <paramref name="pattern"/>, with a custom message.</summary>
-    public static ValidatorRule<T> NotMatches<T>(string pattern, string message) => NotMatches<T>(new Regex(pattern), message);
+    public static IValidatorRule<T> NotMatches<T>(string pattern, string message) => NotMatches<T>(new Regex(pattern), message);
     /// <summary>Requires a string to not match the precompiled regular expression <paramref name="regex"/>, with a custom message.</summary>
-    public static ValidatorRule<T> NotMatches<T>(Regex regex, string message) => new((value, _) => ValueTask.FromResult(value is not string str || !regex.IsMatch(str)), message);
+    public static IValidatorRule<T> NotMatches<T>(Regex regex, string message) => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value is not string str || !regex.IsMatch(str)), message);
 
     /// <summary>Requires a string to be a valid email address.</summary>
-    public static ValidatorRule<T> Email<T>() => Email<T>("Value must be a valid email address.");
+    public static IValidatorRule<T> Email<T>() => Email<T>("Value must be a valid email address.");
     /// <summary>Requires a string to be a valid email address, with a custom message.</summary>
-    public static ValidatorRule<T> Email<T>(string message) => Matches<T>(ValidationRegex.Email(), message);
+    public static IValidatorRule<T> Email<T>(string message) => Matches<T>(ValidationRegex.Email(), message);
 
     /// <summary>Requires a string to be a valid credit-card number.</summary>
-    public static ValidatorRule<T> CreditCard<T>() => CreditCard<T>("Value must be a valid credit card number.");
+    public static IValidatorRule<T> CreditCard<T>() => CreditCard<T>("Value must be a valid credit card number.");
     /// <summary>Requires a string to be a valid credit-card number, with a custom message.</summary>
-    public static ValidatorRule<T> CreditCard<T>(string message) => Matches<T>(ValidationRegex.CreditCard(), message);
+    public static IValidatorRule<T> CreditCard<T>(string message) => Matches<T>(ValidationRegex.CreditCard(), message);
 
     // =============================
     // ISO Code Checks
     // =============================
 
     /// <summary>Requires a string to be a valid ISO 3166-1 alpha-2 country code (e.g. <c>US</c>); case-insensitive.</summary>
-    public static ValidatorRule<T> CountryIso2<T>() => CountryIso2<T>("Value must be a valid ISO 3166-1 alpha-2 country code.");
+    public static IValidatorRule<T> CountryIso2<T>() => CountryIso2<T>("Value must be a valid ISO 3166-1 alpha-2 country code.");
     /// <summary>Requires a string to be a valid ISO 3166-1 alpha-2 country code, with a custom message.</summary>
-    public static ValidatorRule<T> CountryIso2<T>(string message) => new((value, _) => ValueTask.FromResult(value is string str && IsoCodes.CountryAlpha2.Contains(str)), message);
+    public static IValidatorRule<T> CountryIso2<T>(string message) => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value is string str && IsoCodes.CountryAlpha2.Contains(str)), message);
 
     /// <summary>Requires a string to be a valid ISO 3166-1 alpha-3 country code (e.g. <c>USA</c>); case-insensitive.</summary>
-    public static ValidatorRule<T> CountryIso3<T>() => CountryIso3<T>("Value must be a valid ISO 3166-1 alpha-3 country code.");
+    public static IValidatorRule<T> CountryIso3<T>() => CountryIso3<T>("Value must be a valid ISO 3166-1 alpha-3 country code.");
     /// <summary>Requires a string to be a valid ISO 3166-1 alpha-3 country code, with a custom message.</summary>
-    public static ValidatorRule<T> CountryIso3<T>(string message) => new((value, _) => ValueTask.FromResult(value is string str && IsoCodes.CountryAlpha3.Contains(str)), message);
+    public static IValidatorRule<T> CountryIso3<T>(string message) => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value is string str && IsoCodes.CountryAlpha3.Contains(str)), message);
 
     /// <summary>Requires a string to be a valid ISO 3166-1 numeric country code (e.g. <c>840</c>; leading zeros preserved).</summary>
-    public static ValidatorRule<T> CountryIsoNumeric<T>() => CountryIsoNumeric<T>("Value must be a valid ISO 3166-1 numeric country code.");
+    public static IValidatorRule<T> CountryIsoNumeric<T>() => CountryIsoNumeric<T>("Value must be a valid ISO 3166-1 numeric country code.");
     /// <summary>Requires a string to be a valid ISO 3166-1 numeric country code, with a custom message.</summary>
-    public static ValidatorRule<T> CountryIsoNumeric<T>(string message) => new((value, _) => ValueTask.FromResult(value is string str && IsoCodes.CountryNumeric.Contains(str)), message);
+    public static IValidatorRule<T> CountryIsoNumeric<T>(string message) => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value is string str && IsoCodes.CountryNumeric.Contains(str)), message);
 
     /// <summary>Requires a string to be a valid ISO 4217 currency code (e.g. <c>USD</c>); case-insensitive.</summary>
-    public static ValidatorRule<T> CurrencyIso<T>() => CurrencyIso<T>("Value must be a valid ISO 4217 currency code.");
+    public static IValidatorRule<T> CurrencyIso<T>() => CurrencyIso<T>("Value must be a valid ISO 4217 currency code.");
     /// <summary>Requires a string to be a valid ISO 4217 currency code, with a custom message.</summary>
-    public static ValidatorRule<T> CurrencyIso<T>(string message) => new((value, _) => ValueTask.FromResult(value is string str && IsoCodes.Currency.Contains(str)), message);
+    public static IValidatorRule<T> CurrencyIso<T>(string message) => new ValidatorRule<T>((value, _) => ValueTask.FromResult(value is string str && IsoCodes.Currency.Contains(str)), message);
 }
 
 // [GeneratedRegex] cannot be declared in a generic type, so the compile-time

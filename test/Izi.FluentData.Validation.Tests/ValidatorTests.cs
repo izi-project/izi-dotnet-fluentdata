@@ -1,5 +1,3 @@
-using Izi.FluentData.Validation.Rules;
-
 namespace Izi.FluentData.Validation.Tests;
 
 /// <summary>
@@ -23,7 +21,7 @@ public class ValidatorTests
         {
             RuleFor(x => x.Name).NotEmpty().MaxLength(5);
             RuleFor(x => x.Age).GreaterThan(0);
-            RuleFor(x => x.Email).EmailAddress();
+            RuleFor(x => x.Email).Email();
         }
     }
 
@@ -93,14 +91,15 @@ public class ValidatorTests
         Assert.Empty(await new ConsistencyValidator().ValidateAsync(new Person { Age = 10, Email = "" }));
     }
 
-    // ---- Dependent rules (only run if the parent rule passed) ----
-    // Rules2 attaches dependents on the rule itself via ValidatorRule<T>.WithDependent.
+    // ---- Dependent rules (only run if the parent's own rules passed) ----
+    // RuleFor(...) returns a nested Validator<string>; WithDependents attaches a second nested
+    // validator that only runs once NotEmpty (declared directly on the first) has passed.
     public sealed class DependentNameValidator : Validator<Person>
     {
         public DependentNameValidator()
-            => RuleFor(x => x.Name).AddRule(
-                new ValidatorRule<string>((v, _) => ValueTask.FromResult(!string.IsNullOrWhiteSpace(v)), "Value cannot be empty.")
-                    .WithDependent(ValidatorRules.MinLength<string>(3)));
+            => RuleFor(x => x.Name)
+                .NotEmpty("Value cannot be empty.")
+                .WithDependents(v => v.MinLength(3));
     }
 
     [Fact]
@@ -121,4 +120,32 @@ public class ValidatorTests
     [Fact]
     public async Task Dependent_rule_passes_when_both_satisfied()
         => Assert.Empty(await new DependentNameValidator().ValidateAsync(new Person { Name = "abc" }));
+
+    // ---- Dependent rules authored inline via the WithDependents(Action<Validator<T>>) lambda ----
+    public sealed class InlineDependentValidator : Validator<Person>
+    {
+        public InlineDependentValidator()
+            => RuleFor(x => x.Name)
+                .NotEmpty()
+                .WithDependents(x =>
+                {
+                    x.MinLength(3);
+                    x.MaxLength(5);
+                });
+    }
+
+    [Fact]
+    public async Task Inline_dependent_rules_run_when_parent_passes()
+    {
+        // "ab": NotEmpty passes, MinLength(3) fails.
+        Assert.Contains(await new InlineDependentValidator().ValidateAsync(new Person { Name = "ab" }), e => e.Contains("minimum length"));
+        // "abcdef": MaxLength(5) fails.
+        Assert.Contains(await new InlineDependentValidator().ValidateAsync(new Person { Name = "abcdef" }), e => e.Contains("maximum length"));
+        // "abcd": both dependents pass.
+        Assert.Empty(await new InlineDependentValidator().ValidateAsync(new Person { Name = "abcd" }));
+    }
+
+    [Fact]
+    public async Task Inline_dependent_rules_skipped_when_parent_fails()
+        => Assert.Single(await new InlineDependentValidator().ValidateAsync(new Person { Name = "" })); // only NotEmpty
 }
