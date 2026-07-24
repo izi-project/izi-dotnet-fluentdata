@@ -37,6 +37,13 @@ public class Transformer<T> : ITransformer<T>
     /// <c>RuleFor(x =&gt; x.Name).Trim().DefaultIfNull("N/A")</c>. Pass <c>x =&gt; x</c> to transform the whole
     /// instance.
     /// </summary>
+    /// <remarks>
+    /// If the selector reaches through an intermediate member (e.g. <c>x =&gt; x.Tenant.CountryCode</c>) and any
+    /// intermediate on that path is <see langword="null"/>, the member is unreachable and the step is skipped: the
+    /// nested pipeline does not run and the instance is returned untouched, rather than throwing a
+    /// <see cref="NullReferenceException"/>. Only intermediate segments are guarded; the selected member itself may
+    /// still be <see langword="null"/> and is handled by the nested pipeline as usual.
+    /// </remarks>
     /// <typeparam name="TProperty">The member type.</typeparam>
     /// <param name="propertySelector">Selects an assignable member, e.g. <c>x =&gt; x.Name</c>, or <c>x =&gt; x</c>.</param>
     /// <returns>The nested transformer to chain steps onto.</returns>
@@ -45,8 +52,9 @@ public class Transformer<T> : ITransformer<T>
         ArgumentNullException.ThrowIfNull(propertySelector);
         var getter = propertySelector.Compile();
         var setter = BuildSetter(propertySelector);
+        var nullGuard = BuildNullGuard(propertySelector);
         var nested = new Transformer<TProperty>();
-        AddTransformer(new PropertyAdapter<TProperty>(getter, setter, nested));
+        AddTransformer(new PropertyAdapter<TProperty>(getter, setter, nested, nullGuard));
         return nested;
     }
 
@@ -94,10 +102,17 @@ public class Transformer<T> : ITransformer<T>
     // Bridges a Transformer<TProperty> into the parent's ITransformer<T> list: reads the member, runs the nested
     // pipeline over it, then writes the result back and returns the (same, for classes) instance. This is what
     // lets RuleFor erase TProperty back to T.
-    private sealed class PropertyAdapter<TProperty>(Func<T, TProperty> getter, Func<T, TProperty, T> setter, ITransformer<TProperty> transformer) : ITransformer<T>
+    private sealed class PropertyAdapter<TProperty>(Func<T, TProperty> getter, Func<T, TProperty, T> setter, ITransformer<TProperty> transformer, Func<T, bool>? nullGuard) : ITransformer<T>
     {
         public ValueTask<T> TransformAsync(T instance, CancellationToken cancellationToken = default)
         {
+            // If any intermediate on the selector path is null (e.g. r.Tenant in r.Tenant.CountryCode), the member
+            // is unreachable: skip the nested pipeline and leave the instance untouched rather than dereferencing null.
+            if (nullGuard is not null && !nullGuard(instance))
+            {
+                return ValueTask.FromResult(instance);
+            }
+
             var pending = transformer.TransformAsync(getter(instance), cancellationToken);
             return pending.IsCompletedSuccessfully
                 ? ValueTask.FromResult(setter(instance, pending.Result))
@@ -134,5 +149,29 @@ public class Transformer<T> : ITransformer<T>
         var assign = Expression.Assign(body, valueParam);
         var block = Expression.Block(assign, instanceParam);
         return Expression.Lambda<Func<T, TProperty, T>>(block, instanceParam, valueParam).Compile();
+    }
+
+    // Compiles a predicate that returns false when any intermediate receiver on the selector path is null, so RuleFor
+    // can skip an unreachable member instead of throwing. For x => x.A.B.C the receivers are x.A.B and x.A; the leaf
+    // (C) is deliberately not guarded — it may legitimately be null and the nested pipeline handles it. Returns null
+    // when there is nothing to guard (identity selector, a direct member, or a path whose intermediates are all
+    // non-nullable value types), so those paths keep their original zero-overhead behaviour.
+    private static Func<T, bool>? BuildNullGuard<TProperty>(Expression<Func<T, TProperty>> selector)
+    {
+        Expression? guard = null;
+        var receiver = (selector.Body as MemberExpression)?.Expression;
+        while (receiver is MemberExpression member)
+        {
+            // A non-nullable value type can never be null, so it needs no check.
+            if (!member.Type.IsValueType || Nullable.GetUnderlyingType(member.Type) is not null)
+            {
+                var notNull = Expression.NotEqual(member, Expression.Constant(null, member.Type));
+                guard = guard is null ? notNull : Expression.AndAlso(guard, notNull);
+            }
+
+            receiver = member.Expression;
+        }
+
+        return guard is null ? null : Expression.Lambda<Func<T, bool>>(guard, selector.Parameters[0]).Compile();
     }
 }
