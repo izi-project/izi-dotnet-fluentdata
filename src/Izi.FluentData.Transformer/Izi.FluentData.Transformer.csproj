@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.5</Version>
+    <Version>1.1.0</Version>
     <Title>Izi.FluentData Transformer</Title>
     <Description>Fluent, dependency-free object transformation and normalization pipelines for .NET. Compose per-property steps (trim, case, replace, parse/convert, round, clamp) that run as an allocation-light, type-changing pipeline.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
