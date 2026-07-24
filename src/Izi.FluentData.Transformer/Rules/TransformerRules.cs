@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Globalization;
 using System.Numerics;
+using System.Text.RegularExpressions;
 
 namespace Izi.FluentData.Transformer.Rules;
 
@@ -47,6 +48,25 @@ public static partial class TransformerRules
 
     /// <summary>Creates a step that replaces every occurrence of <paramref name="oldValue"/> with <paramref name="newValue"/>.</summary>
     public static TransformerRule<string> Replace(string oldValue, string newValue) => new((source, _) => ValueTask.FromResult((source ?? string.Empty).Replace(oldValue, newValue)));
+
+    /// <summary>Creates a step that replaces every match of <paramref name="regex"/> with <paramref name="replacement"/>. Pass a cached or <c>[GeneratedRegex]</c> instance to reuse it across rules without recompiling.</summary>
+    public static TransformerRule<string> ReplaceRegex(Regex regex, string replacement) => new((source, _) => ValueTask.FromResult(regex.Replace(source ?? string.Empty, replacement)));
+
+    /// <summary>Creates a step that replaces every substring matching <paramref name="pattern"/> with <paramref name="replacement"/>. The pattern is compiled once when the rule is created; use the <see cref="ReplaceRegex(Regex, string)"/> overload to share a pre-built instance.</summary>
+    public static TransformerRule<string> ReplaceRegex(string pattern, string replacement) => ReplaceRegex(new Regex(pattern), replacement);
+
+    /// <summary>Creates a step that replaces every substring matching <paramref name="pattern"/> with <paramref name="replacement"/> using <paramref name="options"/>. The pattern is compiled once when the rule is created; use the <see cref="ReplaceRegex(Regex, string)"/> overload to share a pre-built instance.</summary>
+    public static TransformerRule<string> ReplaceRegex(string pattern, string replacement, RegexOptions options) => ReplaceRegex(new Regex(pattern, options), replacement);
+
+    /// <summary>Source-generated, cached regex matching one or more consecutive whitespace characters. Backs <see cref="RemoveWhitespace"/> and <see cref="CollapseWhitespace"/>.</summary>
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRegexPattern();
+
+    /// <summary>Creates a step that removes all whitespace characters from the value (spaces, tabs, and line breaks anywhere in the string, not just the ends).</summary>
+    public static TransformerRule<string> RemoveWhitespace() => ReplaceRegex(WhitespaceRegexPattern(), string.Empty);
+
+    /// <summary>Creates a step that collapses every run of whitespace into a single space (leading/trailing runs become a single space too; combine with <see cref="Trim"/> to drop them).</summary>
+    public static TransformerRule<string> CollapseWhitespace() => ReplaceRegex(WhitespaceRegexPattern(), " ");
 
     /// <summary>Creates a step that extracts <paramref name="length"/> characters starting at <paramref name="startIndex"/>.</summary>
     public static TransformerRule<string> Substring(int startIndex, int length) => new((source, _) => ValueTask.FromResult((source ?? string.Empty).Substring(startIndex, length)));
