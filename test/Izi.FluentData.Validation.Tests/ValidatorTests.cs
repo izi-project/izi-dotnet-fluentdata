@@ -148,4 +148,62 @@ public class ValidatorTests
     [Fact]
     public async Task Inline_dependent_rules_skipped_when_parent_fails()
         => Assert.Single(await new InlineDependentValidator().ValidateAsync(new Person { Name = "" })); // only NotEmpty
+
+    // ---- MustAsync (custom asynchronous predicate) ----
+    // Simulates an I/O-bound check (e.g. a uniqueness lookup) by actually yielding via Task.Delay,
+    // so the rule's async slow-path is exercised rather than a synchronously-completed ValueTask.
+    public sealed class AsyncAdultValidator : Validator<Person>
+    {
+        public AsyncAdultValidator()
+            => RuleFor(x => x.Age).MustAsync(async (age, ct) =>
+            {
+                await Task.Delay(1, ct);
+                return age >= 18;
+            }, "Must be an adult.");
+    }
+
+    [Fact]
+    public async Task MustAsync_runs_asynchronous_predicate()
+    {
+        Assert.Equal("Must be an adult.", Assert.Single(await new AsyncAdultValidator().ValidateAsync(new Person { Age = 10 })));
+        Assert.Empty(await new AsyncAdultValidator().ValidateAsync(new Person { Age = 20 }));
+    }
+
+    // The Func<T, Task<bool>> overload (no CancellationToken parameter).
+    public sealed class AsyncNoTokenValidator : Validator<Person>
+    {
+        public AsyncNoTokenValidator()
+            => RuleFor(x => x.Email).MustAsync(async email =>
+            {
+                await Task.Yield();
+                return !string.IsNullOrEmpty(email);
+            }, "Email is required.");
+    }
+
+    [Fact]
+    public async Task MustAsync_supports_predicate_without_cancellation_token()
+    {
+        Assert.Equal("Email is required.", Assert.Single(await new AsyncNoTokenValidator().ValidateAsync(new Person { Email = "" })));
+        Assert.Empty(await new AsyncNoTokenValidator().ValidateAsync(new Person { Email = "a@b.com" }));
+    }
+
+    // The token passed to ValidateAsync is threaded straight through to the predicate.
+    public sealed class CancellableValidator : Validator<Person>
+    {
+        public CancellableValidator()
+            => RuleFor(x => x.Name).MustAsync(async (_, ct) =>
+            {
+                await Task.Delay(1000, ct);
+                return true;
+            }, "unreachable");
+    }
+
+    [Fact]
+    public async Task MustAsync_honours_cancellation_token()
+    {
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            async () => await new CancellableValidator().ValidateAsync(new Person { Name = "x" }, cts.Token));
+    }
 }
