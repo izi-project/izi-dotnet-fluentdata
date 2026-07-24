@@ -134,6 +134,39 @@ public class TransformerTests
         Assert.Equal(2, result.Y);
     }
 
+    // ---- Null path on a nested selector ----
+
+    public sealed class Tenant
+    {
+        public string CountryCode { get; set; } = string.Empty;
+    }
+
+    public sealed class Account
+    {
+        public Tenant? Tenant { get; set; }
+    }
+
+    public sealed class AccountTransformer : Transformer<Account>
+    {
+        public AccountTransformer() => RuleFor(a => a.Tenant!.CountryCode).Trim().ToUpper();
+    }
+
+    [Fact]
+    public async Task Nested_rule_runs_when_the_path_is_reachable()
+    {
+        var account = new Account { Tenant = new Tenant { CountryCode = "  pt  " } };
+        var result = await new AccountTransformer().TransformAsync(account);
+        Assert.Equal("PT", result.Tenant!.CountryCode);
+    }
+
+    [Fact]
+    public async Task Nested_rule_is_skipped_when_an_intermediate_is_null()
+    {
+        var account = new Account { Tenant = null };
+        var result = await new AccountTransformer().TransformAsync(account);
+        Assert.Null(result.Tenant);
+    }
+
     // ---- Selector validation ----
 
     [Fact]
