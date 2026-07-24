@@ -163,4 +163,18 @@ public static class ValidatorExtensions
     /// <param name="message">The message produced when the predicate fails.</param>
     public static Validator<T> Must<T>(this Validator<T> validator, Func<T, bool> predicate, string message)
         => validator.AddRule(new ValidatorRule<T>((value, _) => ValueTask.FromResult(predicate(value)), message));
+
+    /// <summary>Adds a rule from a custom asynchronous predicate and failure message, with cancellation support. The escape hatch for checks that require I/O (e.g. a database or HTTP lookup).</summary>
+    /// <param name="validator">The validator to add the rule to.</param>
+    /// <param name="predicate">Returns <see langword="true"/> when the value is valid; receives the <see cref="CancellationToken"/> passed to <c>ValidateAsync</c>.</param>
+    /// <param name="message">The message produced when the predicate fails.</param>
+    public static Validator<T> MustAsync<T>(this Validator<T> validator, Func<T, CancellationToken, Task<bool>> predicate, string message)
+        => validator.AddRule(new ValidatorRule<T>((value, token) => new ValueTask<bool>(predicate(value, token)), message));
+
+    /// <summary>Adds a rule from a custom asynchronous predicate and failure message.</summary>
+    /// <param name="validator">The validator to add the rule to.</param>
+    /// <param name="predicate">Returns <see langword="true"/> when the value is valid.</param>
+    /// <param name="message">The message produced when the predicate fails.</param>
+    public static Validator<T> MustAsync<T>(this Validator<T> validator, Func<T, Task<bool>> predicate, string message)
+        => validator.AddRule(new ValidatorRule<T>((value, _) => new ValueTask<bool>(predicate(value)), message));
 }
