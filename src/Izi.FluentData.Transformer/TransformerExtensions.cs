@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Numerics;
+using System.Text.RegularExpressions;
 using Izi.FluentData.Transformer.Rules;
 
 namespace Izi.FluentData.Transformer;
@@ -44,6 +45,21 @@ public static class TransformerExtensions
 
     /// <summary>Replaces every occurrence of <paramref name="oldValue"/> with <paramref name="newValue"/>.</summary>
     public static Transformer<string> Replace(this Transformer<string> t, string oldValue, string newValue) => t.AddTransformer(TransformerRules.Replace(oldValue, newValue));
+
+    /// <summary>Replaces every match of <paramref name="regex"/> with <paramref name="replacement"/>. Pass a cached or <c>[GeneratedRegex]</c> instance to reuse it across rules without recompiling.</summary>
+    public static Transformer<string> ReplaceRegex(this Transformer<string> t, Regex regex, string replacement) => t.AddTransformer(TransformerRules.ReplaceRegex(regex, replacement));
+
+    /// <summary>Replaces every substring matching <paramref name="pattern"/> with <paramref name="replacement"/>.</summary>
+    public static Transformer<string> ReplaceRegex(this Transformer<string> t, string pattern, string replacement) => t.AddTransformer(TransformerRules.ReplaceRegex(pattern, replacement));
+
+    /// <summary>Replaces every substring matching <paramref name="pattern"/> with <paramref name="replacement"/> using <paramref name="options"/>.</summary>
+    public static Transformer<string> ReplaceRegex(this Transformer<string> t, string pattern, string replacement, RegexOptions options) => t.AddTransformer(TransformerRules.ReplaceRegex(pattern, replacement, options));
+
+    /// <summary>Removes all whitespace characters from the value (anywhere in the string, not just the ends).</summary>
+    public static Transformer<string> RemoveWhitespace(this Transformer<string> t) => t.AddTransformer(TransformerRules.RemoveWhitespace());
+
+    /// <summary>Collapses every run of whitespace into a single space.</summary>
+    public static Transformer<string> CollapseWhitespace(this Transformer<string> t) => t.AddTransformer(TransformerRules.CollapseWhitespace());
 
     /// <summary>Extracts <paramref name="length"/> characters starting at <paramref name="startIndex"/>.</summary>
     public static Transformer<string> Substring(this Transformer<string> t, int startIndex, int length) => t.AddTransformer(TransformerRules.Substring(startIndex, length));

@@ -32,6 +32,28 @@ public class TransformerExtensionsTests
     }
 
     [Fact]
+    public async Task String_pipeline_replace_regex_then_collapse_whitespace()
+    {
+        var result = await new Transformer<string>()
+            .ReplaceRegex(@"\d+", " ")
+            .CollapseWhitespace()
+            .Trim()
+            .TransformAsync("a12b34c");
+
+        Assert.Equal("a b c", result);
+    }
+
+    [Fact]
+    public async Task String_pipeline_remove_whitespace()
+    {
+        var result = await new Transformer<string>()
+            .RemoveWhitespace()
+            .TransformAsync("  a b\tc\n ");
+
+        Assert.Equal("abc", result);
+    }
+
+    [Fact]
     public async Task Numeric_pipeline_rounds_then_clamps()
     {
         var result = await new Transformer<decimal>()

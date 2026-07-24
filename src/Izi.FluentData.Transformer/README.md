@@ -97,6 +97,10 @@ A step is only offered while the running value has a compatible type.
 | `ToUpper([culture])` / `ToLower([culture])` | Change case (invariant culture by default) |
 | `ToTitleCase([culture])` | Title-case the value |
 | `Replace(oldValue, newValue)` | Replace every occurrence |
+| `ReplaceRegex(pattern, replacement[, options])` | Replace every regex match (compiles the pattern once per rule) |
+| `ReplaceRegex(regex, replacement)` | Replace every match of a pre-built `Regex` — pass a cached or `[GeneratedRegex]` instance to avoid recompilation |
+| `RemoveWhitespace()` | Remove all whitespace anywhere in the value (not just the ends) |
+| `CollapseWhitespace()` | Collapse every run of whitespace into a single space |
 | `Substring(start[, length])` | Extract a substring |
 | `Truncate(maxLength)` | Cap at `maxLength` characters |
 | `PadLeft` / `PadRight(totalWidth, paddingChar)` | Pad to a fixed width |

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using static Izi.FluentData.Transformer.Rules.TransformerRules;
 
 namespace Izi.FluentData.Transformer.Tests;
@@ -52,6 +53,36 @@ public class StringRuleTests
     [Fact]
     public async Task Replace_swaps_all_occurrences()
         => Assert.Equal("a_b_c", await Replace("-", "_").TransformAsync("a-b-c"));
+
+    [Fact]
+    public async Task ReplaceRegex_replaces_all_matches()
+        => Assert.Equal("a-b-c", await ReplaceRegex(@"\d+", "-").TransformAsync("a1b23c"));
+
+    [Fact]
+    public async Task ReplaceRegex_honours_options()
+        => Assert.Equal("_bc", await ReplaceRegex("A", "_", RegexOptions.IgnoreCase).TransformAsync("abc"));
+
+    [Fact]
+    public async Task ReplaceRegex_null_is_empty()
+        => Assert.Equal(string.Empty, await ReplaceRegex(@"\d", "-").TransformAsync(null!));
+
+    [Fact]
+    public async Task ReplaceRegex_accepts_prebuilt_regex()
+        => Assert.Equal("a-b-c", await ReplaceRegex(new Regex(@"\d+"), "-").TransformAsync("a1b23c"));
+
+    [Theory]
+    [InlineData("a b\tc\nd", "abcd")]
+    [InlineData("  lots   of  space  ", "lotsofspace")]
+    public async Task RemoveWhitespace_strips_all_whitespace(string input, string expected)
+        => Assert.Equal(expected, await RemoveWhitespace().TransformAsync(input));
+
+    [Fact]
+    public async Task RemoveWhitespace_null_is_empty()
+        => Assert.Equal(string.Empty, await RemoveWhitespace().TransformAsync(null!));
+
+    [Fact]
+    public async Task CollapseWhitespace_reduces_runs_to_single_space()
+        => Assert.Equal(" a b c ", await CollapseWhitespace().TransformAsync("  a \t b\n\nc  "));
 
     [Theory]
     [InlineData("hello", 1, "ello")]
