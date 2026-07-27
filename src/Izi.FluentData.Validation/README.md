@@ -71,6 +71,12 @@ new ValidatorRule<string>(predicate, value => $"'{value}' is not a valid code.")
 
 There is deliberately no `string.Format`-style overload. Constant messages are reported **verbatim**, so braces are ordinary characters — a regex pattern or JSON snippet embedded in a message survives intact, and `Matches`' default message can quote a pattern like `^\d{3}$` without ceremony. Anything needing substitution, culture control, or localisation goes inside the factory, where you have the full language available and pay for it only when a value actually fails.
 
+Both constructors are surfaced by the whole catalogue: every built-in rule — and `Must`/`MustAsync` — has a constant-message overload *and* a `Func<T, string>` overload, so the factory is reachable from the fluent API without dropping down to `AddRule`:
+
+```csharp
+RuleFor(x => x.Name).MaxLength(50, name => $"'{name}' is {name.Length} characters; the limit is 50.");
+```
+
 ### Two-tier aggregation: rules, then dependents
 
 Every `Validator<T>.ValidateAsync` call runs in two tiers:
@@ -143,7 +149,7 @@ Building one rule, i.e. what a validator's constructor pays once (`RuleConstruct
 
 ## Built-in rules
 
-Every rule has an overload taking a custom message, e.g. `.NotEmpty("Name is required.")`.
+Every rule has an overload taking a custom message, e.g. `.NotEmpty("Name is required.")`, and one taking a message factory that receives the failing value, e.g. `.NotEmpty(name => $"'{name}' is not a name.")`.
 
 | Category | Rules |
 | --- | --- |
@@ -170,7 +176,22 @@ RuleFor(x => x.Password).Must(p => p.Any(char.IsDigit), "Password must contain a
 
 ### Messages that name the failing value
 
-The built-in catalogue takes constant messages, but `ValidatorRule<T>` accepts a `Func<T, string>` when the message needs to quote what was actually rejected. The factory runs only on failure, so a passing rule pays nothing for it:
+Every rule takes a `Func<T, string>` in place of a constant message when the message needs to quote what was actually rejected. The factory runs only on failure, so a passing rule pays nothing for it:
+
+```csharp
+RuleFor(x => x.CountryCode).CountryIso2(code => $"'{code}' is not a supported country code.");
+RuleFor(x => x.Password).Must(p => p.Any(char.IsDigit), p => $"'{p}' must contain a digit.");
+```
+
+The factory is also where any formatting or localisation belongs — there is no format-string overload, because a lambda already does the job with compile-time checking and without a `params` array:
+
+```csharp
+RuleFor(x => x.Age).GreaterThanOrEqual(
+    MinimumAge,
+    _ => string.Format(CultureInfo.InvariantCulture, "You must be at least {0} to register.", MinimumAge));
+```
+
+For a check the catalogue doesn't cover, `ValidatorRule<T>` takes the same pair directly:
 
 ```csharp
 using Izi.FluentData.Validation.Rules;
@@ -178,14 +199,6 @@ using Izi.FluentData.Validation.Rules;
 RuleFor(x => x.CountryCode).AddRule(new ValidatorRule<string>(
     (code, _) => ValueTask.FromResult(SupportedCountries.Contains(code)),
     code => $"'{code}' is not a supported country code."));
-```
-
-The factory is also where any formatting or localisation belongs — there is no format-string overload, because a lambda already does the job with compile-time checking and without a `params` array:
-
-```csharp
-RuleFor(x => x.Age).AddRule(new ValidatorRule<int>(
-    (age, _) => ValueTask.FromResult(age >= MinimumAge),
-    _ => string.Format(CultureInfo.InvariantCulture, "You must be at least {0} to register.", MinimumAge)));
 ```
 
 ### Whole-instance (cross-field) rules
@@ -232,14 +245,12 @@ RuleFor(x => x.Email).MustAsync(
     "Email is already registered.");
 ```
 
-Every rule is `ValueTask<bool>`-based underneath, so a prebuilt `ValidatorRule<T>` works too when you also want an instance-aware message:
+Both `MustAsync` overloads also accept a message factory, for a message that quotes the value that failed:
 
 ```csharp
-using Izi.FluentData.Validation.Rules;
-
-RuleFor(x => x.Email).AddRule(new ValidatorRule<string>(
-    async (email, ct) => await store.IsUniqueAsync(email, ct),
-    email => $"'{email}' is already registered."));
+RuleFor(x => x.Email).MustAsync(
+    (email, ct) => store.IsUniqueAsync(email, ct),
+    email => $"'{email}' is already registered.");
 ```
 
 ---

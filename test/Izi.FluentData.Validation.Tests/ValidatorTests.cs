@@ -187,6 +187,65 @@ public class ValidatorTests
         Assert.Empty(await new AsyncNoTokenValidator().ValidateAsync(new Person { Email = "a@b.com" }));
     }
 
+    // ---- Message factories through the fluent extensions ----
+    // Every extension that takes a constant message also takes a Func<T, string> that receives the failing value.
+    public sealed class InstanceAwareMessageValidator : Validator<Person>
+    {
+        public InstanceAwareMessageValidator()
+        {
+            RuleFor(x => x.Name).NotEmpty(name => $"'{name}' is not a name.").MaxLength(5, name => $"'{name}' is too long.");
+            RuleFor(x => x.Age).GreaterThan(0, age => $"{age} is not a valid age.");
+            RuleFor(x => x.Email).Email(email => $"'{email}' is not an email.");
+        }
+    }
+
+    [Fact]
+    public async Task Extension_message_factories_quote_the_failing_value()
+    {
+        var errors = await new InstanceAwareMessageValidator().ValidateAsync(new Person { Name = "Alexander", Age = 0, Email = "nope" });
+
+        Assert.Equal(3, errors.Count);
+        Assert.Contains("'Alexander' is too long.", errors);
+        Assert.Contains("0 is not a valid age.", errors);
+        Assert.Contains("'nope' is not an email.", errors);
+    }
+
+    [Fact]
+    public async Task Extension_message_factories_are_not_invoked_when_the_rules_pass()
+        => Assert.Empty(await new InstanceAwareMessageValidator().ValidateAsync(new Person { Name = "Anna", Age = 30, Email = "anna@example.com" }));
+
+    // ---- Must / MustAsync with an instance-aware message ----
+    public sealed class MustWithFactoryValidator : Validator<Person>
+    {
+        public MustWithFactoryValidator()
+        {
+            RuleFor(x => x.Age).Must(age => age >= 18, age => $"{age} is too young.");
+            RuleFor(x => x.Email).MustAsync(async (email, ct) =>
+            {
+                await Task.Delay(1, ct);
+                return email.EndsWith("@example.com");
+            }, email => $"'{email}' is not a company address.");
+            RuleFor(x => x.Name).MustAsync(async name =>
+            {
+                await Task.Yield();
+                return name.Length > 1;
+            }, name => $"'{name}' is too short.");
+        }
+    }
+
+    [Fact]
+    public async Task Must_and_MustAsync_accept_a_message_factory()
+    {
+        var errors = await new MustWithFactoryValidator().ValidateAsync(new Person { Name = "A", Age = 10, Email = "a@b.com" });
+
+        Assert.Equal(3, errors.Count);
+        Assert.Contains("10 is too young.", errors);
+        Assert.Contains("'a@b.com' is not a company address.", errors);
+        Assert.Contains("'A' is too short.", errors);
+
+        Assert.Empty(await new MustWithFactoryValidator().ValidateAsync(new Person { Name = "Anna", Age = 30, Email = "anna@example.com" }));
+    }
+
     // The token passed to ValidateAsync is threaded straight through to the predicate.
     public sealed class CancellableValidator : Validator<Person>
     {
