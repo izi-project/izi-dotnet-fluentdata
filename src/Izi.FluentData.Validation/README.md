@@ -59,6 +59,18 @@ Because rules are added eagerly instead of being "built" from an accumulated lis
 
 `ValidatorRule<T>` (the `IValidatorRule<T>` implementation returned by every `ValidatorRules` factory) wraps a single `Func<T, CancellationToken, ValueTask<bool>>` predicate and the single message reported on failure. The built-in catalogue on the static `ValidatorRules` class is a library of these; `Must(...)` is the open escape hatch for anything the catalogue doesn't cover.
 
+The message is held as a `Func<T, string>` and is **invoked only when the predicate fails**, so a rule that passes never builds its message. Two constructors feed that delegate:
+
+```csharp
+// 1. Constant — reported verbatim.
+new ValidatorRule<string>(predicate, "Value is invalid.");
+
+// 2. Factory — receives the value that actually failed.
+new ValidatorRule<string>(predicate, value => $"'{value}' is not a valid code.");
+```
+
+There is deliberately no `string.Format`-style overload. Constant messages are reported **verbatim**, so braces are ordinary characters — a regex pattern or JSON snippet embedded in a message survives intact, and `Matches`' default message can quote a pattern like `^\d{3}$` without ceremony. Anything needing substitution, culture control, or localisation goes inside the factory, where you have the full language available and pay for it only when a value actually fails.
+
 ### Two-tier aggregation: rules, then dependents
 
 Every `Validator<T>.ValidateAsync` call runs in two tiers:
@@ -86,6 +98,7 @@ RuleFor(x => x.Name)
 
 - **Allocation-free success path.** A passing rule returns a cached `null`; `Validator<T>` returns a shared empty result when nothing failed. A valid instance therefore allocates **nothing**.
 - **Lazily-allocated error list.** The aggregation list stays `null` until the first failure, so partially-valid instances pay only for the errors they actually produce.
+- **Lazily-built messages.** A rule's message is a `Func<T, string>` invoked only on failure, so a passing rule never touches it — the delegate indirection costs nothing on the hot path, and messages that interpolate the failing value are built only for values that actually fail.
 - **Synchronous fast path, no async state machine.** Predicates return `ValueTask<bool>`; `ValidateAsync` checks `IsCompletedSuccessfully` and stays fully synchronous while rules complete synchronously (all built-ins do). The slow path is reached only when a custom async rule genuinely yields.
 - **Source-generated regex.** `Email` and `CreditCard` are backed by `[GeneratedRegex]` partial methods — the matcher is generated at **compile time**, so there is no runtime `Regex` construction/compilation cost and the patterns are trimming/AOT-friendly.
 - **Single source of truth for ISO data.** Country codes are stored once as aligned rows and projected into three lookup `HashSet`s at type-init, so the alpha-2/alpha-3/numeric sets can never drift out of sync.
@@ -98,6 +111,31 @@ RuleFor(x => x.Name)
 | --- | ---: | ---: | --- |
 | `ValidateValid` (3 properties, all pass) | 103.5 ns | **0 B** | **allocation-free** success path |
 | `ValidateInvalid` (3 properties, all fail) | 191.0 ns | 352 B | pays only for the error list it must return |
+
+#### Message strategies
+
+`BenchmarkDotNet v0.15.8` · `.NET 10.0.7` · Intel Core i7-13700K 3.40GHz · `[MemoryDiagnoser]`
+
+Evaluating one rule, by how its message is declared (`RuleMessageBenchmarks`):
+
+| Method | Mean | Allocated | Notes |
+| --- | ---: | ---: | --- |
+| `PassConstant` | 0.80 ns | **0 B** | baseline |
+| `PassFormat` | 0.80 ns | **0 B** | identical — the message is never built |
+| `PassFactory` | 1.08 ns | **0 B** | at the measurement floor; still allocation-free |
+| `FailConstant` | 0.98 ns | **0 B** | returns a cached literal |
+| `FailFormat` | 24.96 ns | 80 B | `string.Format` on the failure path |
+| `FailFactory` | 26.14 ns | 88 B | interpolates the failing value |
+
+**The passing path is free.** All three strategies are allocation-free and within ~0.3 ns of each other when the rule passes, because the message delegate is never invoked. Message cost is paid only by values that actually fail.
+
+Building one rule, i.e. what a validator's constructor pays once (`RuleConstructionBenchmarks`):
+
+| Method | Mean | Allocated | Notes |
+| --- | ---: | ---: | --- |
+| `BuildConstant` | 21.10 ns | 200 B | caller-interpolated message, built eagerly |
+| `BuildFormat` | 14.52 ns | 184 B | defers formatting, but allocates the `params` array up front |
+| `BuildFactory` | 4.04 ns | **32 B** | non-capturing lambda is cached in a static field |
 
 > Reproduce locally:
 > ```bash
@@ -131,6 +169,26 @@ The ISO rules validate against curated, dependency-free code sets (ISO 3166-1 al
 
 ```csharp
 RuleFor(x => x.Password).Must(p => p.Any(char.IsDigit), "Password must contain a digit.");
+```
+
+### Messages that name the failing value
+
+The built-in catalogue takes constant messages, but `ValidatorRule<T>` accepts a `Func<T, string>` when the message needs to quote what was actually rejected. The factory runs only on failure, so a passing rule pays nothing for it:
+
+```csharp
+using Izi.FluentData.Validation.Rules;
+
+RuleFor(x => x.CountryCode).AddRule(new ValidatorRule<string>(
+    (code, _) => ValueTask.FromResult(SupportedCountries.Contains(code)),
+    code => $"'{code}' is not a supported country code."));
+```
+
+The factory is also where any formatting or localisation belongs — there is no format-string overload, because a lambda already does the job with compile-time checking and without a `params` array:
+
+```csharp
+RuleFor(x => x.Age).AddRule(new ValidatorRule<int>(
+    (age, _) => ValueTask.FromResult(age >= MinimumAge),
+    _ => string.Format(CultureInfo.InvariantCulture, "You must be at least {0} to register.", MinimumAge)));
 ```
 
 ### Whole-instance (cross-field) rules
