@@ -153,21 +153,23 @@ For the full rule/transform catalogues, design notes, and DI wiring, see each li
 
 ---
 
-## Build & test the solution
+## Build & test
 
 ```bash
-# restore + build every project
-dotnet build
+# build a core library (its DI companion references it and builds alongside)
+dotnet build src/Izi.FluentData.Validation
+dotnet build src/Izi.FluentData.Transformer
 
-# run both test suites
-dotnet test
+# run each test suite (project references are restored and built first)
+dotnet test test/Izi.FluentData.Validation.Tests
+dotnet test test/Izi.FluentData.Transformer.Tests
 
 # run the benchmarks (Release is required for meaningful numbers)
 dotnet run -c Release --project benchmark/Izi.FluentData.Validation.Benchmarks  -- --filter *
 dotnet run -c Release --project benchmark/Izi.FluentData.Transformer.Benchmarks -- --filter *
 ```
 
-There is no solution file checked in; `dotnet build` from the repository root discovers and builds every project. To work on a single area, point the CLI at its project file, e.g. `dotnet test test/Izi.FluentData.Validation.Tests`.
+There is no solution file checked in, so every command must name a project or its directory — a bare `dotnet build` or `dotnet test` from the repository root fails with `MSB1003: Specify a project or solution file`. Add one with `dotnet new sln` followed by `dotnet sln add` for each project if you want whole-repo commands.
 
 ---
 
