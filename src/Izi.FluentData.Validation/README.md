@@ -57,7 +57,19 @@ Because rules are added eagerly instead of being "built" from an accumulated lis
 
 ### Rule = one predicate, one message
 
-`ValidatorRule<T>` (the `IValidatorRule<T>` implementation returned by every `ValidatorRules` factory) wraps a single `Func<T, CancellationToken, ValueTask<bool>>` predicate and the single message reported on failure. The built-in catalogue on the static `ValidatorRules` class is a library of these; `Must(...)` is the open escape hatch for anything the catalogue doesn't cover.
+`ValidatorRule<T>` (the `IValidatorRule<T>` implementation returned by every `ValidatorRules` factory) wraps a single `Func<T, CancellationToken, ValueTask<bool>>` predicate and the single message reported on failure. The built-in catalogue on the static `ValidatorRules` class is a library of these; `Must(...)` / `MustAsync(...)` are the open escape hatch for anything the catalogue doesn't cover.
+
+The message is held as a `Func<T, string>` and is **invoked only when the predicate fails**, so a rule that passes never builds its message. Two constructors feed that delegate:
+
+```csharp
+// 1. Constant — reported verbatim.
+new ValidatorRule<string>(predicate, "Value is invalid.");
+
+// 2. Factory — receives the value that actually failed.
+new ValidatorRule<string>(predicate, value => $"'{value}' is not a valid code.");
+```
+
+There is deliberately no `string.Format`-style overload. Constant messages are reported **verbatim**, so braces are ordinary characters — a regex pattern or JSON snippet embedded in a message survives intact, and `Matches`' default message can quote a pattern like `^\d{3}$` without ceremony. Anything needing substitution, culture control, or localisation goes inside the factory, where you have the full language available and pay for it only when a value actually fails.
 
 ### Two-tier aggregation: rules, then dependents
 
@@ -86,22 +98,45 @@ RuleFor(x => x.Name)
 
 - **Allocation-free success path.** A passing rule returns a cached `null`; `Validator<T>` returns a shared empty result when nothing failed. A valid instance therefore allocates **nothing**.
 - **Lazily-allocated error list.** The aggregation list stays `null` until the first failure, so partially-valid instances pay only for the errors they actually produce.
+- **Lazily-built messages.** A rule's message is a `Func<T, string>` invoked only on failure, so a passing rule never touches it — the delegate indirection costs nothing on the hot path, and messages that interpolate the failing value are built only for values that actually fail.
 - **Synchronous fast path, no async state machine.** Predicates return `ValueTask<bool>`; `ValidateAsync` checks `IsCompletedSuccessfully` and stays fully synchronous while rules complete synchronously (all built-ins do). The slow path is reached only when a custom async rule genuinely yields.
 - **Source-generated regex.** `Email` and `CreditCard` are backed by `[GeneratedRegex]` partial methods — the matcher is generated at **compile time**, so there is no runtime `Regex` construction/compilation cost and the patterns are trimming/AOT-friendly.
 - **Single source of truth for ISO data.** Country codes are stored once as aligned rows and projected into three lookup `HashSet`s at type-init, so the alpha-2/alpha-3/numeric sets can never drift out of sync.
 
 ### Benchmarks
 
-`BenchmarkDotNet v0.15.8` · `.NET 10.0.8` · Intel Core i7-9700F CPU 3.00GHz · `[MemoryDiagnoser]`
+`BenchmarkDotNet v0.15.8` · `.NET 10.0.7` · Intel Core i7-13700K 3.40GHz · `[MemoryDiagnoser]`
+
+End-to-end, over an object with three validated properties (`ValidatorBenchmarks`):
 
 | Method | Mean | Allocated | Notes |
 | --- | ---: | ---: | --- |
-| `ValidateValid` (3 properties, all pass) | 103.5 ns | **0 B** | **allocation-free** success path |
-| `ValidateInvalid` (3 properties, all fail) | 191.0 ns | 352 B | pays only for the error list it must return |
+| `ValidateValid` (all pass) | 57.3 ns | **0 B** | **allocation-free** success path |
+| `ValidateInvalid` (all fail) | 98.3 ns | 352 B | pays only for the error list it must return |
+
+#### Message strategies
+
+Evaluating one rule, by how its message is declared (`RuleMessageBenchmarks`):
+
+| Method | Mean | Allocated | Notes |
+| --- | ---: | ---: | --- |
+| `PassConstant` | 1.18 ns | **0 B** | baseline |
+| `PassFactory` | 0.84 ns | **0 B** | indistinguishable from the baseline |
+| `FailConstant` | 1.33 ns | **0 B** | returns the captured literal |
+| `FailFactory` | 28.22 ns | 88 B | builds a message quoting the failing value |
+
+**The passing path is free.** Both strategies are allocation-free and within a nanosecond of each other when the rule passes, because the message delegate is never invoked — the ordering between them is measurement noise at this scale, not a real difference. Message cost is paid only by values that actually fail.
+
+Building one rule, i.e. what a validator's constructor pays once (`RuleConstructionBenchmarks`):
+
+| Method | Mean | Allocated | Notes |
+| --- | ---: | ---: | --- |
+| `BuildConstant` | 18.86 ns | 200 B | eagerly interpolated message string |
+| `BuildFactory` | 3.93 ns | **32 B** | non-capturing lambda is cached in a static field |
 
 > Reproduce locally:
 > ```bash
-> dotnet run -c Release --project benchmark/Izi.FluentData.Validation.Benchmarks -- --filter '*'
+> dotnet run -c Release --project benchmark/Izi.FluentData.Validation.Benchmarks -- --filter *
 > ```
 
 ---
@@ -119,7 +154,7 @@ Every rule has an overload taking a custom message, e.g. `.NotEmpty("Name is req
 | Numeric | `ScalePrecision` |
 | Pattern | `Matches`, `NotMatches`, `Email`, `CreditCard` |
 | ISO codes | `CountryIso2`, `CountryIso3`, `CountryIsoNumeric`, `CurrencyIso` |
-| Custom | `Must` |
+| Custom | `Must`, `MustAsync` |
 
 The ISO rules validate against curated, dependency-free code sets (ISO 3166-1 alpha-2/alpha-3/numeric and ISO 4217); alpha codes match case-insensitively.
 
@@ -131,6 +166,26 @@ The ISO rules validate against curated, dependency-free code sets (ISO 3166-1 al
 
 ```csharp
 RuleFor(x => x.Password).Must(p => p.Any(char.IsDigit), "Password must contain a digit.");
+```
+
+### Messages that name the failing value
+
+The built-in catalogue takes constant messages, but `ValidatorRule<T>` accepts a `Func<T, string>` when the message needs to quote what was actually rejected. The factory runs only on failure, so a passing rule pays nothing for it:
+
+```csharp
+using Izi.FluentData.Validation.Rules;
+
+RuleFor(x => x.CountryCode).AddRule(new ValidatorRule<string>(
+    (code, _) => ValueTask.FromResult(SupportedCountries.Contains(code)),
+    code => $"'{code}' is not a supported country code."));
+```
+
+The factory is also where any formatting or localisation belongs — there is no format-string overload, because a lambda already does the job with compile-time checking and without a `params` array:
+
+```csharp
+RuleFor(x => x.Age).AddRule(new ValidatorRule<int>(
+    (age, _) => ValueTask.FromResult(age >= MinimumAge),
+    _ => string.Format(CultureInfo.InvariantCulture, "You must be at least {0} to register.", MinimumAge)));
 ```
 
 ### Whole-instance (cross-field) rules
@@ -169,14 +224,22 @@ RuleFor(x => x.Name)
 
 ### Asynchronous rules
 
-Any rule is `ValueTask<bool>`-based, so an `async` check (e.g. a uniqueness lookup) drops straight in via a prebuilt rule:
+`MustAsync` is the async counterpart to `Must` — the usual way to express an I/O-bound check such as a uniqueness lookup. Overloads exist with and without a `CancellationToken`; the token is the one passed to `ValidateAsync`:
+
+```csharp
+RuleFor(x => x.Email).MustAsync(
+    (email, ct) => store.IsUniqueAsync(email, ct),
+    "Email is already registered.");
+```
+
+Every rule is `ValueTask<bool>`-based underneath, so a prebuilt `ValidatorRule<T>` works too when you also want an instance-aware message:
 
 ```csharp
 using Izi.FluentData.Validation.Rules;
 
 RuleFor(x => x.Email).AddRule(new ValidatorRule<string>(
     async (email, ct) => await store.IsUniqueAsync(email, ct),
-    "Email is already registered."));
+    email => $"'{email}' is already registered."));
 ```
 
 ---

@@ -85,7 +85,5 @@ public static class TransformerServiceCollectionExtensions
     }
 
     private static List<Type> GetTransformerInterfaces(Type type)
-        => type.GetInterfaces()
-            .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ITransformer<>))
-            .ToList();
+        => [.. type.GetInterfaces().Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ITransformer<>))];
 }
