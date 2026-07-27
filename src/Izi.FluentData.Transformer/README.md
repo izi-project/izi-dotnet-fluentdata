@@ -216,16 +216,16 @@ This is a hot-path library; the design is deliberate about what it allocates.
 
 ### Benchmarks
 
-`BenchmarkDotNet v0.15.8` · `.NET 10.0.8` · Intel Core i7-9700F · `[MemoryDiagnoser]`
+`BenchmarkDotNet v0.15.8` · `.NET 10.0.7` · Intel Core i7-13700K 3.40GHz · `[MemoryDiagnoser]`
 
 | Method | Mean | Allocated | Notes |
 | --- | ---: | ---: | --- |
-| `SingleRule` (one `Trim`) | 15.5 ns | 48 B | the lone allocation is the trimmed `string` result |
-| `StringPipeline` (`Trim → ToUpper → Truncate`) | 50.3 ns | 96 B | two intermediate strings; a string op that changes the value allocates the new string |
-| `DateTimePipeline` (`StartOfMonth → AddDays → WithHour`) | 36.5 ns | **0 B** | struct values flow through `ValueTask` without ever touching the heap |
-| `ObjectTransformer` (3 property pipelines) | 88.3 ns | **0 B** | **allocation-free** — the built-in string ops return the same instance once values are already normalised (idempotent steady state) |
+| `SingleRule` (one `Trim`) | 8.2 ns | 48 B | the lone allocation is the trimmed `string` result |
+| `StringPipeline` (`Trim → ToUpper → Truncate`) | 28.2 ns | 96 B | two intermediate strings; a string op that changes the value allocates the new string |
+| `DateTimePipeline` (`StartOfMonth → AddDays → WithHour`) | 17.3 ns | **0 B** | struct values flow through `ValueTask` without ever touching the heap |
+| `ObjectTransformer` (3 property pipelines) | 49.2 ns | **0 B** | **allocation-free** — the built-in string ops return the same instance once values are already normalised (idempotent steady state) |
 
-The headline results are the two **0 B** rows: a complete object normalisation across three properties runs in ~88 ns and, in steady state, allocates **nothing**; a three-step date/time pipeline is allocation-free by construction because it flows value types.
+The headline results are the two **0 B** rows: a complete object normalisation across three properties runs in ~49 ns and, in steady state, allocates **nothing**; a three-step date/time pipeline is allocation-free by construction because it flows value types.
 
 > Reproduce locally:
 > ```bash
