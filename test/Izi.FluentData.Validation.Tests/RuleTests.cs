@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Izi.FluentData.Validation.Rules;
 
 namespace Izi.FluentData.Validation.Tests;
@@ -171,6 +173,69 @@ public class RuleTests
     {
         var error = await Eval(ValidatorRules.NotNull<string?>("Name is required."), null);
         Assert.Equal("Name is required.", error);
+    }
+
+    // =============================
+    // Message factories
+    // =============================
+
+    /// <summary>
+    /// Every factory that takes a constant message also takes a <see cref="Func{T, TResult}"/> that receives the
+    /// value that failed. One case per rule, since each is a separate overload that could be wired to the wrong
+    /// predicate.
+    /// </summary>
+    public static TheoryData<IValidatorRule<string?>, string?, string> MessageFactoryRules => new()
+    {
+        { ValidatorRules.NotNull<string?>(v => $"[{v}] not null"), null, "[] not null" },
+        { ValidatorRules.Null<string?>(v => $"[{v}] null"), "x", "[x] null" },
+        { ValidatorRules.NotEmpty<string?>(v => $"[{v}] not empty"), "  ", "[  ] not empty" },
+        { ValidatorRules.Empty<string?>(v => $"[{v}] empty"), "x", "[x] empty" },
+        { ValidatorRules.Equal<string?>("a", v => $"[{v}] equal"), "b", "[b] equal" },
+        { ValidatorRules.NotEqual<string?>("a", v => $"[{v}] not equal"), "a", "[a] not equal" },
+        { ValidatorRules.Length<string?>(3, v => $"[{v}] length"), "ab", "[ab] length" },
+        { ValidatorRules.MinLength<string?>(3, v => $"[{v}] min"), "ab", "[ab] min" },
+        { ValidatorRules.MaxLength<string?>(1, v => $"[{v}] max"), "ab", "[ab] max" },
+        { ValidatorRules.Matches<string?>(@"^\d+$", v => $"[{v}] matches"), "ab", "[ab] matches" },
+        { ValidatorRules.Matches<string?>(new Regex(@"^\d+$"), v => $"[{v}] regex"), "ab", "[ab] regex" },
+        { ValidatorRules.NotMatches<string?>(@"^\d+$", v => $"[{v}] not matches"), "12", "[12] not matches" },
+        { ValidatorRules.NotMatches<string?>(new Regex(@"^\d+$"), v => $"[{v}] not regex"), "12", "[12] not regex" },
+        { ValidatorRules.Email<string?>(v => $"[{v}] email"), "nope", "[nope] email" },
+        { ValidatorRules.CreditCard<string?>(v => $"[{v}] card"), "1234", "[1234] card" },
+        { ValidatorRules.CountryIso2<string?>(v => $"[{v}] iso2"), "ZZ", "[ZZ] iso2" },
+        { ValidatorRules.CountryIso3<string?>(v => $"[{v}] iso3"), "ZZZ", "[ZZZ] iso3" },
+        { ValidatorRules.CountryIsoNumeric<string?>(v => $"[{v}] isonum"), "999", "[999] isonum" },
+        { ValidatorRules.CurrencyIso<string?>(v => $"[{v}] currency"), "ZZZ", "[ZZZ] currency" },
+    };
+
+    [Theory]
+    [MemberData(nameof(MessageFactoryRules))]
+    public async Task Message_factory_overload_receives_the_failing_value(IValidatorRule<string?> rule, string? value, string expected)
+        => Assert.Equal(expected, await Eval(rule, value));
+
+    [Fact]
+    public async Task Message_factory_overloads_on_comparison_rules_receive_the_failing_value()
+    {
+        Assert.Equal("11 < 10", await Eval(ValidatorRules.LessThan<int>(10, v => $"{v} < 10"), 11));
+        Assert.Equal("11 <= 10", await Eval(ValidatorRules.LessThanOrEqual<int>(10, v => $"{v} <= 10"), 11));
+        Assert.Equal("9 > 10", await Eval(ValidatorRules.GreaterThan<int>(10, v => $"{v} > 10"), 9));
+        Assert.Equal("9 >= 10", await Eval(ValidatorRules.GreaterThanOrEqual<int>(10, v => $"{v} >= 10"), 9));
+        Assert.Equal("11 in 1..10", await Eval(ValidatorRules.Range<int>(1, 10, v => $"{v} in 1..10"), 11));
+        Assert.Equal("5 out of 1..10", await Eval(ValidatorRules.NotRange<int>(1, 10, v => $"{v} out of 1..10"), 5));
+        // Formatting is the factory's business, so pin the culture here rather than relying on the ambient one.
+        Assert.Equal("123.45 scale", await Eval(ValidatorRules.ScalePrecision<decimal>(1, 3, v => $"{v.ToString(CultureInfo.InvariantCulture)} scale"), 123.45m));
+    }
+
+    /// <summary>The predicate is the same on both overloads: a valid value still passes and never builds a message.</summary>
+    [Fact]
+    public async Task Message_factory_overload_is_not_invoked_when_the_rule_passes()
+    {
+        var invocations = 0;
+        string Message(string? _) { invocations++; return "unused"; }
+
+        Assert.Null(await Eval(ValidatorRules.NotEmpty<string?>(Message), "x"));
+        Assert.Null(await Eval(ValidatorRules.Email<string?>(Message), "a@b.co"));
+        Assert.Null(await Eval(ValidatorRules.CountryIso2<string?>(Message), "US"));
+        Assert.Equal(0, invocations);
     }
 
     [Fact]
