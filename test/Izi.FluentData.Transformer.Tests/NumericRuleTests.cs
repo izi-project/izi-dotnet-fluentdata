@@ -63,6 +63,20 @@ public class NumericRuleTests
     }
 
     [Fact]
+    public async Task Sqrt_of_negative_matches_documented_behaviour()
+    {
+        // IEEE square root does not throw: a negative, NaN, or negative-infinity input is NaN.
+        Assert.True(double.IsNaN(await TransformerRules.Sqrt<double>().TransformAsync(-1d)));
+        Assert.True(double.IsNaN(await TransformerRules.Sqrt<double>().TransformAsync(double.NaN)));
+        Assert.True(double.IsNaN(await TransformerRules.Sqrt<double>().TransformAsync(double.NegativeInfinity)));
+        Assert.True(float.IsNaN(await TransformerRules.Sqrt<float>().TransformAsync(-1f)));
+        Assert.True(float.IsNaN(await TransformerRules.Sqrt<float>().TransformAsync(float.NaN)));
+
+        Assert.Equal(2d, await TransformerRules.Sqrt<double>().TransformAsync(4d), precision: 10);
+        Assert.Equal(double.PositiveInfinity, await TransformerRules.Sqrt<double>().TransformAsync(double.PositiveInfinity));
+    }
+
+    [Fact]
     public async Task Trigonometry_and_hyperbolic_rules_use_radians()
     {
         Assert.Equal(0d, await TransformerRules.Sin<double>().TransformAsync(0d), precision: 10);

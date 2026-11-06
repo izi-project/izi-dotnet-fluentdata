@@ -126,7 +126,12 @@ public class DateTimeRuleTests
         Assert.Equal(new TimeOnly(9, 0), await TransformerRules.Clamp(new TimeOnly(8, 0), new TimeOnly(9, 0)).TransformAsync(new TimeOnly(12, 0)));
         Assert.Throws<ArgumentException>(() => TransformerRules.Clamp(Sample, Sample.AddDays(-1)));
 
-        Assert.Equal(DateTimeKind.Unspecified, (await TransformerRules.SpecifyKind(DateTimeKind.Unspecified).TransformAsync(Sample)).Kind);
+        var unspecifiedKind = await TransformerRules.SpecifyKind(DateTimeKind.Unspecified).TransformAsync(Sample);
+        Assert.Equal(DateTimeKind.Unspecified, unspecifiedKind.Kind);
+        Assert.Equal(Sample.Ticks, unspecifiedKind.Ticks);
+        var localKind = await TransformerRules.SpecifyKind(DateTimeKind.Local).TransformAsync(Sample);
+        Assert.Equal(DateTimeKind.Local, localKind.Kind);
+        Assert.Equal(Sample.Ticks, localKind.Ticks);
         Assert.Equal(Sample, await TransformerRules.ToUniversalTime<DateTime>().TransformAsync(Sample));
         Assert.Equal(SampleOffset.ToUniversalTime(), await TransformerRules.ToUniversalTime<DateTimeOffset>().TransformAsync(SampleOffset));
         Assert.Equal(SampleOffset.ToLocalTime(), await TransformerRules.ToLocalTime<DateTimeOffset>().TransformAsync(SampleOffset));
@@ -137,6 +142,72 @@ public class DateTimeRuleTests
         Assert.Equal(TimeZoneInfo.ConvertTime(SampleOffset, TimeZoneInfo.Utc), await TransformerRules.ConvertToTimeZone(TimeZoneInfo.Utc).TransformAsync(SampleOffset));
         Assert.Throws<ArgumentException>(() => TransformerRules.ToOffset(TimeSpan.FromSeconds(30)));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.ConvertToTimeZone(null!));
+    }
+
+    [Fact]
+    public async Task AddBusinessDays_skips_weekends_and_handles_negative_counts()
+    {
+        var friday = new DateOnly(2020, 5, 15);
+        Assert.Equal(new DateOnly(2020, 5, 19), await TransformerRules.AddBusinessDays<DateOnly>(2).TransformAsync(friday));
+        Assert.Equal(new DateOnly(2020, 5, 22), await TransformerRules.AddBusinessDays<DateOnly>(5).TransformAsync(friday));
+        Assert.Equal(friday, await TransformerRules.AddBusinessDays<DateOnly>(0).TransformAsync(friday));
+        Assert.Equal(new DateOnly(2020, 5, 16), await TransformerRules.AddBusinessDays<DateOnly>(0).TransformAsync(new DateOnly(2020, 5, 16)));
+
+        var monday = new DateOnly(2020, 5, 18);
+        Assert.Equal(new DateOnly(2020, 5, 15), await TransformerRules.AddBusinessDays<DateOnly>(-1).TransformAsync(monday));
+        Assert.Equal(new DateOnly(2020, 5, 14), await TransformerRules.AddBusinessDays<DateOnly>(-2).TransformAsync(monday));
+        Assert.Equal(new DateOnly(2020, 5, 11), await TransformerRules.AddBusinessDays<DateOnly>(-5).TransformAsync(monday));
+        Assert.Equal(new DateOnly(2020, 5, 15), await TransformerRules.AddBusinessDays<DateOnly>(-1).TransformAsync(new DateOnly(2020, 5, 16)));
+        Assert.Equal(new DateOnly(2020, 5, 15), await TransformerRules.AddBusinessDays<DateOnly>(-1).TransformAsync(new DateOnly(2020, 5, 17)));
+        Assert.Equal(new DateOnly(2020, 5, 14), await TransformerRules.AddBusinessDays<DateOnly>(-1).TransformAsync(friday));
+
+        var holidayFriday = new[] { friday };
+        Assert.Equal(new DateOnly(2020, 5, 14), await TransformerRules.AddBusinessDays<DateOnly>(-1, holidayFriday).TransformAsync(monday));
+
+        var fridayNoon = new DateTime(2020, 5, 15, 10, 30, 0, DateTimeKind.Utc);
+        Assert.Equal(
+            new DateTime(2020, 5, 14, 10, 30, 0, DateTimeKind.Utc),
+            await TransformerRules.AddBusinessDays<DateTime>(-1).TransformAsync(fridayNoon));
+
+        var fridayOffset = new DateTimeOffset(2020, 5, 15, 10, 30, 0, TimeSpan.FromHours(2));
+        Assert.Equal(
+            new DateTimeOffset(2020, 5, 18, 10, 30, 0, TimeSpan.FromHours(2)),
+            await TransformerRules.AddBusinessDays<DateTimeOffset>(1).TransformAsync(fridayOffset));
+    }
+
+    [Fact]
+    public async Task EndOfMonth_on_leap_february()
+    {
+        Assert.Equal(new DateOnly(2020, 2, 29), await TransformerRules.EndOfMonth<DateOnly>().TransformAsync(new DateOnly(2020, 2, 1)));
+        Assert.Equal(new DateOnly(2020, 2, 29), await TransformerRules.EndOfMonth<DateOnly>().TransformAsync(new DateOnly(2020, 2, 29)));
+        Assert.Equal(new DateOnly(2019, 2, 28), await TransformerRules.EndOfMonth<DateOnly>().TransformAsync(new DateOnly(2019, 2, 1)));
+        Assert.Equal(new DateOnly(2020, 4, 30), await TransformerRules.EndOfMonth<DateOnly>().TransformAsync(new DateOnly(2020, 4, 15)));
+
+        var leap = await TransformerRules.EndOfMonth<DateTime>().TransformAsync(new DateTime(2020, 2, 15, 10, 0, 0, DateTimeKind.Utc));
+        Assert.Equal(DateTimeKind.Utc, leap.Kind);
+        Assert.Equal(new DateTime(2020, 3, 1, 0, 0, 0, DateTimeKind.Utc), leap.AddTicks(1));
+
+        var common = await TransformerRules.EndOfMonth<DateTime>().TransformAsync(new DateTime(2019, 2, 15, 10, 0, 0, DateTimeKind.Local));
+        Assert.Equal(DateTimeKind.Local, common.Kind);
+        Assert.Equal(new DateTime(2019, 3, 1, 0, 0, 0, DateTimeKind.Local), common.AddTicks(1));
+
+        var offset = await TransformerRules.EndOfMonth<DateTimeOffset>().TransformAsync(new DateTimeOffset(2020, 2, 15, 10, 0, 0, TimeSpan.FromHours(2)));
+        Assert.Equal(TimeSpan.FromHours(2), offset.Offset);
+        Assert.Equal(new DateTimeOffset(2020, 3, 1, 0, 0, 0, TimeSpan.FromHours(2)), offset.AddTicks(1));
+
+        Assert.Equal(new DateOnly(2020, 2, 29), await TransformerRules.AddMonths<DateOnly>(1).TransformAsync(new DateOnly(2020, 1, 31)));
+        Assert.Equal(new DateOnly(2019, 2, 28), await TransformerRules.AddMonths<DateOnly>(1).TransformAsync(new DateOnly(2019, 1, 31)));
+        Assert.Equal(new DateOnly(2021, 2, 28), await TransformerRules.AddYears<DateOnly>(1).TransformAsync(new DateOnly(2020, 2, 29)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => TransformerRules.WithYear<DateOnly>(2019).TransformAsync(new DateOnly(2020, 2, 29)));
+    }
+
+    [Fact]
+    public async Task ToUniversalTime_treats_an_unspecified_datetime_as_local()
+    {
+        var unspecified = new DateTime(2020, 6, 15, 12, 0, 0, DateTimeKind.Unspecified);
+        var converted = await TransformerRules.ToUniversalTime<DateTime>().TransformAsync(unspecified);
+        Assert.Equal(DateTimeKind.Utc, converted.Kind);
+        Assert.Equal(TimeZoneInfo.ConvertTimeToUtc(unspecified), converted);
     }
 
     [Fact]

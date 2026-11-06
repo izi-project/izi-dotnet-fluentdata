@@ -67,4 +67,35 @@ public class FormatAndNumericConversionTests
 
         Assert.Equal((short)42, await pipeline.TransformAsync("42"));
     }
+
+    [Fact]
+    public async Task ConvertChecked_overflows_where_Saturating_clamps()
+    {
+        Assert.Throws<OverflowException>(() => TransformerRules.ConvertChecked<int, byte>().TransformAsync(300));
+        Assert.Equal(byte.MaxValue, await TransformerRules.ConvertSaturating<int, byte>().TransformAsync(300));
+        Assert.Equal((byte)44, await TransformerRules.ConvertTruncating<int, byte>().TransformAsync(300));
+
+        Assert.Throws<OverflowException>(() => TransformerRules.ConvertChecked<int, byte>().TransformAsync(-1));
+        Assert.Equal(byte.MinValue, await TransformerRules.ConvertSaturating<int, byte>().TransformAsync(-1));
+        Assert.Equal(byte.MaxValue, await TransformerRules.ConvertTruncating<int, byte>().TransformAsync(-1));
+
+        Assert.Throws<OverflowException>(() => TransformerRules.ConvertChecked<double, int>().TransformAsync(double.PositiveInfinity));
+        Assert.Equal(int.MaxValue, await TransformerRules.ConvertSaturating<double, int>().TransformAsync(double.PositiveInfinity));
+        Assert.Equal(int.MaxValue, await TransformerRules.ConvertTruncating<double, int>().TransformAsync(double.PositiveInfinity));
+        Assert.Equal(int.MinValue, await TransformerRules.ConvertSaturating<double, int>().TransformAsync(double.NegativeInfinity));
+        Assert.Equal(int.MinValue, await TransformerRules.ConvertTruncating<double, int>().TransformAsync(double.NegativeInfinity));
+
+        // Checked rejects NaN on both runtimes. Saturating and truncating follow the BCL, which disagrees:
+        // .NET 8 yields int.MinValue and .NET 10 yields 0.
+        Assert.Throws<OverflowException>(() => TransformerRules.ConvertChecked<double, int>().TransformAsync(double.NaN));
+#if NET8_0
+        Assert.Equal(int.MinValue, await TransformerRules.ConvertSaturating<double, int>().TransformAsync(double.NaN));
+        Assert.Equal(int.MinValue, await TransformerRules.ConvertTruncating<double, int>().TransformAsync(double.NaN));
+#elif NET10_0
+        Assert.Equal(0, await TransformerRules.ConvertSaturating<double, int>().TransformAsync(double.NaN));
+        Assert.Equal(0, await TransformerRules.ConvertTruncating<double, int>().TransformAsync(double.NaN));
+#else
+#error This suite targets net8.0 and net10.0 only.
+#endif
+    }
 }

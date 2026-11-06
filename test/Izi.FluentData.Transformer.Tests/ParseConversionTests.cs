@@ -91,12 +91,40 @@ public class ParseConversionTests
         Assert.Equal(7, await orDefault.TransformAsync("nope"));
         Assert.Equal(7, await orDefault.TransformAsync(null!));
         Assert.Equal(7, await orDefault.TransformAsync("999999999999"));
+        Assert.Throws<ArgumentNullException>(() => TransformerRules.ParseOrDefault(7, null!));
 
         var tryParse = TransformerRules.TryParse<int>(Invariant);
         Assert.Equal(ParseResult<int>.Succeeded(0), await tryParse.TransformAsync("0"));
         Assert.Equal(ParseResult<int>.Failed(), await tryParse.TransformAsync("nope"));
         Assert.Equal(ParseResult<int>.Failed(), await tryParse.TransformAsync(null!));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.TryParse<int>(null!));
+    }
+
+    [Fact]
+    public async Task TryParse_failed_result_has_Success_false()
+    {
+        var rule = TransformerRules.TryParse<int>(Invariant);
+
+        var failed = await rule.TransformAsync("nope");
+        Assert.False(failed.Success);
+        Assert.Equal(0, failed.Value);
+
+        var overflow = await rule.TransformAsync("999999999999");
+        Assert.False(overflow.Success);
+        Assert.Equal(0, overflow.Value);
+
+        var missing = await rule.TransformAsync(null!);
+        Assert.False(missing.Success);
+        Assert.Equal(0, missing.Value);
+
+        var parsed = await rule.TransformAsync("42");
+        Assert.True(parsed.Success);
+        Assert.Equal(42, parsed.Value);
+
+        // Zero is a legal parsed value and also the failure default, so Success is the only signal.
+        var zero = await rule.TransformAsync("0");
+        Assert.True(zero.Success);
+        Assert.Equal(0, zero.Value);
     }
 
     [Flags]
