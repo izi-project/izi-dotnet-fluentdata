@@ -3,4 +3,7 @@
     <Project Path="src/Izi.FluentData.Transformer/Izi.FluentData.Transformer.csproj" />
     <Project Path="src/Izi.FluentData.Validation/Izi.FluentData.Validation.csproj" />
   </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Izi.FluentData.Transformer.Tests/Izi.FluentData.Transformer.Tests.csproj" />
+  </Folder>
 </Solution>
