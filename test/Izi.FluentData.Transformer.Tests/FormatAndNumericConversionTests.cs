@@ -28,7 +28,9 @@ public class FormatAndNumericConversionTests
     {
         var names = TransformerRules.EnumName<ParseConversionTests.Access>();
         Assert.Equal("Read", await names.TransformAsync(ParseConversionTests.Access.Read));
-        Assert.Equal("Read, Write", await names.TransformAsync(ParseConversionTests.Access.Read | ParseConversionTests.Access.Write));
+        Assert.Equal(
+            "Read, Write",
+            await names.TransformAsync(ParseConversionTests.Access.Read | ParseConversionTests.Access.Write));
         Assert.Equal("8", await names.TransformAsync((ParseConversionTests.Access)8));
         Assert.Equal("None", await names.TransformAsync(ParseConversionTests.Access.None));
     }
@@ -41,12 +43,16 @@ public class FormatAndNumericConversionTests
         Assert.Equal(1, await TransformerRules.ConvertChecked<decimal, int>().TransformAsync(1.5m));
         Assert.Throws<OverflowException>(() => TransformerRules.ConvertChecked<int, byte>().TransformAsync(300));
         Assert.Throws<OverflowException>(() => TransformerRules.ConvertChecked<int, byte>().TransformAsync(-1));
-        Assert.Throws<OverflowException>(() => TransformerRules.ConvertChecked<double, int>().TransformAsync(double.PositiveInfinity));
-        Assert.Throws<OverflowException>(() => TransformerRules.ConvertChecked<double, int>().TransformAsync(double.NaN));
+        Assert.Throws<OverflowException>(() =>
+            TransformerRules.ConvertChecked<double, int>().TransformAsync(double.PositiveInfinity));
+        Assert.Throws<OverflowException>(() =>
+            TransformerRules.ConvertChecked<double, int>().TransformAsync(double.NaN));
 
         Assert.Equal(byte.MaxValue, await TransformerRules.ConvertSaturating<int, byte>().TransformAsync(300));
         Assert.Equal(byte.MinValue, await TransformerRules.ConvertSaturating<int, byte>().TransformAsync(-1));
-        Assert.Equal(int.MaxValue, await TransformerRules.ConvertSaturating<long, int>().TransformAsync(4_000_000_000L));
+        Assert.Equal(
+            int.MaxValue,
+            await TransformerRules.ConvertSaturating<long, int>().TransformAsync(4_000_000_000L));
         Assert.Equal(int.MinValue, await TransformerRules.ConvertSaturating<long, int>().TransformAsync(long.MinValue));
         Assert.Equal(1, await TransformerRules.ConvertSaturating<double, int>().TransformAsync(1.9d));
         Assert.Equal(-1, await TransformerRules.ConvertSaturating<double, int>().TransformAsync(-1.9d));
@@ -55,7 +61,9 @@ public class FormatAndNumericConversionTests
         Assert.Equal((byte)255, await TransformerRules.ConvertTruncating<int, byte>().TransformAsync(-1));
         Assert.Equal(1, await TransformerRules.ConvertTruncating<double, int>().TransformAsync(1.9d));
         Assert.Equal(-1, await TransformerRules.ConvertTruncating<double, int>().TransformAsync(-1.9d));
-        Assert.Equal(-294_967_296, await TransformerRules.ConvertTruncating<long, int>().TransformAsync(4_000_000_000L));
+        Assert.Equal(
+            -294_967_296,
+            await TransformerRules.ConvertTruncating<long, int>().TransformAsync(4_000_000_000L));
         Assert.Equal((short)-25_536, await TransformerRules.ConvertTruncating<int, short>().TransformAsync(40_000));
     }
 
@@ -79,15 +87,25 @@ public class FormatAndNumericConversionTests
         Assert.Equal(byte.MinValue, await TransformerRules.ConvertSaturating<int, byte>().TransformAsync(-1));
         Assert.Equal(byte.MaxValue, await TransformerRules.ConvertTruncating<int, byte>().TransformAsync(-1));
 
-        Assert.Throws<OverflowException>(() => TransformerRules.ConvertChecked<double, int>().TransformAsync(double.PositiveInfinity));
-        Assert.Equal(int.MaxValue, await TransformerRules.ConvertSaturating<double, int>().TransformAsync(double.PositiveInfinity));
-        Assert.Equal(int.MaxValue, await TransformerRules.ConvertTruncating<double, int>().TransformAsync(double.PositiveInfinity));
-        Assert.Equal(int.MinValue, await TransformerRules.ConvertSaturating<double, int>().TransformAsync(double.NegativeInfinity));
-        Assert.Equal(int.MinValue, await TransformerRules.ConvertTruncating<double, int>().TransformAsync(double.NegativeInfinity));
+        Assert.Throws<OverflowException>(() =>
+            TransformerRules.ConvertChecked<double, int>().TransformAsync(double.PositiveInfinity));
+        Assert.Equal(
+            int.MaxValue,
+            await TransformerRules.ConvertSaturating<double, int>().TransformAsync(double.PositiveInfinity));
+        Assert.Equal(
+            int.MaxValue,
+            await TransformerRules.ConvertTruncating<double, int>().TransformAsync(double.PositiveInfinity));
+        Assert.Equal(
+            int.MinValue,
+            await TransformerRules.ConvertSaturating<double, int>().TransformAsync(double.NegativeInfinity));
+        Assert.Equal(
+            int.MinValue,
+            await TransformerRules.ConvertTruncating<double, int>().TransformAsync(double.NegativeInfinity));
 
         // Checked rejects NaN on both runtimes. Saturating and truncating follow the BCL, which disagrees:
         // .NET 8 yields int.MinValue and .NET 10 yields 0.
-        Assert.Throws<OverflowException>(() => TransformerRules.ConvertChecked<double, int>().TransformAsync(double.NaN));
+        Assert.Throws<OverflowException>(() =>
+            TransformerRules.ConvertChecked<double, int>().TransformAsync(double.NaN));
 #if NET8_0
         Assert.Equal(int.MinValue, await TransformerRules.ConvertSaturating<double, int>().TransformAsync(double.NaN));
         Assert.Equal(int.MinValue, await TransformerRules.ConvertTruncating<double, int>().TransformAsync(double.NaN));

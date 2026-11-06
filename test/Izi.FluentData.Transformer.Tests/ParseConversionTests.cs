@@ -18,8 +18,12 @@ public class ParseConversionTests
         Assert.False(await TransformerRules.Parse<bool>(Invariant).TransformAsync("false"));
 
         var id = Guid.Parse("00112233-4455-6677-8899-aabbccddeeff");
-        Assert.Equal(id, await TransformerRules.Parse<Guid>(Invariant).TransformAsync("00112233-4455-6677-8899-aabbccddeeff"));
-        Assert.Equal(new DateTime(2020, 1, 2), await TransformerRules.Parse<DateTime>(Invariant).TransformAsync("2020-01-02"));
+        Assert.Equal(
+            id,
+            await TransformerRules.Parse<Guid>(Invariant).TransformAsync("00112233-4455-6677-8899-aabbccddeeff"));
+        Assert.Equal(
+            new DateTime(2020, 1, 2),
+            await TransformerRules.Parse<DateTime>(Invariant).TransformAsync("2020-01-02"));
     }
 
     [Fact]
@@ -36,11 +40,15 @@ public class ParseConversionTests
     {
         Assert.Equal(
             new DateTime(2020, 2, 29, 3, 4, 0, DateTimeKind.Unspecified),
-            await TransformerRules.ParseExactDateTime("yyyy-MM-dd HH:mm", Invariant).TransformAsync("2020-02-29 03:04"));
+            await TransformerRules.ParseExactDateTime("yyyy-MM-dd HH:mm", Invariant)
+                .TransformAsync("2020-02-29 03:04"));
         Assert.Equal(
             new DateTimeOffset(2020, 1, 2, 3, 4, 0, TimeSpan.FromHours(2)),
-            await TransformerRules.ParseExactDateTimeOffset("yyyy-MM-dd HH:mm zzz", Invariant).TransformAsync("2020-01-02 03:04 +02:00"));
-        Assert.Equal(new TimeOnly(23, 59, 59), await TransformerRules.ParseExactTimeOnly("HH:mm:ss", Invariant).TransformAsync("23:59:59"));
+            await TransformerRules.ParseExactDateTimeOffset("yyyy-MM-dd HH:mm zzz", Invariant)
+                .TransformAsync("2020-01-02 03:04 +02:00"));
+        Assert.Equal(
+            new TimeOnly(23, 59, 59),
+            await TransformerRules.ParseExactTimeOnly("HH:mm:ss", Invariant).TransformAsync("23:59:59"));
         Assert.Equal(
             new TimeSpan(1, 2, 3),
             await TransformerRules.ParseExactTimeSpan(@"hh\:mm\:ss", Invariant).TransformAsync("01:02:03"));
@@ -59,16 +67,21 @@ public class ParseConversionTests
         Assert.Throws<ArgumentException>(() => TransformerRules.ParseExactDateOnly("", Invariant));
         Assert.Throws<ArgumentException>(() => TransformerRules.ParseExactTimeSpan([], Invariant));
         Assert.Throws<ArgumentException>(() => TransformerRules.ParseExactDateOnly([null!], Invariant));
-        Assert.Throws<ArgumentNullException>(() => TransformerRules.ParseExactDateTime("yyyy-MM-dd", Invariant).TransformAsync(null!));
-        Assert.Throws<FormatException>(() => TransformerRules.ParseExactDateOnly("yyyy-MM-dd", Invariant).TransformAsync("2019-02-29"));
-        Assert.Throws<FormatException>(() => TransformerRules.ParseExactTimeOnly("HH:mm", Invariant).TransformAsync("24:00"));
+        Assert.Throws<ArgumentNullException>(() =>
+            TransformerRules.ParseExactDateTime("yyyy-MM-dd", Invariant).TransformAsync(null!));
+        Assert.Throws<FormatException>(() =>
+            TransformerRules.ParseExactDateOnly("yyyy-MM-dd", Invariant).TransformAsync("2019-02-29"));
+        Assert.Throws<FormatException>(() =>
+            TransformerRules.ParseExactTimeOnly("HH:mm", Invariant).TransformAsync("24:00"));
     }
 
     [Fact]
     public async Task ParseEnum_uses_bcl_names_flags_and_undefined_numbers()
     {
         Assert.Equal(Access.Read, await TransformerRules.ParseEnum<Access>().TransformAsync("Read"));
-        Assert.Equal(Access.Read | Access.Write, await TransformerRules.ParseEnum<Access>().TransformAsync("Read, Write"));
+        Assert.Equal(
+            Access.Read | Access.Write,
+            await TransformerRules.ParseEnum<Access>().TransformAsync("Read, Write"));
         Assert.Equal((Access)8, await TransformerRules.ParseEnum<Access>().TransformAsync("8"));
         Assert.False(Enum.IsDefined((Access)8));
         Assert.Equal(Access.Read, await TransformerRules.ParseEnum<Access>(ignoreCase: true).TransformAsync("read"));

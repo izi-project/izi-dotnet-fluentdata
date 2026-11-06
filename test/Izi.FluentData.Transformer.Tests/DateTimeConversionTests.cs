@@ -8,12 +8,16 @@ public class DateTimeConversionTests
     public async Task Date_and_time_parts_use_the_displayed_clock()
     {
         var localClock = new DateTime(2020, 1, 2, 0, 30, 0, DateTimeKind.Utc);
-        Assert.Equal(new DateOnly(2020, 1, 2), await TransformerRules.ToDateOnlyFromDateTime().TransformAsync(localClock));
+        Assert.Equal(
+            new DateOnly(2020, 1, 2),
+            await TransformerRules.ToDateOnlyFromDateTime().TransformAsync(localClock));
         Assert.Equal(new TimeOnly(0, 30), await TransformerRules.ToTimeOnlyFromDateTime().TransformAsync(localClock));
 
         var offset = new DateTimeOffset(2020, 1, 2, 0, 30, 0, TimeSpan.FromHours(2));
         Assert.Equal(new DateOnly(2020, 1, 1), DateOnly.FromDateTime(offset.UtcDateTime));
-        Assert.Equal(new DateOnly(2020, 1, 2), await TransformerRules.ToDateOnlyFromDateTimeOffset().TransformAsync(offset));
+        Assert.Equal(
+            new DateOnly(2020, 1, 2),
+            await TransformerRules.ToDateOnlyFromDateTimeOffset().TransformAsync(offset));
         Assert.Equal(new TimeOnly(0, 30), await TransformerRules.ToTimeOnlyFromDateTimeOffset().TransformAsync(offset));
     }
 
@@ -36,10 +40,16 @@ public class DateTimeConversionTests
         Assert.Equal(time.ToTimeSpan(), await TransformerRules.ToTimeSpan().TransformAsync(time));
 
         var almostADay = TimeSpan.FromTicks(TimeSpan.TicksPerDay - 1);
-        Assert.Equal(almostADay, (await TransformerRules.ToTimeOnlyFromTimeSpan().TransformAsync(almostADay)).ToTimeSpan());
-        Assert.Equal(TimeSpan.Zero, (await TransformerRules.ToTimeOnlyFromTimeSpan().TransformAsync(TimeSpan.Zero)).ToTimeSpan());
-        Assert.Throws<ArgumentOutOfRangeException>(() => TransformerRules.ToTimeOnlyFromTimeSpan().TransformAsync(TimeSpan.FromDays(1)));
-        Assert.Throws<ArgumentOutOfRangeException>(() => TransformerRules.ToTimeOnlyFromTimeSpan().TransformAsync(TimeSpan.FromTicks(-1)));
+        Assert.Equal(
+            almostADay,
+            (await TransformerRules.ToTimeOnlyFromTimeSpan().TransformAsync(almostADay)).ToTimeSpan());
+        Assert.Equal(
+            TimeSpan.Zero,
+            (await TransformerRules.ToTimeOnlyFromTimeSpan().TransformAsync(TimeSpan.Zero)).ToTimeSpan());
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            TransformerRules.ToTimeOnlyFromTimeSpan().TransformAsync(TimeSpan.FromDays(1)));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            TransformerRules.ToTimeOnlyFromTimeSpan().TransformAsync(TimeSpan.FromTicks(-1)));
     }
 
     [Fact]
@@ -49,7 +59,8 @@ public class DateTimeConversionTests
         Assert.Throws<ArgumentOutOfRangeException>(() => TransformerRules.ToDateTimeOffset(TimeSpan.FromHours(15)));
 
         var utc = new DateTime(2020, 1, 2, 3, 4, 5, DateTimeKind.Utc);
-        Assert.Throws<ArgumentException>(() => TransformerRules.ToDateTimeOffset(TimeSpan.FromHours(1)).TransformAsync(utc));
+        Assert.Throws<ArgumentException>(() =>
+            TransformerRules.ToDateTimeOffset(TimeSpan.FromHours(1)).TransformAsync(utc));
         var utcOffset = await TransformerRules.ToDateTimeOffset(TimeSpan.Zero).TransformAsync(utc);
         Assert.Equal(TimeSpan.Zero, utcOffset.Offset);
         Assert.Equal(utc, utcOffset.UtcDateTime);
@@ -78,7 +89,8 @@ public class DateTimeConversionTests
         var milliseconds = DateTimeOffset.FromUnixTimeMilliseconds(-1);
         Assert.Equal(milliseconds, await pipeline.TransformAsync(milliseconds));
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => TransformerRules.FromUnixTimeSeconds().TransformAsync(long.MaxValue));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            TransformerRules.FromUnixTimeSeconds().TransformAsync(long.MaxValue));
     }
 
     [Fact]

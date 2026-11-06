@@ -25,7 +25,9 @@ public class StringRuleTests
         Assert.Equal("ı", await TransformerRules.ToLower(CultureInfo.GetCultureInfo("tr-TR")).TransformAsync("I"));
         Assert.Equal("Hello World", await TransformerRules.ToTitleCase().TransformAsync("hello world"));
         Assert.Equal("ABC", await TransformerRules.ToTitleCase().TransformAsync("ABC"));
-        Assert.Equal("Hello World", await TransformerRules.ToTitleCase(CultureInfo.GetCultureInfo("en-US")).TransformAsync("hello world"));
+        Assert.Equal(
+            "Hello World",
+            await TransformerRules.ToTitleCase(CultureInfo.GetCultureInfo("en-US")).TransformAsync("hello world"));
         Assert.Equal(string.Empty, await TransformerRules.ToUpper().TransformAsync(null!));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.ToUpper(null!));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.ToLower(null!));
@@ -39,7 +41,9 @@ public class StringRuleTests
         Assert.Equal(string.Empty, await TransformerRules.Replace("e", "-").TransformAsync(null!));
         Assert.Equal("h-llo", await TransformerRules.ReplaceRegex(new Regex("e+"), "-").TransformAsync("hello"));
         Assert.Equal("h-llo", await TransformerRules.ReplaceRegex("e+", "-").TransformAsync("hello"));
-        Assert.Equal("h-llo", await TransformerRules.ReplaceRegex("E+", "-", RegexOptions.IgnoreCase).TransformAsync("hello"));
+        Assert.Equal(
+            "h-llo",
+            await TransformerRules.ReplaceRegex("E+", "-", RegexOptions.IgnoreCase).TransformAsync("hello"));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.Replace(null!, "x"));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.Replace("x", null!));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.ReplaceRegex((Regex)null!, "x"));
@@ -94,6 +98,7 @@ public class StringRuleTests
 
         using var cancelled = new CancellationTokenSource();
         await cancelled.CancelAsync();
-        Assert.Throws<OperationCanceledException>(() => TransformerRules.Trim().TransformAsync(" hi ", cancelled.Token));
+        Assert.Throws<OperationCanceledException>(() =>
+            TransformerRules.Trim().TransformAsync(" hi ", cancelled.Token));
     }
 }

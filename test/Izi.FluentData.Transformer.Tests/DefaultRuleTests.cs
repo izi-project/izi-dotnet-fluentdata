@@ -7,8 +7,12 @@ public class DefaultRuleTests
     [Fact]
     public async Task DefaultIf_and_null_rules_substitute_only_on_a_match()
     {
-        Assert.Equal("fallback", await TransformerRules.DefaultIf("fallback", string.IsNullOrWhiteSpace).TransformAsync(" "));
-        Assert.Equal("kept", await TransformerRules.DefaultIf("fallback", string.IsNullOrWhiteSpace).TransformAsync("kept"));
+        Assert.Equal(
+            "fallback",
+            await TransformerRules.DefaultIf("fallback", string.IsNullOrWhiteSpace).TransformAsync(" "));
+        Assert.Equal(
+            "kept",
+            await TransformerRules.DefaultIf("fallback", string.IsNullOrWhiteSpace).TransformAsync("kept"));
         Assert.Equal("fallback", await TransformerRules.DefaultIfNull("fallback").TransformAsync(null!));
         Assert.Equal("kept", await TransformerRules.DefaultIfNull("fallback").TransformAsync("kept"));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.DefaultIf("x", (Func<string, bool>)null!));
@@ -24,7 +28,9 @@ public class DefaultRuleTests
         Assert.Equal("kept", await TransformerRules.DefaultIfNullOrWhitespace("fallback").TransformAsync("kept"));
 
         Assert.Equal(new[] { 1 }, await TransformerRules.DefaultIfEmpty(new[] { 9 }).TransformAsync(new[] { 1 }));
-        Assert.Equal(new[] { 9 }, await TransformerRules.DefaultIfEmpty(new[] { 9 }).TransformAsync(Array.Empty<int>()));
+        Assert.Equal(
+            new[] { 9 },
+            await TransformerRules.DefaultIfEmpty(new[] { 9 }).TransformAsync(Array.Empty<int>()));
 
         var counted = new CountOnlyCollection(0);
         var emptyFallback = new CountOnlyCollection(-1);
@@ -55,19 +61,37 @@ public class DefaultRuleTests
         Assert.Equal("a", await TransformerRules.DefaultIfMaxValue("b", "fallback").TransformAsync("a"));
 
         var replacement = new DateTime(2020, 1, 2);
-        Assert.Equal(replacement, await TransformerRules.DefaultIfMinValue(replacement).TransformAsync(DateTime.MinValue));
-        Assert.Equal(replacement, await TransformerRules.DefaultIfMaxValue(replacement).TransformAsync(DateTime.MaxValue));
-        Assert.Equal(new DateTime(2020, 6, 1), await TransformerRules.DefaultIfMinValue(replacement).TransformAsync(new DateTime(2020, 6, 1)));
+        Assert.Equal(
+            replacement,
+            await TransformerRules.DefaultIfMinValue(replacement).TransformAsync(DateTime.MinValue));
+        Assert.Equal(
+            replacement,
+            await TransformerRules.DefaultIfMaxValue(replacement).TransformAsync(DateTime.MaxValue));
+        Assert.Equal(
+            new DateTime(2020, 6, 1),
+            await TransformerRules.DefaultIfMinValue(replacement).TransformAsync(new DateTime(2020, 6, 1)));
 
         var offset = new DateTimeOffset(2020, 1, 2, 0, 0, 0, TimeSpan.Zero);
         Assert.Equal(offset, await TransformerRules.DefaultIfMinValue(offset).TransformAsync(DateTimeOffset.MinValue));
         Assert.Equal(offset, await TransformerRules.DefaultIfMaxValue(offset).TransformAsync(DateTimeOffset.MaxValue));
-        Assert.Equal(TimeSpan.FromHours(1), await TransformerRules.DefaultIfMinValue(TimeSpan.FromHours(1)).TransformAsync(TimeSpan.MinValue));
-        Assert.Equal(TimeSpan.FromHours(1), await TransformerRules.DefaultIfMaxValue(TimeSpan.FromHours(1)).TransformAsync(TimeSpan.MaxValue));
-        Assert.Equal(new DateOnly(2020, 1, 2), await TransformerRules.DefaultIfMinValue(new DateOnly(2020, 1, 2)).TransformAsync(DateOnly.MinValue));
-        Assert.Equal(new DateOnly(2020, 1, 2), await TransformerRules.DefaultIfMaxValue(new DateOnly(2020, 1, 2)).TransformAsync(DateOnly.MaxValue));
-        Assert.Equal(new TimeOnly(1, 2), await TransformerRules.DefaultIfMinValue(new TimeOnly(1, 2)).TransformAsync(TimeOnly.MinValue));
-        Assert.Equal(new TimeOnly(1, 2), await TransformerRules.DefaultIfMaxValue(new TimeOnly(1, 2)).TransformAsync(TimeOnly.MaxValue));
+        Assert.Equal(
+            TimeSpan.FromHours(1),
+            await TransformerRules.DefaultIfMinValue(TimeSpan.FromHours(1)).TransformAsync(TimeSpan.MinValue));
+        Assert.Equal(
+            TimeSpan.FromHours(1),
+            await TransformerRules.DefaultIfMaxValue(TimeSpan.FromHours(1)).TransformAsync(TimeSpan.MaxValue));
+        Assert.Equal(
+            new DateOnly(2020, 1, 2),
+            await TransformerRules.DefaultIfMinValue(new DateOnly(2020, 1, 2)).TransformAsync(DateOnly.MinValue));
+        Assert.Equal(
+            new DateOnly(2020, 1, 2),
+            await TransformerRules.DefaultIfMaxValue(new DateOnly(2020, 1, 2)).TransformAsync(DateOnly.MaxValue));
+        Assert.Equal(
+            new TimeOnly(1, 2),
+            await TransformerRules.DefaultIfMinValue(new TimeOnly(1, 2)).TransformAsync(TimeOnly.MinValue));
+        Assert.Equal(
+            new TimeOnly(1, 2),
+            await TransformerRules.DefaultIfMaxValue(new TimeOnly(1, 2)).TransformAsync(TimeOnly.MaxValue));
     }
 
     private sealed class CountOnlyCollection(int count) : ICollection

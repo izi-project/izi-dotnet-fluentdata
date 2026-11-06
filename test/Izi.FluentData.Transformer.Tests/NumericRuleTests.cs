@@ -37,7 +37,9 @@ public class NumericRuleTests
         Assert.Equal(1.2d, await TransformerRules.Round<double>(1).TransformAsync(1.25d));
         Assert.Equal(2d, await TransformerRules.Round<double>(MidpointRounding.AwayFromZero).TransformAsync(1.5d));
         Assert.Equal(-2d, await TransformerRules.Round<double>(MidpointRounding.AwayFromZero).TransformAsync(-1.5d));
-        Assert.Equal(1.3d, await TransformerRules.Round<double>(1, MidpointRounding.AwayFromZero).TransformAsync(1.25d));
+        Assert.Equal(
+            1.3d,
+            await TransformerRules.Round<double>(1, MidpointRounding.AwayFromZero).TransformAsync(1.25d));
         Assert.Equal(1d, await TransformerRules.Floor<double>().TransformAsync(1.9d));
         Assert.Equal(-2d, await TransformerRules.Floor<double>().TransformAsync(-1.1d));
         Assert.Equal(2d, await TransformerRules.Ceiling<double>().TransformAsync(1.1d));
@@ -73,7 +75,9 @@ public class NumericRuleTests
         Assert.True(float.IsNaN(await TransformerRules.Sqrt<float>().TransformAsync(float.NaN)));
 
         Assert.Equal(2d, await TransformerRules.Sqrt<double>().TransformAsync(4d), precision: 10);
-        Assert.Equal(double.PositiveInfinity, await TransformerRules.Sqrt<double>().TransformAsync(double.PositiveInfinity));
+        Assert.Equal(
+            double.PositiveInfinity,
+            await TransformerRules.Sqrt<double>().TransformAsync(double.PositiveInfinity));
     }
 
     [Fact]

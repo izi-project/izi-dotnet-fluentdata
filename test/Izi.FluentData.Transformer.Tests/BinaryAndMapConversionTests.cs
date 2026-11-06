@@ -13,7 +13,8 @@ public class BinaryAndMapConversionTests
         Assert.Equal("\uFFFD", await TransformerRules.Decode(Encoding.UTF8).TransformAsync(new byte[] { 0xFF }));
 
         var strict = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
-        Assert.Throws<DecoderFallbackException>(() => TransformerRules.Decode(strict).TransformAsync(new byte[] { 0xFF }));
+        Assert.Throws<DecoderFallbackException>(() =>
+            TransformerRules.Decode(strict).TransformAsync(new byte[] { 0xFF }));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.Encode(null!));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.Encode(Encoding.UTF8).TransformAsync(null!));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.Decode(Encoding.UTF8).TransformAsync(null!));
@@ -28,7 +29,8 @@ public class BinaryAndMapConversionTests
         Assert.Equal(Convert.ToBase64String(bytes), base64);
         Assert.Equal(bytes, await TransformerRules.FromBase64().TransformAsync(base64));
 
-        var wrapped = await TransformerRules.ToBase64(Base64FormattingOptions.InsertLineBreaks).TransformAsync(new byte[80]);
+        var wrapped =
+            await TransformerRules.ToBase64(Base64FormattingOptions.InsertLineBreaks).TransformAsync(new byte[80]);
         Assert.Contains("\r\n", wrapped, StringComparison.Ordinal);
 
         Assert.Equal("0AFF", await TransformerRules.ToHex().TransformAsync(new byte[] { 0x0A, 0xFF }));
