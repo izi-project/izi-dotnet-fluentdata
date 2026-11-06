@@ -100,7 +100,9 @@ public static partial class TransformerRules
     public static TransformerRule<string, string> Substring(int startIndex)
     {
         if (startIndex < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(startIndex));
+        }
 
         return Text(value => value[startIndex..]);
     }
@@ -109,9 +111,14 @@ public static partial class TransformerRules
     public static TransformerRule<string, string> Substring(int startIndex, int length)
     {
         if (startIndex < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(startIndex));
+        }
+
         if (length < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(length));
+        }
 
         return Text(value => value.Substring(startIndex, length));
     }
@@ -123,7 +130,9 @@ public static partial class TransformerRules
     public static TransformerRule<string, string> Truncate(int maxLength)
     {
         if (maxLength < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(maxLength));
+        }
 
         return Text(value => value.Length <= maxLength ? value : value[..maxLength]);
     }
@@ -132,7 +141,9 @@ public static partial class TransformerRules
     public static TransformerRule<string, string> PadLeft(int totalWidth, char paddingChar)
     {
         if (totalWidth < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(totalWidth));
+        }
 
         return Text(value => value.PadLeft(totalWidth, paddingChar));
     }
@@ -141,7 +152,9 @@ public static partial class TransformerRules
     public static TransformerRule<string, string> PadRight(int totalWidth, char paddingChar)
     {
         if (totalWidth < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(totalWidth));
+        }
 
         return Text(value => value.PadRight(totalWidth, paddingChar));
     }

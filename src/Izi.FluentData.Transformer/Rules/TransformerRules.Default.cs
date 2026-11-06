@@ -97,13 +97,24 @@ public static partial class TransformerRules
     private static bool IsEmpty<TSource>(TSource source)
     {
         if (source is null)
+        {
             return true;
+        }
+
         if (source is string text)
+        {
             return text.Length == 0;
+        }
+
         if (source is ICollection collection)
+        {
             return collection.Count == 0;
+        }
+
         if (source is not IEnumerable enumerable)
+        {
             return false;
+        }
 
         var enumerator = enumerable.GetEnumerator();
         try
@@ -113,7 +124,9 @@ public static partial class TransformerRules
         finally
         {
             if (enumerator is IDisposable disposable)
+            {
                 disposable.Dispose();
+            }
         }
     }
 }

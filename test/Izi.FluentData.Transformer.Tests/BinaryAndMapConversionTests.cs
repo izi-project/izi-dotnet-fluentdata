@@ -79,9 +79,12 @@ public class BinaryAndMapConversionTests
             return value;
         });
         var pending = waiting.TransformAsync(5, during.Token);
-        await started.Task;
+
+        // xUnit suppresses CA2007 for calls made directly in a test, but not for a stored task.
+        // ConfigureAwait(false) here trips xUnit1030, and the default continuation is the one the test needs.
+        await started.Task.ConfigureAwait(true);
         await during.CancelAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await pending);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await pending.ConfigureAwait(false));
 
         using var supplied = new CancellationTokenSource();
         CancellationToken observed = default;
@@ -109,7 +112,9 @@ public class BinaryAndMapConversionTests
         {
             var value = rule.TransformAsync(i.ToString(CultureInfo.InvariantCulture)).GetAwaiter().GetResult();
             if (value != i)
+            {
                 Interlocked.Increment(ref mismatches);
+            }
         });
 
         Assert.Equal(0, mismatches);

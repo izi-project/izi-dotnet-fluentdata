@@ -59,7 +59,9 @@ public static partial class TransformerRules
         where TNumber : IFloatingPoint<TNumber>
     {
         if (digits < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(digits));
+        }
 
         return Same<TNumber>(source => TNumber.Round(source, digits));
     }
@@ -74,7 +76,9 @@ public static partial class TransformerRules
         where TNumber : IFloatingPoint<TNumber>
     {
         if (digits < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(digits));
+        }
 
         return Same<TNumber>(source => TNumber.Round(source, digits, mode));
     }
@@ -103,7 +107,9 @@ public static partial class TransformerRules
         where TNumber : INumber<TNumber>
     {
         if (min == max)
+        {
             throw new ArgumentException("Normalize requires distinct bounds.", nameof(max));
+        }
 
         return Same<TNumber>(source => (source - min) / (max - min));
     }

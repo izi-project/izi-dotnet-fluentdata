@@ -39,7 +39,8 @@ public class TransformerTests
             .Then(second)
             .Then(third);
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await partial.TransformAsync(4, during.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            async () => await partial.TransformAsync(4, during.Token).ConfigureAwait(false));
         Assert.Equal(0, second.Calls);
         Assert.Equal(0, third.Calls);
         Assert.Throws<ArgumentNullException>(() => pipeline.Then<int>(null!));

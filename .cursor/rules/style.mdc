@@ -1,0 +1,44 @@
+---
+description: Code style for Izi.FluentData, based on Microsoft .NET conventions (owned by Cleanie Izi FluentData)
+globs: ["**/*.cs"]
+alwaysApply: true
+---
+# Izi.FluentData code style
+
+Baseline: Microsoft's C# coding conventions and .NET Framework Design Guidelines
+(https://learn.microsoft.com/dotnet/csharp/fundamentals/coding-style/coding-conventions,
+https://learn.microsoft.com/dotnet/standard/design-guidelines/). Enforced by the root `.editorconfig`.
+Rules below are project-specific additions or clarifications. Comments in English.
+
+## Layout
+- File-scoped namespaces; one top-level type per file; partials split by topic (`TransformerRules.DateTime.cs`).
+- 4-space indent, Allman braces, braces always (even single-line `if`).
+- `using` directives outside the namespace, `System.*` first.
+- Modifier order per .NET defaults: accessibility, `static`, `readonly` (`private static readonly`).
+- Explicit accessibility modifiers on all non-interface members.
+- Member order: constants, static fields, fields, constructors, properties, public methods, private methods, nested types.
+
+## Naming (Framework Design Guidelines)
+- PascalCase: types, methods, properties, events, constants, static readonly fields.
+- `_camelCase`: private instance fields. `camelCase`: locals and parameters.
+- Interfaces start with `I`; generic type parameters start with `T`.
+- Async methods end in `Async`; internal async continuations end in `SlowAsync`.
+- No abbreviations or Hungarian notation; built-in rule factories are named after the rule (`NotNull`, `MaxLength`).
+
+## Language usage
+- `var` when the type is apparent; explicit type otherwise.
+- Collection expressions (`[]`) and target-typed `new()` where clear.
+- Language features limited to what all target frameworks support (C# 12 with `net8.0;net10.0`) unless `LangVersion` is pinned.
+- Guard public arguments with `ArgumentNullException.ThrowIfNull` / `ArgumentOutOfRangeException.ThrowIf*`.
+
+## Documentation
+- XML docs (`<summary>`, `<param>`, `<returns>`, `<exception>`) on every public member; `GenerateDocumentationFile` on.
+- `//` comments explain *why*, not what. No `#region`.
+
+## Performance (hard rule)
+- Passing validation/transformation must not allocate: shared empty results, lazy `??=` lists, message delegates invoked only on failure.
+- Sync fast path via `ValueTask.IsCompletedSuccessfully`, then a `SlowAsync` tail; `ConfigureAwait(false)` on every await (CA2007).
+- Indexed `for` over `List<T>` in hot loops, consistent between fast and slow paths. No LINQ in rule predicates.
+
+## Public API
+- Breaking public changes only in a major version; collect wanted renames for the next major.

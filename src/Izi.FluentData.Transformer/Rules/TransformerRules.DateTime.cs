@@ -236,7 +236,9 @@ public static partial class TransformerRules
     public static TransformerRule<T, T> WithHour<T>(int hour)
     {
         if (hour is < 0 or > 23)
+        {
             throw new ArgumentOutOfRangeException(nameof(hour));
+        }
 
         return Pick<T>(nameof(WithHour),
             dateTime: value => WithTime(value, hour, value.Minute, value.Second, value.Millisecond),
@@ -248,7 +250,9 @@ public static partial class TransformerRules
     public static TransformerRule<T, T> WithMinute<T>(int minute)
     {
         if (minute is < 0 or > 59)
+        {
             throw new ArgumentOutOfRangeException(nameof(minute));
+        }
 
         return Pick<T>(nameof(WithMinute),
             dateTime: value => WithTime(value, value.Hour, minute, value.Second, value.Millisecond),
@@ -260,7 +264,9 @@ public static partial class TransformerRules
     public static TransformerRule<T, T> WithSecond<T>(int second)
     {
         if (second is < 0 or > 59)
+        {
             throw new ArgumentOutOfRangeException(nameof(second));
+        }
 
         return Pick<T>(nameof(WithSecond),
             dateTime: value => WithTime(value, value.Hour, value.Minute, second, value.Millisecond),
@@ -272,7 +278,9 @@ public static partial class TransformerRules
     public static TransformerRule<T, T> WithMillisecond<T>(int millisecond)
     {
         if (millisecond is < 0 or > 999)
+        {
             throw new ArgumentOutOfRangeException(nameof(millisecond));
+        }
 
         return Pick<T>(nameof(WithMillisecond),
             dateTime: value => WithTime(value, value.Hour, value.Minute, value.Second, millisecond),
@@ -380,15 +388,29 @@ public static partial class TransformerRules
         Func<TimeSpan, TimeSpan>? timeSpan = null)
     {
         if (typeof(T) == typeof(DateTime) && dateTime is not null)
+        {
             return Adapt<T, DateTime>(dateTime);
+        }
+
         if (typeof(T) == typeof(DateTimeOffset) && dateTimeOffset is not null)
+        {
             return Adapt<T, DateTimeOffset>(dateTimeOffset);
+        }
+
         if (typeof(T) == typeof(DateOnly) && dateOnly is not null)
+        {
             return Adapt<T, DateOnly>(dateOnly);
+        }
+
         if (typeof(T) == typeof(TimeOnly) && timeOnly is not null)
+        {
             return Adapt<T, TimeOnly>(timeOnly);
+        }
+
         if (typeof(T) == typeof(TimeSpan) && timeSpan is not null)
+        {
             return Adapt<T, TimeSpan>(timeSpan);
+        }
 
         throw new NotSupportedException($"{operation} does not support {typeof(T).Name}.");
     }
@@ -403,14 +425,22 @@ public static partial class TransformerRules
         where T : IComparable<T>
     {
         if (min.CompareTo(max) > 0)
+        {
             throw new ArgumentException("The minimum must be less than or equal to the maximum.", nameof(min));
+        }
 
         return Same<T>(source =>
         {
             if (source.CompareTo(min) < 0)
+            {
                 return min;
+            }
+
             if (source.CompareTo(max) > 0)
+            {
                 return max;
+            }
+
             return source;
         });
     }
@@ -418,7 +448,9 @@ public static partial class TransformerRules
     private static long RequirePositiveInterval(TimeSpan interval)
     {
         if (interval <= TimeSpan.Zero)
+        {
             throw new ArgumentOutOfRangeException(nameof(interval), "The interval must be a positive duration.");
+        }
 
         return interval.Ticks;
     }
@@ -433,7 +465,9 @@ public static partial class TransformerRules
     {
         var quotient = Math.DivRem(ticks, unit, out var remainder);
         if (remainder == 0)
+        {
             return ticks;
+        }
 
         return remainder > 0 ? (quotient + 1) * unit : quotient * unit;
     }
@@ -442,13 +476,20 @@ public static partial class TransformerRules
     {
         var quotient = Math.DivRem(ticks, unit, out var remainder);
         if (remainder == 0)
+        {
             return ticks;
+        }
 
         var absoluteRemainder = Math.Abs(remainder);
         if (absoluteRemainder * 2 < unit)
+        {
             return quotient * unit;
+        }
+
         if (absoluteRemainder * 2 > unit)
+        {
             return remainder > 0 ? (quotient + 1) * unit : (quotient - 1) * unit;
+        }
 
         return remainder > 0 ? (quotient + 1) * unit : quotient * unit;
     }
@@ -508,7 +549,9 @@ public static partial class TransformerRules
     private static DateTime MoveBusinessDays(DateTime value, int count, HashSet<DateOnly>? holidays)
     {
         if (count == 0)
+        {
             return value;
+        }
 
         var step = Math.Sign(count);
         var remaining = Math.Abs(count);
@@ -517,7 +560,9 @@ public static partial class TransformerRules
         {
             result = result.AddDays(step);
             if (IsBusinessDay(DateOnly.FromDateTime(result), holidays))
+            {
                 remaining--;
+            }
         }
 
         return result;
@@ -526,7 +571,9 @@ public static partial class TransformerRules
     private static DateTimeOffset MoveBusinessDays(DateTimeOffset value, int count, HashSet<DateOnly>? holidays)
     {
         if (count == 0)
+        {
             return value;
+        }
 
         var step = Math.Sign(count);
         var remaining = Math.Abs(count);
@@ -535,7 +582,9 @@ public static partial class TransformerRules
         {
             result = result.AddDays(step);
             if (IsBusinessDay(DateOnly.FromDateTime(result.DateTime), holidays))
+            {
                 remaining--;
+            }
         }
 
         return result;
@@ -544,7 +593,9 @@ public static partial class TransformerRules
     private static DateOnly MoveBusinessDays(DateOnly value, int count, HashSet<DateOnly>? holidays)
     {
         if (count == 0)
+        {
             return value;
+        }
 
         var step = Math.Sign(count);
         var remaining = Math.Abs(count);
@@ -553,7 +604,9 @@ public static partial class TransformerRules
         {
             result = result.AddDays(step);
             if (IsBusinessDay(result, holidays))
+            {
                 remaining--;
+            }
         }
 
         return result;

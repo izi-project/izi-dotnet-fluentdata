@@ -208,7 +208,9 @@ public static partial class TransformerRules
         return new TransformerRule<string, T>((value, _) =>
         {
             if (value is not null && T.TryParse(value, provider, out var parsed))
+            {
                 return ValueTask.FromResult(parsed);
+            }
 
             return ValueTask.FromResult(fallback);
         });
@@ -226,7 +228,9 @@ public static partial class TransformerRules
         return new TransformerRule<string, ParseResult<T>>((value, _) =>
         {
             if (value is not null && T.TryParse(value, provider, out var parsed))
+            {
                 return ValueTask.FromResult(ParseResult<T>.Succeeded(parsed));
+            }
 
             return ValueTask.FromResult(ParseResult<T>.Failed());
         });
@@ -241,13 +245,17 @@ public static partial class TransformerRules
         where T : IFormattable
     {
         if (format is { Length: 0 })
+        {
             throw new ArgumentException("Format must be non-empty when it is supplied. Pass null for the general format.", nameof(format));
+        }
 
         ArgumentNullException.ThrowIfNull(provider);
         return new TransformerRule<T, string>((value, _) =>
         {
             if (value is null)
+            {
                 throw new ArgumentNullException(nameof(value));
+            }
 
             return ValueTask.FromResult(value.ToString(format, provider));
         });
@@ -485,20 +493,26 @@ public static partial class TransformerRules
     {
         ArgumentNullException.ThrowIfNull(format);
         if (format.Length == 0)
+        {
             throw new ArgumentException("Format must be non-empty.", nameof(format));
+        }
     }
 
     private static string[] CopyFormats(string[] formats)
     {
         ArgumentNullException.ThrowIfNull(formats);
         if (formats.Length == 0)
+        {
             throw new ArgumentException("At least one format is required.", nameof(formats));
+        }
 
         var copy = new string[formats.Length];
         for (var i = 0; i < formats.Length; i++)
         {
             if (string.IsNullOrEmpty(formats[i]))
+            {
                 throw new ArgumentException("Formats must be non-empty.", nameof(formats));
+            }
 
             copy[i] = formats[i];
         }
@@ -509,7 +523,9 @@ public static partial class TransformerRules
     private static string EncodeHex(byte[] bytes, bool uppercase)
     {
         if (bytes.Length == 0)
+        {
             return string.Empty;
+        }
 
         return string.Create(bytes.Length * 2, (Bytes: bytes, Uppercase: uppercase), static (destination, state) =>
         {
@@ -527,7 +543,9 @@ public static partial class TransformerRules
     private static byte[] DecodeHex(string text)
     {
         if ((text.Length & 1) != 0)
+        {
             throw new FormatException("Hexadecimal text must contain an even number of characters.");
+        }
 
         var bytes = new byte[text.Length / 2];
         for (var i = 0; i < bytes.Length; i++)
