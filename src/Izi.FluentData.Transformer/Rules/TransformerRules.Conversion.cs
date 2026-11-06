@@ -5,16 +5,17 @@ using System.Text;
 namespace Izi.FluentData.Transformer;
 
 /// <summary>
-/// Factories for type-changing conversion steps. Each method returns a
-/// <see cref="TransformerRule{TIn,TOut}"/> that can be passed to
-/// <see cref="Transformer{TIn,TOut}"/> and chained with <see cref="Transformer{TIn,TOut}.Then{TNext}"/>.
+/// Factories for transformation steps. Each method returns a <see cref="TransformerRule{TIn,TOut}"/>
+/// that can be passed to <see cref="Transformer{TIn,TOut}"/> and chained with
+/// <see cref="Transformer{TIn,TOut}.Then{TNext}"/>.
 /// </summary>
 /// <remarks>
 /// <para>
-/// C# cannot overload a method on its return type alone, so a few proposed names are split by the
-/// source or destination type. <c>Parse&lt;DateTime&gt;</c> is the culture-aware parse;
-/// <c>ParseExactDateTime</c> is the exact-format parse. <c>ToDateOnlyFromDateTime</c> and
-/// <c>ToDateOnlyFromDateTimeOffset</c> are separate because both would otherwise be parameterless.
+/// Same-type steps return <c>TransformerRule&lt;T, T&gt;</c>. Conversion steps change the type.
+/// C# cannot overload a method on its return type alone, so names such as <c>ParseExactDateTime</c>
+/// and <c>ToDateOnlyFromDateTime</c> carry the type in the method name. Date arithmetic that shares
+/// a parameter list is generic, for example <c>AddYears&lt;DateTime&gt;(1)</c>, and rejects an
+/// unsupported type when the rule is created.
 /// </para>
 /// <para>
 /// Rules capture their configuration when they are created and do not mutate it. Format arrays are copied.
@@ -32,7 +33,7 @@ namespace Izi.FluentData.Transformer;
 /// or its own <c>ConfigureAwait</c>.
 /// </para>
 /// </remarks>
-public static class TransformerRules
+public static partial class TransformerRules
 {
     /// <summary>
     /// Parses text with <typeparamref name="T"/>'s <see cref="IParsable{TSelf}.Parse"/>.
@@ -546,18 +547,7 @@ public static class TransformerRules
         >= 'a' and <= 'f' => character - 'a' + 10,
         _ => throw new FormatException($"'{character}' is not a hexadecimal character."),
     };
-}
 
-/// <summary>
-/// The outcome of <see cref="TransformerRules.TryParse{T}"/>. Check <see cref="Success"/> before using <see cref="Value"/>:
-/// failure stores <c>default</c>, which is also a legal successful value for some types.
-/// </summary>
-/// <typeparam name="T">The parsed type.</typeparam>
-public readonly record struct ParseResult<T>(bool Success, T Value)
-{
-    /// <summary>A successful parse of <paramref name="value"/>.</summary>
-    public static ParseResult<T> Succeeded(T value) => new(true, value);
-
-    /// <summary>A null or invalid input. <see cref="Value"/> is <c>default</c>.</summary>
-    public static ParseResult<T> Failed() => new(false, default!);
+    private static TransformerRule<T, T> Same<T>(Func<T, T> map)
+        => new((value, _) => ValueTask.FromResult(map(value)));
 }
