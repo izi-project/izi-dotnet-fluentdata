@@ -1,2 +1,6 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Izi.FluentData.Transformer/Izi.FluentData.Transformer.csproj" />
+    <Project Path="src/Izi.FluentData.Validation/Izi.FluentData.Validation.csproj" />
+  </Folder>
 </Solution>
