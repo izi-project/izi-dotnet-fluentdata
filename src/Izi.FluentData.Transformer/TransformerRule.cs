@@ -3,23 +3,23 @@ namespace Izi.FluentData.Transformer;
 /// <summary>
 /// A transformation step backed by a delegate.
 /// </summary>
-/// <typeparam name="Tin">The type the step reads.</typeparam>
-/// <typeparam name="Tout">The type the step produces.</typeparam>
+/// <typeparam name="TIn">The type the step reads.</typeparam>
+/// <typeparam name="TOut">The type the step produces.</typeparam>
 /// <remarks>
 /// <see cref="TransformAsync"/> checks the token once, then returns the delegate's
 /// <see cref="ValueTask{TResult}"/> directly. A delegate that finishes synchronously does not allocate
 /// an async state machine inside this type.
 /// </remarks>
-public sealed class TransformerRule<Tin, Tout> : ITransformerRule<Tin, Tout>
+public sealed class TransformerRule<TIn, TOut> : ITransformerRule<TIn, TOut>
 {
-    private readonly Func<Tin, CancellationToken, ValueTask<Tout>> _transform;
+    private readonly Func<TIn, CancellationToken, ValueTask<TOut>> _transform;
 
     /// <summary>Creates a rule that runs <paramref name="transform"/>.</summary>
     /// <param name="transform">
     /// The function that maps a value. It receives the cancellation token after this rule has checked it.
     /// </param>
     /// <exception cref="ArgumentNullException"><paramref name="transform"/> is <see langword="null"/>.</exception>
-    public TransformerRule(Func<Tin, CancellationToken, ValueTask<Tout>> transform)
+    public TransformerRule(Func<TIn, CancellationToken, ValueTask<TOut>> transform)
     {
         ArgumentNullException.ThrowIfNull(transform);
         _transform = transform;
@@ -32,7 +32,7 @@ public sealed class TransformerRule<Tin, Tout> : ITransformerRule<Tin, Tout>
     /// <exception cref="OperationCanceledException">
     /// <paramref name="cancellationToken"/> is already cancelled.
     /// </exception>
-    public ValueTask<Tout> TransformAsync(Tin value, CancellationToken cancellationToken = default)
+    public ValueTask<TOut> TransformAsync(TIn value, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         return _transform(value, cancellationToken);
