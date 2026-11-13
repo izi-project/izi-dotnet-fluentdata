@@ -1,0 +1,6 @@
+<Project>
+  <!--
+    Stops the search for Directory.Build.props.
+    Projects under .old keep the settings in their own project files.
+  -->
+</Project>
