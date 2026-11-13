@@ -6,4 +6,7 @@
   <Folder Name="/test/">
     <Project Path="test/Izi.FluentData.Transformer.Tests/Izi.FluentData.Transformer.Tests.csproj" />
   </Folder>
+  <Folder Name="/benchmark/">
+    <Project Path="benchmark/Izi.FluentData.Transformer.PipelineBenchmarks/Izi.FluentData.Transformer.PipelineBenchmarks.csproj" />
+  </Folder>
 </Solution>
