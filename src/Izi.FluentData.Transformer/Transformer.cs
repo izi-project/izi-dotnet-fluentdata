@@ -11,9 +11,9 @@ namespace Izi.FluentData.Transformer;
 /// <para>
 /// Property rules run in the order they were registered. Rules added to the returned
 /// <see cref="PropertyRule{T, TProperty}"/> stay inside that binding.
-/// Configuration stays mutable between executions. <see cref="TransformAsync"/> copies the step list
-/// and each property's rules before it runs, so a registration on another thread does not change the
-/// pipeline that is already running.
+/// Configuration stays mutable between executions. <see cref="TransformAsync"/> reuses a snapshot of the
+/// step list taken when the configuration last changed. A registration on another thread does not change
+/// a pipeline that is already running, and the next run sees the new rules.
 /// </para>
 /// <para>
 /// <see cref="TransformAsync"/> returns the updated value. A class with ordinary setters is changed in place,
@@ -35,6 +35,7 @@ public sealed partial class Transformer<T> : ITransformer<T>
 {
     private readonly object _gate = new();
     private readonly List<ITransformerStep<T>> _steps = [];
+    private ITransformerStep<T>[]? _cachedSteps;
 
     /// <summary>
     /// Registers a same-type rule for one property. The property is read, the rules run, and the
@@ -54,6 +55,7 @@ public sealed partial class Transformer<T> : ITransformer<T>
         lock (_gate)
         {
             _steps.Add(rule);
+            _cachedSteps = null;
         }
 
         return rule;
@@ -85,11 +87,7 @@ public sealed partial class Transformer<T> : ITransformer<T>
         ITransformerStep<T>[] steps;
         lock (_gate)
         {
-            steps = new ITransformerStep<T>[_steps.Count];
-            for (var i = 0; i < _steps.Count; i++)
-            {
-                steps[i] = _steps[i].Snapshot();
-            }
+            steps = _cachedSteps ??= SnapshotSteps();
         }
 
         // Successes that are already complete stay on this call. Faulted, cancelled, and incomplete
@@ -107,6 +105,26 @@ public sealed partial class Transformer<T> : ITransformer<T>
         }
 
         return new ValueTask<T>(instance);
+    }
+
+    /// <summary>Drops the cached pipeline. Callers already hold <see cref="Gate"/>.</summary>
+    internal void InvalidateSnapshot() => _cachedSteps = null;
+
+    private ITransformerStep<T>[] SnapshotSteps()
+    {
+        var count = _steps.Count;
+        if (count == 0)
+        {
+            return Array.Empty<ITransformerStep<T>>();
+        }
+
+        var steps = new ITransformerStep<T>[count];
+        for (var i = 0; i < count; i++)
+        {
+            steps[i] = _steps[i].Snapshot();
+        }
+
+        return steps;
     }
 
     private static async ValueTask<T> ContinueStepsAsync(
@@ -169,6 +187,7 @@ public sealed partial class PropertyRule<T, TProperty> : ITransformerStep<T>
             }
 
             _rules.Add(rule);
+            _owner.InvalidateSnapshot();
         }
 
         return this;
@@ -213,6 +232,7 @@ public sealed partial class PropertyRule<T, TProperty> : ITransformerStep<T>
                     return rule.TransformAsync(value, token);
                 });
             _conversion = conversion;
+            _owner.InvalidateSnapshot();
             return conversion;
         }
     }
@@ -222,6 +242,7 @@ public sealed partial class PropertyRule<T, TProperty> : ITransformerStep<T>
     internal void ReplaceConversion(IPendingConversion<T, TProperty> conversion)
     {
         _conversion = conversion;
+        _owner.InvalidateSnapshot();
     }
 
     /// <summary>Copies the rules configured at this moment.</summary>
@@ -234,9 +255,29 @@ public sealed partial class PropertyRule<T, TProperty> : ITransformerStep<T>
             return _conversion.Snapshot(_read, rules);
         }
 
-        var read = _read;
-        var write = _write;
-        return new DelegateStep<T>((instance, token) => ApplyRules(instance, read, write, rules, token));
+        return new SameTypeStep(_read, _write, rules);
+    }
+
+    private sealed class SameTypeStep : ITransformerStep<T>
+    {
+        private readonly Func<T, TProperty> _read;
+        private readonly Func<T, TProperty, T> _write;
+        private readonly ITransformerRule<TProperty, TProperty>[] _rules;
+
+        public SameTypeStep(
+            Func<T, TProperty> read,
+            Func<T, TProperty, T> write,
+            ITransformerRule<TProperty, TProperty>[] rules)
+        {
+            _read = read;
+            _write = write;
+            _rules = rules;
+        }
+
+        public ValueTask<T> ApplyAsync(T instance, CancellationToken cancellationToken)
+            => ApplyRules(instance, _read, _write, _rules, cancellationToken);
+
+        public ITransformerStep<T> Snapshot() => this;
     }
 
     private static ValueTask<T> ApplyRules(
@@ -364,6 +405,7 @@ public sealed partial class PropertyConversion<T, TIn, TOut> : IPendingConversio
         {
             EnsureCurrent();
             _write = write;
+            _owner.InvalidateSnapshot();
         }
 
         return _owner;
@@ -384,10 +426,32 @@ public sealed partial class PropertyConversion<T, TIn, TOut> : IPendingConversio
                 "Convert must be finished with Into before TransformAsync. The conversion was not run.");
         }
 
-        var run = _run;
-        var write = _write;
-        return new DelegateStep<T>((instance, token) =>
-            ApplyConversion(instance, read, sourceRules, run, write, token));
+        return new ConversionStep(read, sourceRules, _run, _write);
+    }
+
+    private sealed class ConversionStep : ITransformerStep<T>
+    {
+        private readonly Func<T, TIn> _read;
+        private readonly ITransformerRule<TIn, TIn>[] _sourceRules;
+        private readonly Func<TIn, CancellationToken, ValueTask<TOut>> _run;
+        private readonly Func<T, TOut, T> _write;
+
+        public ConversionStep(
+            Func<T, TIn> read,
+            ITransformerRule<TIn, TIn>[] sourceRules,
+            Func<TIn, CancellationToken, ValueTask<TOut>> run,
+            Func<T, TOut, T> write)
+        {
+            _read = read;
+            _sourceRules = sourceRules;
+            _run = run;
+            _write = write;
+        }
+
+        public ValueTask<T> ApplyAsync(T instance, CancellationToken cancellationToken)
+            => ApplyConversion(instance, _read, _sourceRules, _run, _write, cancellationToken);
+
+        public ITransformerStep<T> Snapshot() => this;
     }
 
     private static ValueTask<T> ApplyConversion(

@@ -15,67 +15,67 @@ public static partial class TransformerRuleExtensions
 {
     /// <summary>Appends the catalogue Trim rule.</summary>
     public static PropertyRule<T, string> Trim<T>(this PropertyRule<T, string> rule)
-        => rule.Add(TransformerRules.Trim());
+        => rule.Add(StringRules.Trim);
 
     /// <summary>Appends the catalogue Trim rule.</summary>
     public static PropertyConversion<T, TIn, string> Trim<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Trim());
+        => conversion.Then(StringRules.Trim);
 
     /// <summary>Appends the catalogue TrimStart rule.</summary>
     public static PropertyRule<T, string> TrimStart<T>(this PropertyRule<T, string> rule)
-        => rule.Add(TransformerRules.TrimStart());
+        => rule.Add(StringRules.TrimStart);
 
     /// <summary>Appends the catalogue TrimStart rule.</summary>
     public static PropertyConversion<T, TIn, string> TrimStart<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.TrimStart());
+        => conversion.Then(StringRules.TrimStart);
 
     /// <summary>Appends the catalogue TrimEnd rule.</summary>
     public static PropertyRule<T, string> TrimEnd<T>(this PropertyRule<T, string> rule)
-        => rule.Add(TransformerRules.TrimEnd());
+        => rule.Add(StringRules.TrimEnd);
 
     /// <summary>Appends the catalogue TrimEnd rule.</summary>
     public static PropertyConversion<T, TIn, string> TrimEnd<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.TrimEnd());
+        => conversion.Then(StringRules.TrimEnd);
 
     /// <summary>Appends the catalogue invariant ToUpper rule.</summary>
     public static PropertyRule<T, string> ToUpper<T>(this PropertyRule<T, string> rule)
-        => rule.Add(TransformerRules.ToUpper());
+        => rule.Add(StringRules.ToUpper);
 
     /// <summary>Appends the catalogue invariant ToUpper rule.</summary>
     public static PropertyConversion<T, TIn, string> ToUpper<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.ToUpper());
+        => conversion.Then(StringRules.ToUpper);
 
     /// <summary>Appends the catalogue invariant ToLower rule.</summary>
     public static PropertyRule<T, string> ToLower<T>(this PropertyRule<T, string> rule)
-        => rule.Add(TransformerRules.ToLower());
+        => rule.Add(StringRules.ToLower);
 
     /// <summary>Appends the catalogue invariant ToLower rule.</summary>
     public static PropertyConversion<T, TIn, string> ToLower<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.ToLower());
+        => conversion.Then(StringRules.ToLower);
 
     /// <summary>Appends the catalogue invariant ToTitleCase rule.</summary>
     public static PropertyRule<T, string> ToTitleCase<T>(this PropertyRule<T, string> rule)
-        => rule.Add(TransformerRules.ToTitleCase());
+        => rule.Add(StringRules.ToTitleCase);
 
     /// <summary>Appends the catalogue invariant ToTitleCase rule.</summary>
     public static PropertyConversion<T, TIn, string> ToTitleCase<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.ToTitleCase());
+        => conversion.Then(StringRules.ToTitleCase);
 
     /// <summary>Appends the catalogue RemoveWhitespace rule.</summary>
     public static PropertyRule<T, string> RemoveWhitespace<T>(this PropertyRule<T, string> rule)
-        => rule.Add(TransformerRules.RemoveWhitespace());
+        => rule.Add(StringRules.RemoveWhitespace);
 
     /// <summary>Appends the catalogue RemoveWhitespace rule.</summary>
     public static PropertyConversion<T, TIn, string> RemoveWhitespace<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.RemoveWhitespace());
+        => conversion.Then(StringRules.RemoveWhitespace);
 
     /// <summary>Appends the catalogue CollapseWhitespace rule.</summary>
     public static PropertyRule<T, string> CollapseWhitespace<T>(this PropertyRule<T, string> rule)
-        => rule.Add(TransformerRules.CollapseWhitespace());
+        => rule.Add(StringRules.CollapseWhitespace);
 
     /// <summary>Appends the catalogue CollapseWhitespace rule.</summary>
     public static PropertyConversion<T, TIn, string> CollapseWhitespace<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.CollapseWhitespace());
+        => conversion.Then(StringRules.CollapseWhitespace);
 
     /// <summary>Appends the catalogue ToUpper rule for a culture.</summary>
     public static PropertyRule<T, string> ToUpper<T>(this PropertyRule<T, string> rule, CultureInfo culture)
@@ -188,4 +188,16 @@ public static partial class TransformerRuleExtensions
     /// <summary>Appends the catalogue Append rule.</summary>
     public static PropertyConversion<T, TIn, string> Append<T, TIn>(this PropertyConversion<T, TIn, string> conversion, string? suffix)
         => conversion.Then(TransformerRules.Append(suffix));
+
+    private static class StringRules
+    {
+        public static readonly TransformerRule<string, string> Trim = TransformerRules.Trim();
+        public static readonly TransformerRule<string, string> TrimStart = TransformerRules.TrimStart();
+        public static readonly TransformerRule<string, string> TrimEnd = TransformerRules.TrimEnd();
+        public static readonly TransformerRule<string, string> ToUpper = TransformerRules.ToUpper();
+        public static readonly TransformerRule<string, string> ToLower = TransformerRules.ToLower();
+        public static readonly TransformerRule<string, string> ToTitleCase = TransformerRules.ToTitleCase();
+        public static readonly TransformerRule<string, string> RemoveWhitespace = TransformerRules.RemoveWhitespace();
+        public static readonly TransformerRule<string, string> CollapseWhitespace = TransformerRules.CollapseWhitespace();
+    }
 }

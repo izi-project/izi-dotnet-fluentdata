@@ -73,6 +73,19 @@ public class FluentAndInterfaceTests
         Assert.Equal((short)8, updated.QuantitySmall);
     }
 
+    [Fact]
+    public async Task A_rule_added_after_the_first_run_is_used_on_the_next_run()
+    {
+        var transformer = new Transformer<Customer>();
+        var rule = transformer.RuleFor(customer => customer.Name);
+        var first = await transformer.TransformAsync(new Customer { Name = "  ada  " });
+        Assert.Equal("  ada  ", first.Name);
+
+        rule.Trim();
+        var second = await transformer.TransformAsync(new Customer { Name = "  ada  " });
+        Assert.Equal("ada", second.Name);
+    }
+
     private sealed class PrefixName : ITransformer<Customer>
     {
         public ValueTask<Customer> TransformAsync(Customer value, CancellationToken cancellationToken = default)

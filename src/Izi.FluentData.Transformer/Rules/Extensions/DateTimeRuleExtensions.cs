@@ -92,83 +92,83 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Appends the catalogue StartOfDay rule.</summary>
     public static PropertyRule<T, TProperty> StartOfDay<T, TProperty>(this PropertyRule<T, TProperty> rule)
-        => rule.Add(TransformerRules.StartOfDay<TProperty>());
+        => rule.Add(DateCache<TProperty>.StartOfDay);
 
     /// <summary>Appends the catalogue StartOfDay rule.</summary>
     public static PropertyConversion<T, TIn, TProperty> StartOfDay<T, TIn, TProperty>(this PropertyConversion<T, TIn, TProperty> conversion)
-        => conversion.Then(TransformerRules.StartOfDay<TProperty>());
+        => conversion.Then(DateCache<TProperty>.StartOfDay);
 
     /// <summary>Appends the catalogue EndOfDay rule.</summary>
     public static PropertyRule<T, TProperty> EndOfDay<T, TProperty>(this PropertyRule<T, TProperty> rule)
-        => rule.Add(TransformerRules.EndOfDay<TProperty>());
+        => rule.Add(DateCache<TProperty>.EndOfDay);
 
     /// <summary>Appends the catalogue EndOfDay rule.</summary>
     public static PropertyConversion<T, TIn, TProperty> EndOfDay<T, TIn, TProperty>(this PropertyConversion<T, TIn, TProperty> conversion)
-        => conversion.Then(TransformerRules.EndOfDay<TProperty>());
+        => conversion.Then(DateCache<TProperty>.EndOfDay);
 
     /// <summary>Appends the catalogue StartOfMonth rule.</summary>
     public static PropertyRule<T, TProperty> StartOfMonth<T, TProperty>(this PropertyRule<T, TProperty> rule)
-        => rule.Add(TransformerRules.StartOfMonth<TProperty>());
+        => rule.Add(DateCache<TProperty>.StartOfMonth);
 
     /// <summary>Appends the catalogue StartOfMonth rule.</summary>
     public static PropertyConversion<T, TIn, TProperty> StartOfMonth<T, TIn, TProperty>(this PropertyConversion<T, TIn, TProperty> conversion)
-        => conversion.Then(TransformerRules.StartOfMonth<TProperty>());
+        => conversion.Then(DateCache<TProperty>.StartOfMonth);
 
     /// <summary>Appends the catalogue EndOfMonth rule.</summary>
     public static PropertyRule<T, TProperty> EndOfMonth<T, TProperty>(this PropertyRule<T, TProperty> rule)
-        => rule.Add(TransformerRules.EndOfMonth<TProperty>());
+        => rule.Add(DateCache<TProperty>.EndOfMonth);
 
     /// <summary>Appends the catalogue EndOfMonth rule.</summary>
     public static PropertyConversion<T, TIn, TProperty> EndOfMonth<T, TIn, TProperty>(this PropertyConversion<T, TIn, TProperty> conversion)
-        => conversion.Then(TransformerRules.EndOfMonth<TProperty>());
+        => conversion.Then(DateCache<TProperty>.EndOfMonth);
 
     /// <summary>Appends the catalogue StartOfQuarter rule.</summary>
     public static PropertyRule<T, TProperty> StartOfQuarter<T, TProperty>(this PropertyRule<T, TProperty> rule)
-        => rule.Add(TransformerRules.StartOfQuarter<TProperty>());
+        => rule.Add(DateCache<TProperty>.StartOfQuarter);
 
     /// <summary>Appends the catalogue StartOfQuarter rule.</summary>
     public static PropertyConversion<T, TIn, TProperty> StartOfQuarter<T, TIn, TProperty>(this PropertyConversion<T, TIn, TProperty> conversion)
-        => conversion.Then(TransformerRules.StartOfQuarter<TProperty>());
+        => conversion.Then(DateCache<TProperty>.StartOfQuarter);
 
     /// <summary>Appends the catalogue EndOfQuarter rule.</summary>
     public static PropertyRule<T, TProperty> EndOfQuarter<T, TProperty>(this PropertyRule<T, TProperty> rule)
-        => rule.Add(TransformerRules.EndOfQuarter<TProperty>());
+        => rule.Add(DateCache<TProperty>.EndOfQuarter);
 
     /// <summary>Appends the catalogue EndOfQuarter rule.</summary>
     public static PropertyConversion<T, TIn, TProperty> EndOfQuarter<T, TIn, TProperty>(this PropertyConversion<T, TIn, TProperty> conversion)
-        => conversion.Then(TransformerRules.EndOfQuarter<TProperty>());
+        => conversion.Then(DateCache<TProperty>.EndOfQuarter);
 
     /// <summary>Appends the catalogue StartOfYear rule.</summary>
     public static PropertyRule<T, TProperty> StartOfYear<T, TProperty>(this PropertyRule<T, TProperty> rule)
-        => rule.Add(TransformerRules.StartOfYear<TProperty>());
+        => rule.Add(DateCache<TProperty>.StartOfYear);
 
     /// <summary>Appends the catalogue StartOfYear rule.</summary>
     public static PropertyConversion<T, TIn, TProperty> StartOfYear<T, TIn, TProperty>(this PropertyConversion<T, TIn, TProperty> conversion)
-        => conversion.Then(TransformerRules.StartOfYear<TProperty>());
+        => conversion.Then(DateCache<TProperty>.StartOfYear);
 
     /// <summary>Appends the catalogue EndOfYear rule.</summary>
     public static PropertyRule<T, TProperty> EndOfYear<T, TProperty>(this PropertyRule<T, TProperty> rule)
-        => rule.Add(TransformerRules.EndOfYear<TProperty>());
+        => rule.Add(DateCache<TProperty>.EndOfYear);
 
     /// <summary>Appends the catalogue EndOfYear rule.</summary>
     public static PropertyConversion<T, TIn, TProperty> EndOfYear<T, TIn, TProperty>(this PropertyConversion<T, TIn, TProperty> conversion)
-        => conversion.Then(TransformerRules.EndOfYear<TProperty>());
+        => conversion.Then(DateCache<TProperty>.EndOfYear);
 
     /// <summary>Appends the catalogue ToUniversalTime rule.</summary>
     public static PropertyRule<T, TProperty> ToUniversalTime<T, TProperty>(this PropertyRule<T, TProperty> rule)
-        => rule.Add(TransformerRules.ToUniversalTime<TProperty>());
+        => rule.Add(DateCache<TProperty>.ToUniversalTime);
 
     /// <summary>Appends the catalogue ToUniversalTime rule.</summary>
     public static PropertyConversion<T, TIn, TProperty> ToUniversalTime<T, TIn, TProperty>(this PropertyConversion<T, TIn, TProperty> conversion)
-        => conversion.Then(TransformerRules.ToUniversalTime<TProperty>());
+        => conversion.Then(DateCache<TProperty>.ToUniversalTime);
 
     /// <summary>Appends the catalogue ToLocalTime rule.</summary>
     public static PropertyRule<T, TProperty> ToLocalTime<T, TProperty>(this PropertyRule<T, TProperty> rule)
-        => rule.Add(TransformerRules.ToLocalTime<TProperty>());
+        => rule.Add(DateCache<TProperty>.ToLocalTime);
 
     /// <summary>Appends the catalogue ToLocalTime rule.</summary>
     public static PropertyConversion<T, TIn, TProperty> ToLocalTime<T, TIn, TProperty>(this PropertyConversion<T, TIn, TProperty> conversion)
-        => conversion.Then(TransformerRules.ToLocalTime<TProperty>());
+        => conversion.Then(DateCache<TProperty>.ToLocalTime);
 
     /// <summary>Appends the catalogue StartOfWeek rule.</summary>
     public static PropertyRule<T, TProperty> StartOfWeek<T, TProperty>(this PropertyRule<T, TProperty> rule, DayOfWeek firstDayOfWeek)
@@ -324,19 +324,19 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Appends the catalogue Negate rule.</summary>
     public static PropertyRule<T, TimeSpan> Negate<T>(this PropertyRule<T, TimeSpan> rule)
-        => rule.Add(TransformerRules.Negate());
+        => rule.Add(TimeSpanRules.Negate);
 
     /// <summary>Appends the catalogue Negate rule.</summary>
     public static PropertyConversion<T, TIn, TimeSpan> Negate<T, TIn>(this PropertyConversion<T, TIn, TimeSpan> conversion)
-        => conversion.Then(TransformerRules.Negate());
+        => conversion.Then(TimeSpanRules.Negate);
 
     /// <summary>Appends the catalogue Duration rule.</summary>
     public static PropertyRule<T, TimeSpan> Duration<T>(this PropertyRule<T, TimeSpan> rule)
-        => rule.Add(TransformerRules.Duration());
+        => rule.Add(TimeSpanRules.Duration);
 
     /// <summary>Appends the catalogue Duration rule.</summary>
     public static PropertyConversion<T, TIn, TimeSpan> Duration<T, TIn>(this PropertyConversion<T, TIn, TimeSpan> conversion)
-        => conversion.Then(TransformerRules.Duration());
+        => conversion.Then(TimeSpanRules.Duration);
 
     /// <summary>Appends the catalogue DateTime Clamp rule.</summary>
     public static PropertyRule<T, DateTime> Clamp<T>(this PropertyRule<T, DateTime> rule, DateTime min, DateTime max)
@@ -401,4 +401,54 @@ public static partial class TransformerRuleExtensions
     /// <summary>Appends the catalogue ConvertToTimeZone rule.</summary>
     public static PropertyConversion<T, TIn, DateTimeOffset> ConvertToTimeZone<T, TIn>(this PropertyConversion<T, TIn, DateTimeOffset> conversion, TimeZoneInfo timeZone)
         => conversion.Then(TransformerRules.ConvertToTimeZone(timeZone));
+
+    private static class DateCache<TProperty>
+    {
+        private static TransformerRule<TProperty, TProperty>? _startOfDay;
+        private static TransformerRule<TProperty, TProperty>? _endOfDay;
+        private static TransformerRule<TProperty, TProperty>? _startOfMonth;
+        private static TransformerRule<TProperty, TProperty>? _endOfMonth;
+        private static TransformerRule<TProperty, TProperty>? _startOfQuarter;
+        private static TransformerRule<TProperty, TProperty>? _endOfQuarter;
+        private static TransformerRule<TProperty, TProperty>? _startOfYear;
+        private static TransformerRule<TProperty, TProperty>? _endOfYear;
+        private static TransformerRule<TProperty, TProperty>? _toUniversalTime;
+        private static TransformerRule<TProperty, TProperty>? _toLocalTime;
+
+        public static TransformerRule<TProperty, TProperty> StartOfDay =>
+            _startOfDay ??= TransformerRules.StartOfDay<TProperty>();
+
+        public static TransformerRule<TProperty, TProperty> EndOfDay =>
+            _endOfDay ??= TransformerRules.EndOfDay<TProperty>();
+
+        public static TransformerRule<TProperty, TProperty> StartOfMonth =>
+            _startOfMonth ??= TransformerRules.StartOfMonth<TProperty>();
+
+        public static TransformerRule<TProperty, TProperty> EndOfMonth =>
+            _endOfMonth ??= TransformerRules.EndOfMonth<TProperty>();
+
+        public static TransformerRule<TProperty, TProperty> StartOfQuarter =>
+            _startOfQuarter ??= TransformerRules.StartOfQuarter<TProperty>();
+
+        public static TransformerRule<TProperty, TProperty> EndOfQuarter =>
+            _endOfQuarter ??= TransformerRules.EndOfQuarter<TProperty>();
+
+        public static TransformerRule<TProperty, TProperty> StartOfYear =>
+            _startOfYear ??= TransformerRules.StartOfYear<TProperty>();
+
+        public static TransformerRule<TProperty, TProperty> EndOfYear =>
+            _endOfYear ??= TransformerRules.EndOfYear<TProperty>();
+
+        public static TransformerRule<TProperty, TProperty> ToUniversalTime =>
+            _toUniversalTime ??= TransformerRules.ToUniversalTime<TProperty>();
+
+        public static TransformerRule<TProperty, TProperty> ToLocalTime =>
+            _toLocalTime ??= TransformerRules.ToLocalTime<TProperty>();
+    }
+
+    private static class TimeSpanRules
+    {
+        public static readonly TransformerRule<TimeSpan, TimeSpan> Negate = TransformerRules.Negate();
+        public static readonly TransformerRule<TimeSpan, TimeSpan> Duration = TransformerRules.Duration();
+    }
 }

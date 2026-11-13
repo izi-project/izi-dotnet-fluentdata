@@ -55,12 +55,12 @@ public static partial class TransformerRuleExtensions
     /// <summary>Appends the catalogue Abs rule.</summary>
     public static PropertyRule<T, TNumber> Abs<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : INumberBase<TNumber>
-        => rule.Add(TransformerRules.Abs<TNumber>());
+        => rule.Add(NumberCache<TNumber>.Abs);
 
     /// <summary>Appends the catalogue Abs rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Abs<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : INumberBase<TNumber>
-        => conversion.Then(TransformerRules.Abs<TNumber>());
+        => conversion.Then(NumberCache<TNumber>.Abs);
 
     /// <summary>Appends the catalogue numeric Clamp rule.</summary>
     public static PropertyRule<T, TNumber> Clamp<T, TNumber>(this PropertyRule<T, TNumber> rule, TNumber min, TNumber max)
@@ -75,22 +75,22 @@ public static partial class TransformerRuleExtensions
     /// <summary>Appends the catalogue Invert rule.</summary>
     public static PropertyRule<T, TNumber> Invert<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : INumberBase<TNumber>
-        => rule.Add(TransformerRules.Invert<TNumber>());
+        => rule.Add(NumberCache<TNumber>.Invert);
 
     /// <summary>Appends the catalogue Invert rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Invert<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : INumberBase<TNumber>
-        => conversion.Then(TransformerRules.Invert<TNumber>());
+        => conversion.Then(NumberCache<TNumber>.Invert);
 
     /// <summary>Appends the catalogue Round rule to the nearest integer.</summary>
     public static PropertyRule<T, TNumber> Round<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IFloatingPoint<TNumber>
-        => rule.Add(TransformerRules.Round<TNumber>());
+        => rule.Add(FloatingCache<TNumber>.Round);
 
     /// <summary>Appends the catalogue Round rule to the nearest integer.</summary>
     public static PropertyConversion<T, TIn, TNumber> Round<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IFloatingPoint<TNumber>
-        => conversion.Then(TransformerRules.Round<TNumber>());
+        => conversion.Then(FloatingCache<TNumber>.Round);
 
     /// <summary>Appends the catalogue Round rule for a digit count.</summary>
     public static PropertyRule<T, TNumber> Round<T, TNumber>(this PropertyRule<T, TNumber> rule, int digits)
@@ -125,32 +125,32 @@ public static partial class TransformerRuleExtensions
     /// <summary>Appends the catalogue Floor rule.</summary>
     public static PropertyRule<T, TNumber> Floor<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IFloatingPoint<TNumber>
-        => rule.Add(TransformerRules.Floor<TNumber>());
+        => rule.Add(FloatingCache<TNumber>.Floor);
 
     /// <summary>Appends the catalogue Floor rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Floor<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IFloatingPoint<TNumber>
-        => conversion.Then(TransformerRules.Floor<TNumber>());
+        => conversion.Then(FloatingCache<TNumber>.Floor);
 
     /// <summary>Appends the catalogue Ceiling rule.</summary>
     public static PropertyRule<T, TNumber> Ceiling<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IFloatingPoint<TNumber>
-        => rule.Add(TransformerRules.Ceiling<TNumber>());
+        => rule.Add(FloatingCache<TNumber>.Ceiling);
 
     /// <summary>Appends the catalogue Ceiling rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Ceiling<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IFloatingPoint<TNumber>
-        => conversion.Then(TransformerRules.Ceiling<TNumber>());
+        => conversion.Then(FloatingCache<TNumber>.Ceiling);
 
     /// <summary>Appends the catalogue numeric Truncate rule.</summary>
     public static PropertyRule<T, TNumber> Truncate<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IFloatingPoint<TNumber>
-        => rule.Add(TransformerRules.Truncate<TNumber>());
+        => rule.Add(FloatingCache<TNumber>.Truncate);
 
     /// <summary>Appends the catalogue numeric Truncate rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Truncate<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IFloatingPoint<TNumber>
-        => conversion.Then(TransformerRules.Truncate<TNumber>());
+        => conversion.Then(FloatingCache<TNumber>.Truncate);
 
     /// <summary>Appends the catalogue Normalize rule.</summary>
     public static PropertyRule<T, TNumber> Normalize<T, TNumber>(this PropertyRule<T, TNumber> rule, TNumber min, TNumber max)
@@ -165,22 +165,22 @@ public static partial class TransformerRuleExtensions
     /// <summary>Appends the catalogue Sqrt rule.</summary>
     public static PropertyRule<T, TNumber> Sqrt<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IRootFunctions<TNumber>
-        => rule.Add(TransformerRules.Sqrt<TNumber>());
+        => rule.Add(RootCache<TNumber>.Sqrt);
 
     /// <summary>Appends the catalogue Sqrt rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Sqrt<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IRootFunctions<TNumber>
-        => conversion.Then(TransformerRules.Sqrt<TNumber>());
+        => conversion.Then(RootCache<TNumber>.Sqrt);
 
     /// <summary>Appends the catalogue Cbrt rule.</summary>
     public static PropertyRule<T, TNumber> Cbrt<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IRootFunctions<TNumber>
-        => rule.Add(TransformerRules.Cbrt<TNumber>());
+        => rule.Add(RootCache<TNumber>.Cbrt);
 
     /// <summary>Appends the catalogue Cbrt rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Cbrt<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IRootFunctions<TNumber>
-        => conversion.Then(TransformerRules.Cbrt<TNumber>());
+        => conversion.Then(RootCache<TNumber>.Cbrt);
 
     /// <summary>Appends the catalogue RootN rule.</summary>
     public static PropertyRule<T, TNumber> RootN<T, TNumber>(this PropertyRule<T, TNumber> rule, int n)
@@ -205,42 +205,42 @@ public static partial class TransformerRuleExtensions
     /// <summary>Appends the catalogue Exp rule.</summary>
     public static PropertyRule<T, TNumber> Exp<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IExponentialFunctions<TNumber>
-        => rule.Add(TransformerRules.Exp<TNumber>());
+        => rule.Add(ExpCache<TNumber>.Exp);
 
     /// <summary>Appends the catalogue Exp rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Exp<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IExponentialFunctions<TNumber>
-        => conversion.Then(TransformerRules.Exp<TNumber>());
+        => conversion.Then(ExpCache<TNumber>.Exp);
 
     /// <summary>Appends the catalogue Exp2 rule.</summary>
     public static PropertyRule<T, TNumber> Exp2<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IExponentialFunctions<TNumber>
-        => rule.Add(TransformerRules.Exp2<TNumber>());
+        => rule.Add(ExpCache<TNumber>.Exp2);
 
     /// <summary>Appends the catalogue Exp2 rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Exp2<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IExponentialFunctions<TNumber>
-        => conversion.Then(TransformerRules.Exp2<TNumber>());
+        => conversion.Then(ExpCache<TNumber>.Exp2);
 
     /// <summary>Appends the catalogue Exp10 rule.</summary>
     public static PropertyRule<T, TNumber> Exp10<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IExponentialFunctions<TNumber>
-        => rule.Add(TransformerRules.Exp10<TNumber>());
+        => rule.Add(ExpCache<TNumber>.Exp10);
 
     /// <summary>Appends the catalogue Exp10 rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Exp10<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IExponentialFunctions<TNumber>
-        => conversion.Then(TransformerRules.Exp10<TNumber>());
+        => conversion.Then(ExpCache<TNumber>.Exp10);
 
     /// <summary>Appends the catalogue natural Log rule.</summary>
     public static PropertyRule<T, TNumber> Log<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : ILogarithmicFunctions<TNumber>
-        => rule.Add(TransformerRules.Log<TNumber>());
+        => rule.Add(LogCache<TNumber>.Log);
 
     /// <summary>Appends the catalogue natural Log rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Log<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : ILogarithmicFunctions<TNumber>
-        => conversion.Then(TransformerRules.Log<TNumber>());
+        => conversion.Then(LogCache<TNumber>.Log);
 
     /// <summary>Appends the catalogue Log rule for a base.</summary>
     public static PropertyRule<T, TNumber> Log<T, TNumber>(this PropertyRule<T, TNumber> rule, TNumber newBase)
@@ -255,160 +255,223 @@ public static partial class TransformerRuleExtensions
     /// <summary>Appends the catalogue Log2 rule.</summary>
     public static PropertyRule<T, TNumber> Log2<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : ILogarithmicFunctions<TNumber>
-        => rule.Add(TransformerRules.Log2<TNumber>());
+        => rule.Add(LogCache<TNumber>.Log2);
 
     /// <summary>Appends the catalogue Log2 rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Log2<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : ILogarithmicFunctions<TNumber>
-        => conversion.Then(TransformerRules.Log2<TNumber>());
+        => conversion.Then(LogCache<TNumber>.Log2);
 
     /// <summary>Appends the catalogue Log10 rule.</summary>
     public static PropertyRule<T, TNumber> Log10<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : ILogarithmicFunctions<TNumber>
-        => rule.Add(TransformerRules.Log10<TNumber>());
+        => rule.Add(LogCache<TNumber>.Log10);
 
     /// <summary>Appends the catalogue Log10 rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Log10<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : ILogarithmicFunctions<TNumber>
-        => conversion.Then(TransformerRules.Log10<TNumber>());
+        => conversion.Then(LogCache<TNumber>.Log10);
 
     /// <summary>Appends the catalogue Sin rule.</summary>
     public static PropertyRule<T, TNumber> Sin<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => rule.Add(TransformerRules.Sin<TNumber>());
+        => rule.Add(TrigCache<TNumber>.Sin);
 
     /// <summary>Appends the catalogue Sin rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Sin<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => conversion.Then(TransformerRules.Sin<TNumber>());
+        => conversion.Then(TrigCache<TNumber>.Sin);
 
     /// <summary>Appends the catalogue Cos rule.</summary>
     public static PropertyRule<T, TNumber> Cos<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => rule.Add(TransformerRules.Cos<TNumber>());
+        => rule.Add(TrigCache<TNumber>.Cos);
 
     /// <summary>Appends the catalogue Cos rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Cos<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => conversion.Then(TransformerRules.Cos<TNumber>());
+        => conversion.Then(TrigCache<TNumber>.Cos);
 
     /// <summary>Appends the catalogue Tan rule.</summary>
     public static PropertyRule<T, TNumber> Tan<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => rule.Add(TransformerRules.Tan<TNumber>());
+        => rule.Add(TrigCache<TNumber>.Tan);
 
     /// <summary>Appends the catalogue Tan rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Tan<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => conversion.Then(TransformerRules.Tan<TNumber>());
+        => conversion.Then(TrigCache<TNumber>.Tan);
 
     /// <summary>Appends the catalogue Asin rule.</summary>
     public static PropertyRule<T, TNumber> Asin<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => rule.Add(TransformerRules.Asin<TNumber>());
+        => rule.Add(TrigCache<TNumber>.Asin);
 
     /// <summary>Appends the catalogue Asin rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Asin<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => conversion.Then(TransformerRules.Asin<TNumber>());
+        => conversion.Then(TrigCache<TNumber>.Asin);
 
     /// <summary>Appends the catalogue Acos rule.</summary>
     public static PropertyRule<T, TNumber> Acos<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => rule.Add(TransformerRules.Acos<TNumber>());
+        => rule.Add(TrigCache<TNumber>.Acos);
 
     /// <summary>Appends the catalogue Acos rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Acos<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => conversion.Then(TransformerRules.Acos<TNumber>());
+        => conversion.Then(TrigCache<TNumber>.Acos);
 
     /// <summary>Appends the catalogue Atan rule.</summary>
     public static PropertyRule<T, TNumber> Atan<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => rule.Add(TransformerRules.Atan<TNumber>());
+        => rule.Add(TrigCache<TNumber>.Atan);
 
     /// <summary>Appends the catalogue Atan rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Atan<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => conversion.Then(TransformerRules.Atan<TNumber>());
+        => conversion.Then(TrigCache<TNumber>.Atan);
 
     /// <summary>Appends the catalogue DegreesToRadians rule.</summary>
     public static PropertyRule<T, TNumber> DegreesToRadians<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => rule.Add(TransformerRules.DegreesToRadians<TNumber>());
+        => rule.Add(TrigCache<TNumber>.DegreesToRadians);
 
     /// <summary>Appends the catalogue DegreesToRadians rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> DegreesToRadians<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => conversion.Then(TransformerRules.DegreesToRadians<TNumber>());
+        => conversion.Then(TrigCache<TNumber>.DegreesToRadians);
 
     /// <summary>Appends the catalogue RadiansToDegrees rule.</summary>
     public static PropertyRule<T, TNumber> RadiansToDegrees<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => rule.Add(TransformerRules.RadiansToDegrees<TNumber>());
+        => rule.Add(TrigCache<TNumber>.RadiansToDegrees);
 
     /// <summary>Appends the catalogue RadiansToDegrees rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> RadiansToDegrees<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : ITrigonometricFunctions<TNumber>
-        => conversion.Then(TransformerRules.RadiansToDegrees<TNumber>());
+        => conversion.Then(TrigCache<TNumber>.RadiansToDegrees);
 
     /// <summary>Appends the catalogue Sinh rule.</summary>
     public static PropertyRule<T, TNumber> Sinh<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => rule.Add(TransformerRules.Sinh<TNumber>());
+        => rule.Add(HypCache<TNumber>.Sinh);
 
     /// <summary>Appends the catalogue Sinh rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Sinh<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => conversion.Then(TransformerRules.Sinh<TNumber>());
+        => conversion.Then(HypCache<TNumber>.Sinh);
 
     /// <summary>Appends the catalogue Cosh rule.</summary>
     public static PropertyRule<T, TNumber> Cosh<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => rule.Add(TransformerRules.Cosh<TNumber>());
+        => rule.Add(HypCache<TNumber>.Cosh);
 
     /// <summary>Appends the catalogue Cosh rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Cosh<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => conversion.Then(TransformerRules.Cosh<TNumber>());
+        => conversion.Then(HypCache<TNumber>.Cosh);
 
     /// <summary>Appends the catalogue Tanh rule.</summary>
     public static PropertyRule<T, TNumber> Tanh<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => rule.Add(TransformerRules.Tanh<TNumber>());
+        => rule.Add(HypCache<TNumber>.Tanh);
 
     /// <summary>Appends the catalogue Tanh rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Tanh<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => conversion.Then(TransformerRules.Tanh<TNumber>());
+        => conversion.Then(HypCache<TNumber>.Tanh);
 
     /// <summary>Appends the catalogue Asinh rule.</summary>
     public static PropertyRule<T, TNumber> Asinh<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => rule.Add(TransformerRules.Asinh<TNumber>());
+        => rule.Add(HypCache<TNumber>.Asinh);
 
     /// <summary>Appends the catalogue Asinh rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Asinh<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => conversion.Then(TransformerRules.Asinh<TNumber>());
+        => conversion.Then(HypCache<TNumber>.Asinh);
 
     /// <summary>Appends the catalogue Acosh rule.</summary>
     public static PropertyRule<T, TNumber> Acosh<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => rule.Add(TransformerRules.Acosh<TNumber>());
+        => rule.Add(HypCache<TNumber>.Acosh);
 
     /// <summary>Appends the catalogue Acosh rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Acosh<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => conversion.Then(TransformerRules.Acosh<TNumber>());
+        => conversion.Then(HypCache<TNumber>.Acosh);
 
     /// <summary>Appends the catalogue Atanh rule.</summary>
     public static PropertyRule<T, TNumber> Atanh<T, TNumber>(this PropertyRule<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => rule.Add(TransformerRules.Atanh<TNumber>());
+        => rule.Add(HypCache<TNumber>.Atanh);
 
     /// <summary>Appends the catalogue Atanh rule.</summary>
     public static PropertyConversion<T, TIn, TNumber> Atanh<T, TIn, TNumber>(this PropertyConversion<T, TIn, TNumber> conversion)
         where TNumber : IHyperbolicFunctions<TNumber>
-        => conversion.Then(TransformerRules.Atanh<TNumber>());
+        => conversion.Then(HypCache<TNumber>.Atanh);
+
+    private static class NumberCache<TNumber>
+        where TNumber : INumberBase<TNumber>
+    {
+        public static readonly TransformerRule<TNumber, TNumber> Abs = TransformerRules.Abs<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Invert = TransformerRules.Invert<TNumber>();
+    }
+
+    private static class FloatingCache<TNumber>
+        where TNumber : IFloatingPoint<TNumber>
+    {
+        public static readonly TransformerRule<TNumber, TNumber> Round = TransformerRules.Round<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Floor = TransformerRules.Floor<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Ceiling = TransformerRules.Ceiling<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Truncate = TransformerRules.Truncate<TNumber>();
+    }
+
+    private static class RootCache<TNumber>
+        where TNumber : IRootFunctions<TNumber>
+    {
+        public static readonly TransformerRule<TNumber, TNumber> Sqrt = TransformerRules.Sqrt<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Cbrt = TransformerRules.Cbrt<TNumber>();
+    }
+
+    private static class ExpCache<TNumber>
+        where TNumber : IExponentialFunctions<TNumber>
+    {
+        public static readonly TransformerRule<TNumber, TNumber> Exp = TransformerRules.Exp<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Exp2 = TransformerRules.Exp2<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Exp10 = TransformerRules.Exp10<TNumber>();
+    }
+
+    private static class LogCache<TNumber>
+        where TNumber : ILogarithmicFunctions<TNumber>
+    {
+        public static readonly TransformerRule<TNumber, TNumber> Log = TransformerRules.Log<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Log2 = TransformerRules.Log2<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Log10 = TransformerRules.Log10<TNumber>();
+    }
+
+    private static class TrigCache<TNumber>
+        where TNumber : ITrigonometricFunctions<TNumber>
+    {
+        public static readonly TransformerRule<TNumber, TNumber> Sin = TransformerRules.Sin<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Cos = TransformerRules.Cos<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Tan = TransformerRules.Tan<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Asin = TransformerRules.Asin<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Acos = TransformerRules.Acos<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Atan = TransformerRules.Atan<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> DegreesToRadians = TransformerRules.DegreesToRadians<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> RadiansToDegrees = TransformerRules.RadiansToDegrees<TNumber>();
+    }
+
+    private static class HypCache<TNumber>
+        where TNumber : IHyperbolicFunctions<TNumber>
+    {
+        public static readonly TransformerRule<TNumber, TNumber> Sinh = TransformerRules.Sinh<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Cosh = TransformerRules.Cosh<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Tanh = TransformerRules.Tanh<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Asinh = TransformerRules.Asinh<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Acosh = TransformerRules.Acosh<TNumber>();
+        public static readonly TransformerRule<TNumber, TNumber> Atanh = TransformerRules.Atanh<TNumber>();
+    }
 }

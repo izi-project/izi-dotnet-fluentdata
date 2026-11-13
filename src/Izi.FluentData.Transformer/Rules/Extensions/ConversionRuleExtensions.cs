@@ -16,11 +16,11 @@ public static partial class TransformerRuleExtensions
 {
     /// <summary>Converts with the catalogue Parse rule for int and the invariant culture.</summary>
     public static PropertyConversion<T, string, int> ParseInt<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<int>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseInt);
 
     /// <summary>Converts with the catalogue Parse rule for int and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, int> ParseInt<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<int>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseInt);
 
     /// <summary>Converts with the catalogue Parse rule for int and a format provider.</summary>
     public static PropertyConversion<T, string, int> ParseInt<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -32,11 +32,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for long and the invariant culture.</summary>
     public static PropertyConversion<T, string, long> ParseLong<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<long>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseLong);
 
     /// <summary>Converts with the catalogue Parse rule for long and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, long> ParseLong<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<long>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseLong);
 
     /// <summary>Converts with the catalogue Parse rule for long and a format provider.</summary>
     public static PropertyConversion<T, string, long> ParseLong<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -48,11 +48,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for short and the invariant culture.</summary>
     public static PropertyConversion<T, string, short> ParseShort<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<short>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseShort);
 
     /// <summary>Converts with the catalogue Parse rule for short and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, short> ParseShort<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<short>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseShort);
 
     /// <summary>Converts with the catalogue Parse rule for short and a format provider.</summary>
     public static PropertyConversion<T, string, short> ParseShort<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -64,11 +64,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for byte and the invariant culture.</summary>
     public static PropertyConversion<T, string, byte> ParseByte<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<byte>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseByte);
 
     /// <summary>Converts with the catalogue Parse rule for byte and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, byte> ParseByte<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<byte>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseByte);
 
     /// <summary>Converts with the catalogue Parse rule for byte and a format provider.</summary>
     public static PropertyConversion<T, string, byte> ParseByte<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -80,11 +80,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for double and the invariant culture.</summary>
     public static PropertyConversion<T, string, double> ParseDouble<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<double>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseDouble);
 
     /// <summary>Converts with the catalogue Parse rule for double and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, double> ParseDouble<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<double>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseDouble);
 
     /// <summary>Converts with the catalogue Parse rule for double and a format provider.</summary>
     public static PropertyConversion<T, string, double> ParseDouble<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -96,11 +96,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for float and the invariant culture.</summary>
     public static PropertyConversion<T, string, float> ParseFloat<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<float>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseFloat);
 
     /// <summary>Converts with the catalogue Parse rule for float and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, float> ParseFloat<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<float>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseFloat);
 
     /// <summary>Converts with the catalogue Parse rule for float and a format provider.</summary>
     public static PropertyConversion<T, string, float> ParseFloat<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -112,11 +112,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for decimal and the invariant culture.</summary>
     public static PropertyConversion<T, string, decimal> ParseDecimal<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<decimal>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseDecimal);
 
     /// <summary>Converts with the catalogue Parse rule for decimal and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, decimal> ParseDecimal<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<decimal>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseDecimal);
 
     /// <summary>Converts with the catalogue Parse rule for decimal and a format provider.</summary>
     public static PropertyConversion<T, string, decimal> ParseDecimal<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -128,11 +128,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for bool and the invariant culture.</summary>
     public static PropertyConversion<T, string, bool> ParseBool<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<bool>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseBool);
 
     /// <summary>Converts with the catalogue Parse rule for bool and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, bool> ParseBool<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<bool>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseBool);
 
     /// <summary>Converts with the catalogue Parse rule for bool and a format provider.</summary>
     public static PropertyConversion<T, string, bool> ParseBool<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -144,11 +144,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for DateTime and the invariant culture.</summary>
     public static PropertyConversion<T, string, DateTime> ParseDateTime<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<DateTime>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseDateTime);
 
     /// <summary>Converts with the catalogue Parse rule for DateTime and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, DateTime> ParseDateTime<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<DateTime>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseDateTime);
 
     /// <summary>Converts with the catalogue Parse rule for DateTime and a format provider.</summary>
     public static PropertyConversion<T, string, DateTime> ParseDateTime<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -160,11 +160,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for DateTimeOffset and the invariant culture.</summary>
     public static PropertyConversion<T, string, DateTimeOffset> ParseDateTimeOffset<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<DateTimeOffset>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseDateTimeOffset);
 
     /// <summary>Converts with the catalogue Parse rule for DateTimeOffset and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, DateTimeOffset> ParseDateTimeOffset<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<DateTimeOffset>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseDateTimeOffset);
 
     /// <summary>Converts with the catalogue Parse rule for DateTimeOffset and a format provider.</summary>
     public static PropertyConversion<T, string, DateTimeOffset> ParseDateTimeOffset<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -176,11 +176,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for DateOnly and the invariant culture.</summary>
     public static PropertyConversion<T, string, DateOnly> ParseDateOnly<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<DateOnly>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseDateOnly);
 
     /// <summary>Converts with the catalogue Parse rule for DateOnly and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, DateOnly> ParseDateOnly<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<DateOnly>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseDateOnly);
 
     /// <summary>Converts with the catalogue Parse rule for DateOnly and a format provider.</summary>
     public static PropertyConversion<T, string, DateOnly> ParseDateOnly<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -192,11 +192,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for TimeOnly and the invariant culture.</summary>
     public static PropertyConversion<T, string, TimeOnly> ParseTimeOnly<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<TimeOnly>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseTimeOnly);
 
     /// <summary>Converts with the catalogue Parse rule for TimeOnly and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, TimeOnly> ParseTimeOnly<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<TimeOnly>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseTimeOnly);
 
     /// <summary>Converts with the catalogue Parse rule for TimeOnly and a format provider.</summary>
     public static PropertyConversion<T, string, TimeOnly> ParseTimeOnly<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -208,11 +208,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for TimeSpan and the invariant culture.</summary>
     public static PropertyConversion<T, string, TimeSpan> ParseTimeSpan<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<TimeSpan>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseTimeSpan);
 
     /// <summary>Converts with the catalogue Parse rule for TimeSpan and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, TimeSpan> ParseTimeSpan<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<TimeSpan>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseTimeSpan);
 
     /// <summary>Converts with the catalogue Parse rule for TimeSpan and a format provider.</summary>
     public static PropertyConversion<T, string, TimeSpan> ParseTimeSpan<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -224,11 +224,11 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Converts with the catalogue Parse rule for Guid and the invariant culture.</summary>
     public static PropertyConversion<T, string, Guid> ParseGuid<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.Parse<Guid>(CultureInfo.InvariantCulture));
+        => rule.Convert(FixedRules.ParseGuid);
 
     /// <summary>Converts with the catalogue Parse rule for Guid and the invariant culture.</summary>
     public static PropertyConversion<T, TIn, Guid> ParseGuid<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.Parse<Guid>(CultureInfo.InvariantCulture));
+        => conversion.Then(FixedRules.ParseGuid);
 
     /// <summary>Converts with the catalogue Parse rule for Guid and a format provider.</summary>
     public static PropertyConversion<T, string, Guid> ParseGuid<T>(this PropertyRule<T, string> rule, IFormatProvider provider)
@@ -340,99 +340,99 @@ public static partial class TransformerRuleExtensions
 
     /// <summary>Appends the catalogue ToDateOnlyFromDateTime rule.</summary>
     public static PropertyConversion<T, DateTime, DateOnly> ToDateOnlyFromDateTime<T>(this PropertyRule<T, DateTime> rule)
-        => rule.Convert(TransformerRules.ToDateOnlyFromDateTime());
+        => rule.Convert(FixedRules.ToDateOnlyFromDateTime);
 
     /// <summary>Appends the catalogue ToDateOnlyFromDateTime rule.</summary>
     public static PropertyConversion<T, TIn, DateOnly> ToDateOnlyFromDateTime<T, TIn>(this PropertyConversion<T, TIn, DateTime> conversion)
-        => conversion.Then(TransformerRules.ToDateOnlyFromDateTime());
+        => conversion.Then(FixedRules.ToDateOnlyFromDateTime);
 
     /// <summary>Appends the catalogue ToDateOnlyFromDateTimeOffset rule.</summary>
     public static PropertyConversion<T, DateTimeOffset, DateOnly> ToDateOnlyFromDateTimeOffset<T>(this PropertyRule<T, DateTimeOffset> rule)
-        => rule.Convert(TransformerRules.ToDateOnlyFromDateTimeOffset());
+        => rule.Convert(FixedRules.ToDateOnlyFromDateTimeOffset);
 
     /// <summary>Appends the catalogue ToDateOnlyFromDateTimeOffset rule.</summary>
     public static PropertyConversion<T, TIn, DateOnly> ToDateOnlyFromDateTimeOffset<T, TIn>(this PropertyConversion<T, TIn, DateTimeOffset> conversion)
-        => conversion.Then(TransformerRules.ToDateOnlyFromDateTimeOffset());
+        => conversion.Then(FixedRules.ToDateOnlyFromDateTimeOffset);
 
     /// <summary>Appends the catalogue ToTimeOnlyFromDateTime rule.</summary>
     public static PropertyConversion<T, DateTime, TimeOnly> ToTimeOnlyFromDateTime<T>(this PropertyRule<T, DateTime> rule)
-        => rule.Convert(TransformerRules.ToTimeOnlyFromDateTime());
+        => rule.Convert(FixedRules.ToTimeOnlyFromDateTime);
 
     /// <summary>Appends the catalogue ToTimeOnlyFromDateTime rule.</summary>
     public static PropertyConversion<T, TIn, TimeOnly> ToTimeOnlyFromDateTime<T, TIn>(this PropertyConversion<T, TIn, DateTime> conversion)
-        => conversion.Then(TransformerRules.ToTimeOnlyFromDateTime());
+        => conversion.Then(FixedRules.ToTimeOnlyFromDateTime);
 
     /// <summary>Appends the catalogue ToTimeOnlyFromDateTimeOffset rule.</summary>
     public static PropertyConversion<T, DateTimeOffset, TimeOnly> ToTimeOnlyFromDateTimeOffset<T>(this PropertyRule<T, DateTimeOffset> rule)
-        => rule.Convert(TransformerRules.ToTimeOnlyFromDateTimeOffset());
+        => rule.Convert(FixedRules.ToTimeOnlyFromDateTimeOffset);
 
     /// <summary>Appends the catalogue ToTimeOnlyFromDateTimeOffset rule.</summary>
     public static PropertyConversion<T, TIn, TimeOnly> ToTimeOnlyFromDateTimeOffset<T, TIn>(this PropertyConversion<T, TIn, DateTimeOffset> conversion)
-        => conversion.Then(TransformerRules.ToTimeOnlyFromDateTimeOffset());
+        => conversion.Then(FixedRules.ToTimeOnlyFromDateTimeOffset);
 
     /// <summary>Appends the catalogue ToTimeOnlyFromTimeSpan rule.</summary>
     public static PropertyConversion<T, TimeSpan, TimeOnly> ToTimeOnlyFromTimeSpan<T>(this PropertyRule<T, TimeSpan> rule)
-        => rule.Convert(TransformerRules.ToTimeOnlyFromTimeSpan());
+        => rule.Convert(FixedRules.ToTimeOnlyFromTimeSpan);
 
     /// <summary>Appends the catalogue ToTimeOnlyFromTimeSpan rule.</summary>
     public static PropertyConversion<T, TIn, TimeOnly> ToTimeOnlyFromTimeSpan<T, TIn>(this PropertyConversion<T, TIn, TimeSpan> conversion)
-        => conversion.Then(TransformerRules.ToTimeOnlyFromTimeSpan());
+        => conversion.Then(FixedRules.ToTimeOnlyFromTimeSpan);
 
     /// <summary>Appends the catalogue ToTimeSpan rule.</summary>
     public static PropertyConversion<T, TimeOnly, TimeSpan> ToTimeSpan<T>(this PropertyRule<T, TimeOnly> rule)
-        => rule.Convert(TransformerRules.ToTimeSpan());
+        => rule.Convert(FixedRules.ToTimeSpan);
 
     /// <summary>Appends the catalogue ToTimeSpan rule.</summary>
     public static PropertyConversion<T, TIn, TimeSpan> ToTimeSpan<T, TIn>(this PropertyConversion<T, TIn, TimeOnly> conversion)
-        => conversion.Then(TransformerRules.ToTimeSpan());
+        => conversion.Then(FixedRules.ToTimeSpan);
 
     /// <summary>Appends the catalogue ToUnixTimeSeconds rule.</summary>
     public static PropertyConversion<T, DateTimeOffset, long> ToUnixTimeSeconds<T>(this PropertyRule<T, DateTimeOffset> rule)
-        => rule.Convert(TransformerRules.ToUnixTimeSeconds());
+        => rule.Convert(FixedRules.ToUnixTimeSeconds);
 
     /// <summary>Appends the catalogue ToUnixTimeSeconds rule.</summary>
     public static PropertyConversion<T, TIn, long> ToUnixTimeSeconds<T, TIn>(this PropertyConversion<T, TIn, DateTimeOffset> conversion)
-        => conversion.Then(TransformerRules.ToUnixTimeSeconds());
+        => conversion.Then(FixedRules.ToUnixTimeSeconds);
 
     /// <summary>Appends the catalogue ToUnixTimeMilliseconds rule.</summary>
     public static PropertyConversion<T, DateTimeOffset, long> ToUnixTimeMilliseconds<T>(this PropertyRule<T, DateTimeOffset> rule)
-        => rule.Convert(TransformerRules.ToUnixTimeMilliseconds());
+        => rule.Convert(FixedRules.ToUnixTimeMilliseconds);
 
     /// <summary>Appends the catalogue ToUnixTimeMilliseconds rule.</summary>
     public static PropertyConversion<T, TIn, long> ToUnixTimeMilliseconds<T, TIn>(this PropertyConversion<T, TIn, DateTimeOffset> conversion)
-        => conversion.Then(TransformerRules.ToUnixTimeMilliseconds());
+        => conversion.Then(FixedRules.ToUnixTimeMilliseconds);
 
     /// <summary>Appends the catalogue FromUnixTimeSeconds rule.</summary>
     public static PropertyConversion<T, long, DateTimeOffset> FromUnixTimeSeconds<T>(this PropertyRule<T, long> rule)
-        => rule.Convert(TransformerRules.FromUnixTimeSeconds());
+        => rule.Convert(FixedRules.FromUnixTimeSeconds);
 
     /// <summary>Appends the catalogue FromUnixTimeSeconds rule.</summary>
     public static PropertyConversion<T, TIn, DateTimeOffset> FromUnixTimeSeconds<T, TIn>(this PropertyConversion<T, TIn, long> conversion)
-        => conversion.Then(TransformerRules.FromUnixTimeSeconds());
+        => conversion.Then(FixedRules.FromUnixTimeSeconds);
 
     /// <summary>Appends the catalogue FromUnixTimeMilliseconds rule.</summary>
     public static PropertyConversion<T, long, DateTimeOffset> FromUnixTimeMilliseconds<T>(this PropertyRule<T, long> rule)
-        => rule.Convert(TransformerRules.FromUnixTimeMilliseconds());
+        => rule.Convert(FixedRules.FromUnixTimeMilliseconds);
 
     /// <summary>Appends the catalogue FromUnixTimeMilliseconds rule.</summary>
     public static PropertyConversion<T, TIn, DateTimeOffset> FromUnixTimeMilliseconds<T, TIn>(this PropertyConversion<T, TIn, long> conversion)
-        => conversion.Then(TransformerRules.FromUnixTimeMilliseconds());
+        => conversion.Then(FixedRules.FromUnixTimeMilliseconds);
 
     /// <summary>Appends the catalogue FromBase64 rule.</summary>
     public static PropertyConversion<T, string, byte[]> FromBase64<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.FromBase64());
+        => rule.Convert(FixedRules.FromBase64);
 
     /// <summary>Appends the catalogue FromBase64 rule.</summary>
     public static PropertyConversion<T, TIn, byte[]> FromBase64<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.FromBase64());
+        => conversion.Then(FixedRules.FromBase64);
 
     /// <summary>Appends the catalogue FromHex rule.</summary>
     public static PropertyConversion<T, string, byte[]> FromHex<T>(this PropertyRule<T, string> rule)
-        => rule.Convert(TransformerRules.FromHex());
+        => rule.Convert(FixedRules.FromHex);
 
     /// <summary>Appends the catalogue FromHex rule.</summary>
     public static PropertyConversion<T, TIn, byte[]> FromHex<T, TIn>(this PropertyConversion<T, TIn, string> conversion)
-        => conversion.Then(TransformerRules.FromHex());
+        => conversion.Then(FixedRules.FromHex);
 
     /// <summary>Builds a DateTime from a DateOnly with the catalogue ToDateTime rule.</summary>
     public static PropertyConversion<T, DateOnly, DateTime> ToDateTime<T>(this PropertyRule<T, DateOnly> rule, TimeOnly time, DateTimeKind kind)
@@ -547,4 +547,34 @@ public static partial class TransformerRuleExtensions
     /// <summary>Appends a same-type catalogue MapAsync rule. Use MapToAsync to change the property type.</summary>
     public static PropertyConversion<T, TIn, TProperty> MapAsync<T, TIn, TProperty>(this PropertyConversion<T, TIn, TProperty> conversion, Func<TProperty, CancellationToken, ValueTask<TProperty>> map)
         => conversion.Then(TransformerRules.MapAsync(map));
+
+    private static class FixedRules
+    {
+        public static readonly TransformerRule<string, int> ParseInt = TransformerRules.Parse<int>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, long> ParseLong = TransformerRules.Parse<long>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, short> ParseShort = TransformerRules.Parse<short>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, byte> ParseByte = TransformerRules.Parse<byte>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, double> ParseDouble = TransformerRules.Parse<double>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, float> ParseFloat = TransformerRules.Parse<float>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, decimal> ParseDecimal = TransformerRules.Parse<decimal>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, bool> ParseBool = TransformerRules.Parse<bool>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, DateTime> ParseDateTime = TransformerRules.Parse<DateTime>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, DateTimeOffset> ParseDateTimeOffset = TransformerRules.Parse<DateTimeOffset>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, DateOnly> ParseDateOnly = TransformerRules.Parse<DateOnly>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, TimeOnly> ParseTimeOnly = TransformerRules.Parse<TimeOnly>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, TimeSpan> ParseTimeSpan = TransformerRules.Parse<TimeSpan>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<string, Guid> ParseGuid = TransformerRules.Parse<Guid>(CultureInfo.InvariantCulture);
+        public static readonly TransformerRule<DateTime, DateOnly> ToDateOnlyFromDateTime = TransformerRules.ToDateOnlyFromDateTime();
+        public static readonly TransformerRule<DateTimeOffset, DateOnly> ToDateOnlyFromDateTimeOffset = TransformerRules.ToDateOnlyFromDateTimeOffset();
+        public static readonly TransformerRule<DateTime, TimeOnly> ToTimeOnlyFromDateTime = TransformerRules.ToTimeOnlyFromDateTime();
+        public static readonly TransformerRule<DateTimeOffset, TimeOnly> ToTimeOnlyFromDateTimeOffset = TransformerRules.ToTimeOnlyFromDateTimeOffset();
+        public static readonly TransformerRule<TimeSpan, TimeOnly> ToTimeOnlyFromTimeSpan = TransformerRules.ToTimeOnlyFromTimeSpan();
+        public static readonly TransformerRule<TimeOnly, TimeSpan> ToTimeSpan = TransformerRules.ToTimeSpan();
+        public static readonly TransformerRule<DateTimeOffset, long> ToUnixTimeSeconds = TransformerRules.ToUnixTimeSeconds();
+        public static readonly TransformerRule<DateTimeOffset, long> ToUnixTimeMilliseconds = TransformerRules.ToUnixTimeMilliseconds();
+        public static readonly TransformerRule<long, DateTimeOffset> FromUnixTimeSeconds = TransformerRules.FromUnixTimeSeconds();
+        public static readonly TransformerRule<long, DateTimeOffset> FromUnixTimeMilliseconds = TransformerRules.FromUnixTimeMilliseconds();
+        public static readonly TransformerRule<string, byte[]> FromBase64 = TransformerRules.FromBase64();
+        public static readonly TransformerRule<string, byte[]> FromHex = TransformerRules.FromHex();
+    }
 }
