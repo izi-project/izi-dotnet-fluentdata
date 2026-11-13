@@ -16,6 +16,8 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- SourceLink 11 pulls System.IO.Hashing 11, which warns that it has not been tested on net8.0. -->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(_IsTestProject)' == 'true'">

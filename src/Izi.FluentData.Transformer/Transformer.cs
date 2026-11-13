@@ -26,8 +26,12 @@ namespace Izi.FluentData.Transformer;
 /// A type with no settable or init property, such as <see cref="string"/>, cannot use <see cref="RuleFor{TProperty}"/>.
 /// <see cref="TransformAsync"/> with no rules returns the input unchanged.
 /// </para>
+/// <para>
+/// <see cref="ITransformer{T}"/> is the type to inject or mock. This class is the implementation.
+/// The library does not reference a dependency-injection package.
+/// </para>
 /// </remarks>
-public sealed class Transformer<T>
+public sealed partial class Transformer<T> : ITransformer<T>
 {
     private readonly object _gate = new();
     private readonly List<ITransformerStep<T>> _steps = [];
@@ -130,7 +134,7 @@ public sealed class Transformer<T>
 /// </summary>
 /// <typeparam name="T">The object being transformed.</typeparam>
 /// <typeparam name="TProperty">The property type.</typeparam>
-public sealed class PropertyRule<T, TProperty> : ITransformerStep<T>
+public sealed partial class PropertyRule<T, TProperty> : ITransformerStep<T>
 {
     private readonly Transformer<T> _owner;
     private readonly Func<T, TProperty> _read;
@@ -297,7 +301,7 @@ public sealed class PropertyRule<T, TProperty> : ITransformerStep<T>
 /// <typeparam name="T">The object being transformed.</typeparam>
 /// <typeparam name="TIn">The property type that was read.</typeparam>
 /// <typeparam name="TOut">The type produced by the conversion so far.</typeparam>
-public sealed class PropertyConversion<T, TIn, TOut> : IPendingConversion<T, TIn>
+public sealed partial class PropertyConversion<T, TIn, TOut> : IPendingConversion<T, TIn>
 {
     private readonly Transformer<T> _owner;
     private readonly PropertyRule<T, TIn> _rule;
