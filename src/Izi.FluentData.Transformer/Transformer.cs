@@ -16,7 +16,14 @@ namespace Izi.FluentData.Transformer;
 /// pipeline that is already running.
 /// </para>
 /// <para>
-/// A type with no settable property, such as <see cref="string"/>, cannot use <see cref="RuleFor{TProperty}"/>.
+/// <see cref="TransformAsync"/> returns the updated value. A class with ordinary setters is changed in place,
+/// and that same instance is returned. A struct is not mutated: the updated copy is the return value, so the
+/// caller must reassign it (<c>value = await transformer.TransformAsync(value)</c>). Records and other
+/// init-only properties are cloned before they are written; the input is left unchanged and must be replaced
+/// with the returned clone the same way.
+/// </para>
+/// <para>
+/// A type with no settable or init property, such as <see cref="string"/>, cannot use <see cref="RuleFor{TProperty}"/>.
 /// <see cref="TransformAsync"/> with no rules returns the input unchanged.
 /// </para>
 /// </remarks>
@@ -49,10 +56,16 @@ public sealed class Transformer<T>
     }
 
     /// <summary>Runs the registered property rules in registration order.</summary>
-    /// <param name="instance">The object to transform. Struct updates are returned; they are not written back to the caller.</param>
+    /// <param name="instance">
+    /// The object to transform. A class with settable properties is updated on this instance. A struct is not
+    /// mutated, and neither is a record or other object whose properties are init-only: those are cloned and
+    /// the clone is returned.
+    /// </param>
     /// <param name="cancellationToken">Checked before the run and between steps.</param>
     /// <returns>
-    /// The transformed instance. When every step finishes successfully without waiting, the returned
+    /// The transformed value. Callers must reassign it (<c>value = await transformer.TransformAsync(value)</c>).
+    /// That assignment is required for structs and for records or other init-only properties, because the input
+    /// is not mutated. When every step finishes successfully without waiting, the returned
     /// <see cref="ValueTask{TResult}"/> is already completed.
     /// </returns>
     /// <exception cref="OperationCanceledException">
@@ -554,8 +567,8 @@ internal static class PropertyAccess
         if (setter is null || !setter.IsPublic || setter.IsStatic)
         {
             throw new ArgumentException(
-                $"Property '{info.Name}' has no public instance setter. " +
-                "Whole-value Transform can still change values that have no settable property.",
+                $"Property '{info.Name}' has no public settable or init accessor. " +
+                "RuleFor and Into need a settable or init property. Transformer<T> only changes properties.",
                 nameof(property));
         }
 
