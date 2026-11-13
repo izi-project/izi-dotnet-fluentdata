@@ -1,177 +1,198 @@
 # Izi.FluentData
 
-A small, allocation-conscious family of **.NET 10** libraries for **validating** and **transforming** objects through a fluent, FluentValidation-style API.
+Libraries for normalising objects in .NET 8 and .NET 10. Version 2.0 of the transformer is a single `Transformer<T>`: it changes properties of `T` and returns the updated value.
 
-The ecosystem is built around two independent core libraries — use one, the other, or both. Each core library is **dependency-free**; the optional dependency-injection helpers live in separate packages so nothing third-party leaks into your domain unless you opt in.
+Validation is not in this branch yet. `src/Izi.FluentData.Validation` is reserved for it.
 
-> **Validate** → declare rules per property, get back a list of error messages.
-> **Transform** → declare a pipeline per property, get back the normalised object.
+## Install
 
----
-
-## Why it exists
-
-Most apps need the same two things at their boundaries: **normalise** incoming data (trim, case, parse, clamp) and **validate** it (required, length, range, format). Izi.FluentData gives both a single, declarative, strongly-typed style — without dragging in a validation framework, a mapper, or a regex-compilation tax — and keeps the hot paths allocation-free.
-
-- **Fluent & declarative** — describe *what* is valid / *how* to normalise, not the control flow.
-- **Strongly typed** — type-changing transformation pipelines are checked by the compiler.
-- **Dependency-free core** — reference a core package and you pull in **zero** transitive dependencies.
-- **Allocation-conscious** — synchronous fast paths, shared empty results, and source-generated regex keep steady-state allocations at or near zero.
-- **`async`-ready** — every entry point is `ValueTask`-based, with a synchronous fast path that avoids the async state machine when no step actually yields.
-
----
-
-## The ecosystem at a glance
-
-| Package | Responsibility | Third-party deps |
-| --- | --- | --- |
-| [`Izi.FluentData.Validation`](src/Izi.FluentData.Validation/README.md) | Core validation engine | **none** |
-| [`Izi.FluentData.Transformer`](src/Izi.FluentData.Transformer/README.md) | Core transformation engine | **none** |
-| [`Izi.FluentData.Validation.DependencyInjectionExtensions`](src/Izi.FluentData.Validation.DependencyInjectionExtensions/README.md) | `AddValidator(...)` helpers for `IServiceCollection` | `Microsoft.Extensions.DependencyInjection.Abstractions` |
-| [`Izi.FluentData.Transformer.DependencyInjectionExtensions`](src/Izi.FluentData.Transformer.DependencyInjectionExtensions/README.md) | `AddTransformer(...)` helpers for `IServiceCollection` | `Microsoft.Extensions.DependencyInjection.Abstractions` |
-
-**Requirements:** .NET 10 (`net10.0`).
-
----
-
-## Architecture
-
-The two domains are symmetric. Each exposes a base class you subclass, an interface you depend on, and small, single-purpose rule/step objects that the base class composes.
-
-```
-                         ┌──────────────────────────────────────────────┐
-                         │                Your application              │
-                         └───────────────┬──────────────┬───────────────┘
-                       depends on (DI)   │              │   depends on (DI)
-                                ┌─────────▼───┐      ┌───▼─────────┐
-                                │ IValidator<T>│      │ITransformer<T>│
-                                └─────────┬───┘      └───┬─────────┘
-                                          │ implements   │ implements
-                                ┌─────────▼───┐      ┌───▼─────────┐
-                                │ Validator<T> │      │ Transformer<T>│
-                                └─────────┬───┘      └───┬─────────┘
-                                          │ holds        │ holds
-                       rules + dependent Validator<T>s   steps + nested Transformer<T>s
-                                          │              │
-                                 IValidatorRule<T>       TransformerRule<T>
-                                (single predicate)       (transform step)
+```bash
+dotnet add package Izi.FluentData.Transformer --version 2.0.0
 ```
 
-Both cores follow the same shape: `RuleFor<TProperty>` creates and wires in a nested `Validator<TProperty>` / `Transformer<TProperty>` directly, and rules or steps chain straight onto it — no separate builder type. See each library's README ([Validation](src/Izi.FluentData.Validation/README.md#design--technical-specifications), [Transformer](src/Izi.FluentData.Transformer/README.md#design--how-it-works)) for the full design notes.
-
-### Repository structure
-
-```
-izi-dotnet-fluentdata/
-├─ src/
-│  ├─ Izi.FluentData.Validation/                              core validation engine
-│  ├─ Izi.FluentData.Validation.DependencyInjectionExtensions/   AddValidator(...)
-│  ├─ Izi.FluentData.Transformer/                             core transformation engine
-│  └─ Izi.FluentData.Transformer.DependencyInjectionExtensions/  AddTransformer(...)
-├─ test/
-│  ├─ Izi.FluentData.Validation.Tests/                       xUnit test suite
-│  └─ Izi.FluentData.Transformer.Tests/
-├─ benchmark/
-│  ├─ Izi.FluentData.Validation.Benchmarks/                  BenchmarkDotNet
-│  └─ Izi.FluentData.Transformer.Benchmarks/
-└─ README.md                                                 ← you are here
-```
-
-### Pipeline flow
-
-**Validation** runs every rule for a value and aggregates the failures:
-
-```
-instance ──selector──▶ value ──▶ rule₁ ─┐
-                                 rule₂ ─┼──▶ aggregate ──▶ IReadOnlyList<string>
-                                 ruleₙ ─┘                  (empty ⇒ valid)
-```
-
-**Transformation** reads a property, threads it through a composed pipeline, and writes it back:
-
-```
-instance ──getter──▶ value ──▶ step₁ ──▶ step₂ ──▶ … ──▶ stepₙ ──setter──▶ instance
-                              └──── each step's output feeds the next ─────┘
-```
-
-### How the pieces interconnect
-
-- **Core libraries are standalone.** `Validation` and `Transformer` share no code and can ship independently.
-- **DI packages are thin adapters.** Each `*.DependencyInjectionExtensions` package references its core library plus `Microsoft.Extensions.DependencyInjection.Abstractions`, and adds `IServiceCollection` registration helpers in the `Microsoft.Extensions.DependencyInjection` namespace — nothing more.
-- **A common composition pattern.** In a typical request you transform first, then validate the normalised result:
-
-  ```csharp
-  customer = await transformer.TransformAsync(customer);
-  IReadOnlyList<string> errors = await validator.ValidateAsync(customer);
-  ```
-
----
+The package targets `net8.0` and `net10.0`. It has no dependency-injection dependency. Register `ITransformer<T>` yourself if you use a container.
 
 ## Quick start
 
-Install whichever cores you need (each is independent):
-
-```bash
-dotnet add package Izi.FluentData.Validation
-dotnet add package Izi.FluentData.Transformer
-```
-
-Declare a validator and a transformer, then run them:
+`Transformer<T>` is sealed. Configure an instance, then call `TransformAsync`.
 
 ```csharp
-using Izi.FluentData.Validation;
 using Izi.FluentData.Transformer;
 
-public sealed class CustomerValidator : Validator<Customer>
-{
-    public CustomerValidator()
-    {
-        RuleFor(x => x.Name).NotEmpty().MaxLength(50);
-        RuleFor(x => x.Email).NotEmpty().Email();
-        RuleFor(x => x.Age).Range(18, 120);
-    }
-}
-
-public sealed class CustomerTransformer : Transformer<Customer>
-{
-    public CustomerTransformer()
-    {
-        RuleFor(x => x.Name).Trim().ToUpper();
-        RuleFor(x => x.Email).Trim().ToLower();
-        RuleFor(x => x.Total).Round(2).Clamp(0m, 10_000m);
-    }
-}
-
-var transformer = new CustomerTransformer();
-var validator   = new CustomerValidator();
+var customer = new Customer { Name = "  ada  ", Email = "  Ada@Example.COM ", Total = 1.239m };
+var transformer = new Transformer<Customer>();
+transformer.RuleFor(customer => customer.Name).Trim().ToUpper();
+transformer.RuleFor(customer => customer.Email).Trim().ToLower();
+transformer.RuleFor(customer => customer.Total).Round(2);
 
 customer = await transformer.TransformAsync(customer);
-IReadOnlyList<string> errors = await validator.ValidateAsync(customer);
+
+sealed class Customer
+{
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public decimal Total { get; set; }
+}
 ```
 
-For the full rule/transform catalogues, design notes, and DI wiring, see each library's README linked in the [table above](#the-ecosystem-at-a-glance).
+`Trim`, `ToUpper`, `ToLower`, and `Round` are fluent wrappers over the catalogue in `TransformerRules`. Same-type steps stay on the property rule, so they chain.
 
----
+## Convert into another property
 
-## Build & test
+`ParseInt()` reads the string with the invariant culture and starts a conversion. `Into` writes the result. The source property is left as it was.
+
+```csharp
+using Izi.FluentData.Transformer;
+
+var customer = new Customer { AgeText = " 41 " };
+var transformer = new Transformer<Customer>();
+transformer.RuleFor(customer => customer.AgeText)
+    .Trim()
+    .ParseInt()
+    .Into(customer => customer.Age);
+
+customer = await transformer.TransformAsync(customer);
+
+sealed class Customer
+{
+    public string AgeText { get; set; } = "";
+    public int Age { get; set; }
+}
+```
+
+`ParseInt(IFormatProvider)` selects another culture. Other shortcuts include `ParseLong`, `ParseDecimal`, `ParseDouble`, `ParseBool`, `ParseDateTime`, and `ParseGuid`. A type with no shortcut uses `Convert(TransformerRules.Parse<T>(provider))`, where `T` implements `IParsable<T>`. `ConvertChecked<T, TFrom, TTo>()` is the checked numeric conversion, for example `ConvertChecked<Order, int, short>()`.
+
+## Custom rules
+
+`Add` is still the public hook for a rule the catalogue does not have. The delegate receives the property value and the cancellation token.
+
+```csharp
+using Izi.FluentData.Transformer;
+
+var transformer = new Transformer<Customer>();
+transformer.RuleFor(customer => customer.Name).Add(static (name, token) =>
+{
+    token.ThrowIfCancellationRequested();
+    return new ValueTask<string>(name.Trim());
+});
+
+sealed class Customer
+{
+    public string Name { get; set; } = "";
+}
+```
+
+`Add` also accepts an `ITransformerRule<TProperty, TProperty>`, including any `TransformerRules` factory.
+
+## Structs and records
+
+`TransformAsync` returns the updated value. A class with ordinary setters is updated in place and that same instance is returned. A struct is not written back to the caller's variable. A record, or any other init-only property, is cloned and the original is left unchanged. Reassign the result:
+
+```csharp
+using Izi.FluentData.Transformer;
+
+var points = new Transformer<Point>();
+points.RuleFor(point => point.X).Add(1);
+var point = await points.TransformAsync(new Point { X = 1, Y = 5 });
+
+var people = new Transformer<Person>();
+people.RuleFor(person => person.Name).Trim();
+var person = await people.TransformAsync(new Person("  ada  ", 4));
+
+struct Point
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+}
+
+sealed record Person(string Name, int Age);
+```
+
+## ITransformer&lt;T&gt;
+
+`ITransformer<T>` exists so the pipeline can be injected or mocked. This library does not ship a container integration.
+
+```csharp
+using Izi.FluentData.Transformer;
+
+var configured = new Transformer<Customer>();
+configured.RuleFor(customer => customer.Name).Trim().ToUpper();
+
+ITransformer<Customer> transformer = configured;
+var customer = await transformer.TransformAsync(new Customer { Name = "  ada  " });
+
+sealed class Customer
+{
+    public string Name { get; set; } = "";
+}
+```
+
+A mock implements the same method:
+
+```csharp
+using Izi.FluentData.Transformer;
+
+ITransformer<Customer> transformer = new Echo();
+var customer = await transformer.TransformAsync(new Customer());
+
+sealed class Echo : ITransformer<Customer>
+{
+    public ValueTask<Customer> TransformAsync(Customer value, CancellationToken cancellationToken = default)
+        => new(value);
+}
+
+sealed class Customer
+{
+    public string Name { get; set; } = "";
+}
+```
+
+## Cancellation
+
+The token is checked before the run and before each property step. Pass it through:
+
+```csharp
+using Izi.FluentData.Transformer;
+
+var transformer = new Transformer<Customer>();
+using var cancellation = new CancellationTokenSource();
+var customer = await transformer.TransformAsync(new Customer(), cancellation.Token);
+
+sealed class Customer
+{
+    public string Name { get; set; } = "";
+}
+```
+
+A rule that waits should watch the same token. Synchronous rules finish on the calling thread and do not allocate an async state machine.
+
+## Benchmarks
+
+The benchmark project is `benchmark/Izi.FluentData.Transformer.PipelineBenchmarks`. Release mode is required. It checks the scenario results, then runs BenchmarkDotNet.
 
 ```bash
-# build a core library (its DI companion references it and builds alongside)
-dotnet build src/Izi.FluentData.Validation
-dotnet build src/Izi.FluentData.Transformer
-
-# run each test suite (project references are restored and built first)
-dotnet test test/Izi.FluentData.Validation.Tests
-dotnet test test/Izi.FluentData.Transformer.Tests
-
-# run the benchmarks (Release is required for meaningful numbers)
-dotnet run -c Release --project benchmark/Izi.FluentData.Validation.Benchmarks  -- --filter *
-dotnet run -c Release --project benchmark/Izi.FluentData.Transformer.Benchmarks -- --filter *
+dotnet run -c Release -f net10.0 --project benchmark/Izi.FluentData.Transformer.PipelineBenchmarks -- --filter '*'
 ```
 
-There is no solution file checked in, so every command must name a project or its directory — a bare `dotnet build` or `dotnet test` from the repository root fails with `MSB1003: Specify a project or solution file`. Add one with `dotnet new sln` followed by `dotnet sln add` for each project if you want whole-repo commands.
+A short run, useful while changing the library:
 
----
+```bash
+dotnet run -c Release -f net10.0 --project benchmark/Izi.FluentData.Transformer.PipelineBenchmarks -- --job short --filter '*'
+```
+
+Use `-f net8.0` for the other target. The scenarios cover an empty transformer, a synchronous class, the same rules on a struct and on an init-only record, one yielding step, and direct `Trim`, `Parse<int>`, and `Round` calls.
+
+## Build and test
+
+```bash
+dotnet build izi-dotnet-fluentdata.slnx
+dotnet test test/Izi.FluentData.Transformer.Tests/Izi.FluentData.Transformer.Tests.csproj -f net8.0
+dotnet test test/Izi.FluentData.Transformer.Tests/Izi.FluentData.Transformer.Tests.csproj -f net10.0
+```
+
+## Validation
+
+The 2.0 validator is not implemented in this branch. Do not use the 1.x `Validator<T>` samples against this tree. They will return when `src/Izi.FluentData.Validation` has an API.
 
 ## License
 
