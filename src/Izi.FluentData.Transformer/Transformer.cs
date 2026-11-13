@@ -51,7 +51,10 @@ public sealed class Transformer<T>
     /// <summary>Runs the registered property rules in registration order.</summary>
     /// <param name="instance">The object to transform. Struct updates are returned; they are not written back to the caller.</param>
     /// <param name="cancellationToken">Checked before the run and between steps.</param>
-    /// <returns>The transformed instance.</returns>
+    /// <returns>
+    /// The transformed instance. When every step finishes successfully without waiting, the returned
+    /// <see cref="ValueTask{TResult}"/> is already completed.
+    /// </returns>
     /// <exception cref="OperationCanceledException">
     /// <paramref name="cancellationToken"/> is cancelled before a step runs.
     /// </exception>
@@ -59,7 +62,7 @@ public sealed class Transformer<T>
     /// A <see cref="PropertyRule{T, TProperty}.Convert{TOut}"/> was not finished with
     /// <see cref="PropertyConversion{T, TIn, TOut}.Into"/>.
     /// </exception>
-    public async ValueTask<T> TransformAsync(T instance, CancellationToken cancellationToken = default)
+    public ValueTask<T> TransformAsync(T instance, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ITransformerStep<T>[] steps;
@@ -72,10 +75,34 @@ public sealed class Transformer<T>
             }
         }
 
-        foreach (var step in steps)
+        // Successes that are already complete stay on this call. Faulted, cancelled, and incomplete
+        // tasks are awaited so their exceptions surface from the returned ValueTask.
+        for (var i = 0; i < steps.Length; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            instance = await step.ApplyAsync(instance, cancellationToken).ConfigureAwait(false);
+            var pending = steps[i].ApplyAsync(instance, cancellationToken);
+            if (!pending.IsCompletedSuccessfully)
+            {
+                return ContinueStepsAsync(pending, steps, i + 1, cancellationToken);
+            }
+
+            instance = pending.Result;
+        }
+
+        return new ValueTask<T>(instance);
+    }
+
+    private static async ValueTask<T> ContinueStepsAsync(
+        ValueTask<T> pending,
+        ITransformerStep<T>[] steps,
+        int index,
+        CancellationToken cancellationToken)
+    {
+        var instance = await pending.ConfigureAwait(false);
+        for (; index < steps.Length; index++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            instance = await steps[index].ApplyAsync(instance, cancellationToken).ConfigureAwait(false);
         }
 
         return instance;
@@ -192,19 +219,51 @@ public sealed class PropertyRule<T, TProperty> : ITransformerStep<T>
 
         var read = _read;
         var write = _write;
-        return new DelegateStep<T>(async (instance, token) =>
+        return new DelegateStep<T>((instance, token) => ApplyRules(instance, read, write, rules, token));
+    }
+
+    private static ValueTask<T> ApplyRules(
+        T instance,
+        Func<T, TProperty> read,
+        Func<T, TProperty, T> write,
+        ITransformerRule<TProperty, TProperty>[] rules,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var value = read(instance);
+        for (var i = 0; i < rules.Length; i++)
         {
-            token.ThrowIfCancellationRequested();
-            var value = read(instance);
-            foreach (var rule in rules)
+            cancellationToken.ThrowIfCancellationRequested();
+            var pending = rules[i].TransformAsync(value, cancellationToken);
+            if (!pending.IsCompletedSuccessfully)
             {
-                token.ThrowIfCancellationRequested();
-                value = await rule.TransformAsync(value, token).ConfigureAwait(false);
+                return ContinueRulesAsync(pending, rules, i + 1, instance, write, cancellationToken);
             }
 
-            token.ThrowIfCancellationRequested();
-            return write(instance, value);
-        });
+            value = pending.Result;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return new ValueTask<T>(write(instance, value));
+    }
+
+    private static async ValueTask<T> ContinueRulesAsync(
+        ValueTask<TProperty> pending,
+        ITransformerRule<TProperty, TProperty>[] rules,
+        int index,
+        T instance,
+        Func<T, TProperty, T> write,
+        CancellationToken cancellationToken)
+    {
+        var value = await pending.ConfigureAwait(false);
+        for (; index < rules.Length; index++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            value = await rules[index].TransformAsync(value, cancellationToken).ConfigureAwait(false);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return write(instance, value);
     }
 
     ValueTask<T> ITransformerStep<T>.ApplyAsync(T instance, CancellationToken cancellationToken)
@@ -310,30 +369,106 @@ public sealed class PropertyConversion<T, TIn, TOut> : IPendingConversion<T, TIn
 
         var run = _run;
         var write = _write;
-        return new DelegateStep<T>(async (instance, token) =>
-        {
-            token.ThrowIfCancellationRequested();
-            var value = read(instance);
-            foreach (var rule in sourceRules)
-            {
-                token.ThrowIfCancellationRequested();
-                value = await rule.TransformAsync(value, token).ConfigureAwait(false);
-            }
-
-            token.ThrowIfCancellationRequested();
-            var converted = await run(value, token).ConfigureAwait(false);
-            token.ThrowIfCancellationRequested();
-            return write(instance, converted);
-        });
+        return new DelegateStep<T>((instance, token) =>
+            ApplyConversion(instance, read, sourceRules, run, write, token));
     }
 
-    private static async ValueTask<TNext> Append<TNext>(
+    private static ValueTask<T> ApplyConversion(
+        T instance,
+        Func<T, TIn> read,
+        ITransformerRule<TIn, TIn>[] sourceRules,
+        Func<TIn, CancellationToken, ValueTask<TOut>> run,
+        Func<T, TOut, T> write,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var value = read(instance);
+        for (var i = 0; i < sourceRules.Length; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var pending = sourceRules[i].TransformAsync(value, cancellationToken);
+            if (!pending.IsCompletedSuccessfully)
+            {
+                return ContinueSourceAsync(
+                    pending,
+                    sourceRules,
+                    i + 1,
+                    instance,
+                    run,
+                    write,
+                    cancellationToken);
+            }
+
+            value = pending.Result;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        var converted = run(value, cancellationToken);
+        if (!converted.IsCompletedSuccessfully)
+        {
+            return ContinueConvertedAsync(converted, instance, write, cancellationToken);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return new ValueTask<T>(write(instance, converted.Result));
+    }
+
+    private static async ValueTask<T> ContinueSourceAsync(
+        ValueTask<TIn> pending,
+        ITransformerRule<TIn, TIn>[] sourceRules,
+        int index,
+        T instance,
+        Func<TIn, CancellationToken, ValueTask<TOut>> run,
+        Func<T, TOut, T> write,
+        CancellationToken cancellationToken)
+    {
+        var value = await pending.ConfigureAwait(false);
+        for (; index < sourceRules.Length; index++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            value = await sourceRules[index].TransformAsync(value, cancellationToken).ConfigureAwait(false);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        var converted = await run(value, cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        return write(instance, converted);
+    }
+
+    private static async ValueTask<T> ContinueConvertedAsync(
+        ValueTask<TOut> pending,
+        T instance,
+        Func<T, TOut, T> write,
+        CancellationToken cancellationToken)
+    {
+        var converted = await pending.ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        return write(instance, converted);
+    }
+
+    private static ValueTask<TNext> Append<TNext>(
         Func<TIn, CancellationToken, ValueTask<TOut>> previous,
         ITransformerRule<TOut, TNext> next,
         TIn value,
         CancellationToken cancellationToken)
     {
-        var current = await previous(value, cancellationToken).ConfigureAwait(false);
+        var pending = previous(value, cancellationToken);
+        if (!pending.IsCompletedSuccessfully)
+        {
+            return ContinueThenAsync(pending, next, cancellationToken);
+        }
+
+        var current = pending.Result;
+        cancellationToken.ThrowIfCancellationRequested();
+        return next.TransformAsync(current, cancellationToken);
+    }
+
+    private static async ValueTask<TNext> ContinueThenAsync<TNext>(
+        ValueTask<TOut> pending,
+        ITransformerRule<TOut, TNext> next,
+        CancellationToken cancellationToken)
+    {
+        var current = await pending.ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         return await next.TransformAsync(current, cancellationToken).ConfigureAwait(false);
     }

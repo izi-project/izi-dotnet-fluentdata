@@ -166,6 +166,290 @@ public class TransformerObjectTests
         Assert.Equal("Ada", customer.Name);
     }
 
+    [Fact]
+    public async Task All_sync_class_pipeline_returns_a_completed_ValueTask()
+    {
+        var transformer = new Transformer<Customer>();
+        transformer.RuleFor(customer => customer.Name)
+            .Add(TransformerRules.Trim())
+            .Add(TransformerRules.ToUpper());
+        transformer.RuleFor(customer => customer.AgeText)
+            .Add(TransformerRules.Trim())
+            .Convert(TransformerRules.Parse<int>(Invariant))
+            .Then(TransformerRules.Add(1))
+            .Into(customer => customer.Age);
+
+        var pending = transformer.TransformAsync(new Customer
+        {
+            Name = "  ada  ",
+            AgeText = " 6 ",
+            Age = 0,
+        });
+
+        Assert.True(pending.IsCompletedSuccessfully);
+        var customer = await pending.ConfigureAwait(true);
+        Assert.Equal("ADA", customer.Name);
+        Assert.Equal(7, customer.Age);
+        Assert.Equal(" 6 ", customer.AgeText);
+    }
+
+    [Fact]
+    public async Task All_sync_struct_pipeline_returns_a_completed_ValueTask()
+    {
+        var transformer = new Transformer<Point>();
+        transformer.RuleFor(point => point.X).Add(TransformerRules.Add(1)).Add(TransformerRules.Add(1));
+        transformer.RuleFor(point => point.Y).Add(TransformerRules.Multiply(3));
+
+        var pending = transformer.TransformAsync(new Point { X = 1, Y = 5 });
+
+        Assert.True(pending.IsCompletedSuccessfully);
+        var point = await pending.ConfigureAwait(true);
+        Assert.Equal(3, point.X);
+        Assert.Equal(15, point.Y);
+    }
+
+    [Fact]
+    public async Task Yield_in_the_middle_of_an_Add_chain_runs_later_steps()
+    {
+        var order = new List<string>();
+        var transformer = new Transformer<Customer>();
+        transformer.RuleFor(customer => customer.Name)
+            .Add(TransformerRules.Map<string, string>(name =>
+            {
+                order.Add("trim");
+                return name.Trim();
+            }))
+            .Add(async (name, _) =>
+            {
+                order.Add("yield");
+                await Task.Yield();
+                return name;
+            })
+            .Add(TransformerRules.Map<string, string>(name =>
+            {
+                order.Add("upper");
+                return name.ToUpperInvariant();
+            }));
+        transformer.RuleFor(customer => customer.Age).Add(TransformerRules.Map<int, int>(age =>
+        {
+            order.Add("age");
+            return age + 1;
+        }));
+
+        var pending = transformer.TransformAsync(new Customer { Name = "  ada  ", Age = 4 });
+        var customer = await pending.ConfigureAwait(true);
+        Assert.Equal("ADA", customer.Name);
+        Assert.Equal(5, customer.Age);
+        Assert.Equal(new[] { "trim", "yield", "upper", "age" }, order);
+    }
+
+    [Fact]
+    public async Task Yield_in_the_middle_of_a_Then_chain_runs_later_steps()
+    {
+        var order = new List<string>();
+        var transformer = new Transformer<Customer>();
+        transformer.RuleFor(customer => customer.AgeText)
+            .Add(TransformerRules.Map<string, string>(text =>
+            {
+                order.Add("pre");
+                return text.Trim();
+            }))
+            .Convert(TransformerRules.Map<string, string>(text =>
+            {
+                order.Add("convert");
+                return text;
+            }))
+            .Then(TransformerRules.Map<string, string>(text =>
+            {
+                order.Add("then-before");
+                return text + "0";
+            }))
+            .Then(async (text, _) =>
+            {
+                order.Add("yield");
+                await Task.Yield();
+                return text;
+            })
+            .Then(TransformerRules.Map<string, int>(text =>
+            {
+                order.Add("then-after");
+                return int.Parse(text, Invariant);
+            }))
+            .Into(customer => customer.Age);
+
+        var pending = transformer.TransformAsync(new Customer { AgeText = " 4 " });
+        var customer = await pending.ConfigureAwait(true);
+        Assert.Equal(40, customer.Age);
+        Assert.Equal(" 4 ", customer.AgeText);
+        Assert.Equal(new[] { "pre", "convert", "then-before", "yield", "then-after" }, order);
+    }
+
+    [Fact]
+    public async Task Sync_faulted_ValueTask_propagates()
+    {
+        var later = 0;
+        var addChain = new Transformer<Customer>();
+        addChain.RuleFor(customer => customer.Name)
+            .Add(TransformerRules.Trim())
+            .Add(static async (value, _) =>
+            {
+                await new ValueTask().ConfigureAwait(true);
+                throw new InvalidOperationException("sync-add:" + value);
+            })
+            .Add((_, _) =>
+            {
+                later++;
+                return new ValueTask<string>("skipped");
+            });
+
+        var addPending = addChain.TransformAsync(new Customer { Name = "  ada  " });
+        var addError = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await addPending.ConfigureAwait(true));
+        Assert.Equal("sync-add:ada", addError.Message);
+        Assert.Equal(0, later);
+
+        var thenLater = 0;
+        var conversion = new Transformer<Customer>();
+        conversion.RuleFor(customer => customer.AgeText)
+            .Convert(new TransformerRule<string, string>(static async (value, _) =>
+            {
+                await new ValueTask().ConfigureAwait(true);
+                throw new InvalidOperationException("sync-then:" + value);
+            }))
+            .Then<int>((_, _) =>
+            {
+                thenLater++;
+                return new ValueTask<int>(1);
+            })
+            .Into(customer => customer.Age);
+
+        var unchanged = new Customer { AgeText = "7", Age = 3 };
+        var thenPending = conversion.TransformAsync(unchanged);
+        var thenError = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await thenPending.ConfigureAwait(true));
+        Assert.Equal("sync-then:7", thenError.Message);
+        Assert.Equal(0, thenLater);
+        Assert.Equal(3, unchanged.Age);
+        Assert.Equal("7", unchanged.AgeText);
+    }
+
+    [Fact]
+    public async Task Async_fault_propagates()
+    {
+        var later = 0;
+        var addChain = new Transformer<Customer>();
+        addChain.RuleFor(customer => customer.Name)
+            .Add(TransformerRules.Trim())
+            .Add(async (value, _) =>
+            {
+                await Task.Yield();
+                throw new InvalidOperationException("async-add:" + value);
+            })
+            .Add((_, _) =>
+            {
+                later++;
+                return new ValueTask<string>("skipped");
+            });
+
+        var addPending = addChain.TransformAsync(new Customer { Name = "  ada  " });
+        Assert.False(addPending.IsCompletedSuccessfully);
+        var addError = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await addPending.ConfigureAwait(true));
+        Assert.Equal("async-add:ada", addError.Message);
+        Assert.Equal(0, later);
+
+        var thenLater = 0;
+        var conversion = new Transformer<Customer>();
+        conversion.RuleFor(customer => customer.AgeText)
+            .Add(TransformerRules.Trim())
+            .Convert(TransformerRules.Map<string, string>(text => text))
+            .Then<string>(async (value, _) =>
+            {
+                await Task.Yield();
+                throw new InvalidOperationException("async-then:" + value);
+            })
+            .Then<int>((_, _) =>
+            {
+                thenLater++;
+                return new ValueTask<int>(1);
+            })
+            .Into(customer => customer.Age);
+
+        var thenPending = conversion.TransformAsync(new Customer { AgeText = " 8 ", Age = 2 });
+        Assert.False(thenPending.IsCompletedSuccessfully);
+        var thenError = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await thenPending.ConfigureAwait(true));
+        Assert.Equal("async-then:8", thenError.Message);
+        Assert.Equal(0, thenLater);
+    }
+
+    [Fact]
+    public async Task Cancellation_is_honoured_mid_pipeline()
+    {
+        var addLater = 0;
+        using var duringAdd = new CancellationTokenSource();
+        var addChain = new Transformer<Customer>();
+        addChain.RuleFor(customer => customer.Name)
+            .Add(TransformerRules.Map<string, string>(name =>
+            {
+                duringAdd.Cancel();
+                return name.Trim();
+            }))
+            .Add((_, _) =>
+            {
+                addLater++;
+                return new ValueTask<string>("skipped");
+            });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            async () => await addChain.TransformAsync(new Customer { Name = "  ada  " }, duringAdd.Token).ConfigureAwait(true));
+        Assert.Equal(0, addLater);
+
+        var yieldLater = 0;
+        using var duringYield = new CancellationTokenSource();
+        var yieldChain = new Transformer<Customer>();
+        yieldChain.RuleFor(customer => customer.Name)
+            .Add(async (name, _) =>
+            {
+                await Task.Yield();
+                duringYield.Cancel();
+                return name;
+            })
+            .Add((_, _) =>
+            {
+                yieldLater++;
+                return new ValueTask<string>("skipped");
+            });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            async () => await yieldChain.TransformAsync(new Customer { Name = "ada" }, duringYield.Token).ConfigureAwait(true));
+        Assert.Equal(0, yieldLater);
+
+        var thenLater = 0;
+        using var duringThen = new CancellationTokenSource();
+        var conversion = new Transformer<Customer>();
+        conversion.RuleFor(customer => customer.AgeText)
+            .Convert(TransformerRules.Map<string, string>(text => text.Trim()))
+            .Then(TransformerRules.Map<string, string>(text =>
+            {
+                duringThen.Cancel();
+                return text;
+            }))
+            .Then<int>((_, _) =>
+            {
+                thenLater++;
+                return new ValueTask<int>(1);
+            })
+            .Into(customer => customer.Age);
+
+        var unchanged = new Customer { AgeText = " 9 ", Age = 4 };
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            async () => await conversion.TransformAsync(unchanged, duringThen.Token).ConfigureAwait(true));
+        Assert.Equal(0, thenLater);
+        Assert.Equal(4, unchanged.Age);
+        Assert.Equal(" 9 ", unchanged.AgeText);
+    }
+
     public sealed class Customer
     {
         public string Name { get; set; } = string.Empty;
