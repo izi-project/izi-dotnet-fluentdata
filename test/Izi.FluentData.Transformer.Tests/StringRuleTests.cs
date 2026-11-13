@@ -90,11 +90,10 @@ public class StringRuleTests
     }
 
     [Fact]
-    public async Task A_string_rule_chains_with_Then_and_observes_cancellation()
+    public async Task Trim_then_upper_and_cancellation_are_observed_on_the_rules()
     {
-        var pipeline = new Transformer<string, string>(TransformerRules.Trim())
-            .Then(TransformerRules.ToUpper());
-        Assert.Equal("HI", await pipeline.TransformAsync("  hi  "));
+        var trimmed = await TransformerRules.Trim().TransformAsync("  hi  ");
+        Assert.Equal("HI", await TransformerRules.ToUpper().TransformAsync(trimmed));
 
         using var cancelled = new CancellationTokenSource();
         await cancelled.CancelAsync();

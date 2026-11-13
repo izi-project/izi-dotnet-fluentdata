@@ -4,20 +4,20 @@ using System.Reflection;
 namespace Izi.FluentData.Transformer;
 
 /// <summary>
-/// Configures and runs property rules and whole-value steps for one object.
+/// Configures and runs property rules for one object. This is the only transformer type.
 /// </summary>
-/// <typeparam name="T">The object being transformed.</typeparam>
+/// <typeparam name="T">The object being transformed. Only its properties change.</typeparam>
 /// <remarks>
 /// <para>
-/// Steps run in the order they were registered. A <see cref="RuleFor{TProperty}"/> binding occupies
-/// that position; rules added to the returned <see cref="PropertyRule{T, TProperty}"/> stay inside it.
+/// Property rules run in the order they were registered. Rules added to the returned
+/// <see cref="PropertyRule{T, TProperty}"/> stay inside that binding.
 /// Configuration stays mutable between executions. <see cref="TransformAsync"/> copies the step list
 /// and each property's rules before it runs, so a registration on another thread does not change the
 /// pipeline that is already running.
 /// </para>
 /// <para>
-/// This type is separate from <see cref="Transformer{TIn, TOut}"/>, which remains a single immutable
-/// value-to-value pipeline.
+/// A type with no settable property, such as <see cref="string"/>, cannot use <see cref="RuleFor{TProperty}"/>.
+/// <see cref="TransformAsync"/> with no rules returns the input unchanged.
 /// </para>
 /// </remarks>
 public sealed class Transformer<T>
@@ -48,22 +48,7 @@ public sealed class Transformer<T>
         return rule;
     }
 
-    /// <summary>Appends a whole-value step. The function returns the next instance.</summary>
-    /// <param name="transform">The step. It receives the current instance and the cancellation token.</param>
-    /// <returns>This transformer, for chaining.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="transform"/> is <see langword="null"/>.</exception>
-    public Transformer<T> Transform(Func<T, CancellationToken, ValueTask<T>> transform)
-    {
-        ArgumentNullException.ThrowIfNull(transform);
-        lock (_gate)
-        {
-            _steps.Add(new WholeValueStep<T>(transform));
-        }
-
-        return this;
-    }
-
-    /// <summary>Runs the registered steps in registration order.</summary>
+    /// <summary>Runs the registered property rules in registration order.</summary>
     /// <param name="instance">The object to transform. Struct updates are returned; they are not written back to the caller.</param>
     /// <param name="cancellationToken">Checked before the run and between steps.</param>
     /// <returns>The transformed instance.</returns>
@@ -394,27 +379,6 @@ internal sealed class DelegateStep<T> : ITransformerStep<T>
     public ValueTask<T> ApplyAsync(T instance, CancellationToken cancellationToken)
     {
         return _apply(instance, cancellationToken);
-    }
-
-    public ITransformerStep<T> Snapshot()
-    {
-        return this;
-    }
-}
-
-internal sealed class WholeValueStep<T> : ITransformerStep<T>
-{
-    private readonly Func<T, CancellationToken, ValueTask<T>> _transform;
-
-    public WholeValueStep(Func<T, CancellationToken, ValueTask<T>> transform)
-    {
-        _transform = transform;
-    }
-
-    public async ValueTask<T> ApplyAsync(T instance, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        return await _transform(instance, cancellationToken).ConfigureAwait(false);
     }
 
     public ITransformerStep<T> Snapshot()

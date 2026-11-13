@@ -70,10 +70,8 @@ public class FormatAndNumericConversionTests
     [Fact]
     public async Task A_parse_then_checked_conversion_chain_returns_the_narrowed_value()
     {
-        var pipeline = new Transformer<string, int>(TransformerRules.Parse<int>(Invariant))
-            .Then(TransformerRules.ConvertChecked<int, short>());
-
-        Assert.Equal((short)42, await pipeline.TransformAsync("42"));
+        var parsed = await TransformerRules.Parse<int>(Invariant).TransformAsync("42");
+        Assert.Equal((short)42, await TransformerRules.ConvertChecked<int, short>().TransformAsync(parsed));
     }
 
     [Fact]

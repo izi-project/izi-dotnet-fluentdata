@@ -50,16 +50,16 @@ public class BinaryAndMapConversionTests
     [Fact]
     public async Task Map_and_MapAsync_compose_and_observe_cancellation()
     {
-        var pipeline = new Transformer<string, int>(TransformerRules.Parse<int>(CultureInfo.InvariantCulture))
-            .Then(TransformerRules.Map<int, int>(value => value + 1))
-            .Then(TransformerRules.MapAsync<int, string>(async (value, token) =>
-            {
-                await Task.Yield();
-                token.ThrowIfCancellationRequested();
-                return value.ToString(CultureInfo.InvariantCulture);
-            }));
+        var parsed = await TransformerRules.Parse<int>(CultureInfo.InvariantCulture).TransformAsync("42");
+        var incremented = await TransformerRules.Map<int, int>(value => value + 1).TransformAsync(parsed);
+        var text = await TransformerRules.MapAsync<int, string>(async (value, token) =>
+        {
+            await Task.Yield();
+            token.ThrowIfCancellationRequested();
+            return value.ToString(CultureInfo.InvariantCulture);
+        }).TransformAsync(incremented);
 
-        Assert.Equal("43", await pipeline.TransformAsync("42"));
+        Assert.Equal("43", text);
 
         var calls = 0;
         using var cancelled = new CancellationTokenSource();

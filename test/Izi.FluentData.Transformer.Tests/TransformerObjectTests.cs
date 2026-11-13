@@ -63,7 +63,7 @@ public class TransformerObjectTests
     }
 
     [Fact]
-    public async Task Transform_changes_the_whole_value_and_keeps_registration_order()
+    public async Task Property_rules_run_in_registration_order()
     {
         var order = new List<string>();
         var transformer = new Transformer<Customer>();
@@ -73,12 +73,6 @@ public class TransformerObjectTests
                 order.Add("name");
                 return name.Trim();
             }));
-        transformer.Transform((customer, _) =>
-        {
-            order.Add("whole");
-            customer.Name += "!";
-            return new ValueTask<Customer>(customer);
-        });
         transformer.RuleFor(customer => customer.Age).Add(
             TransformerRules.Map<int, int>(age =>
             {
@@ -89,18 +83,17 @@ public class TransformerObjectTests
         var customer = await transformer.TransformAsync(
             new Customer { Name = "  ada  ", Age = 1 });
 
-        Assert.Equal("ada!", customer.Name);
+        Assert.Equal("ada", customer.Name);
         Assert.Equal(2, customer.Age);
-        Assert.Equal(new[] { "name", "whole", "age" }, order);
+        Assert.Equal(new[] { "name", "age" }, order);
     }
 
     [Fact]
-    public async Task String_transformer_runs_whole_value_steps_and_rejects_RuleFor()
+    public async Task String_transformer_returns_the_input_and_rejects_RuleFor()
     {
         var transformer = new Transformer<string>();
-        transformer.Transform((value, _) => new ValueTask<string>(value.Trim().ToUpperInvariant()));
 
-        Assert.Equal("HI", await transformer.TransformAsync("  hi  "));
+        Assert.Equal("hi", await transformer.TransformAsync("hi"));
         Assert.Throws<ArgumentException>(() => transformer.RuleFor(value => value.Length));
     }
 
@@ -117,41 +110,42 @@ public class TransformerObjectTests
     }
 
     [Fact]
-    public async Task Cancellation_is_checked_between_steps()
+    public async Task Cancellation_is_checked_between_property_rules()
     {
         var ran = 0;
-        var transformer = new Transformer<string>();
+        var transformer = new Transformer<Customer>();
+        transformer.RuleFor(customer => customer.Name).Add(
+            TransformerRules.Map<string, string>(name =>
+            {
+                ran++;
+                return name;
+            }));
         using var cancelled = new CancellationTokenSource();
         await cancelled.CancelAsync();
-        transformer.Transform((value, _) =>
-        {
-            ran++;
-            return new ValueTask<string>(value);
-        });
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            async () => await transformer.TransformAsync("ada", cancelled.Token))
-;
+            async () => await transformer.TransformAsync(new Customer { Name = "ada" }, cancelled.Token).ConfigureAwait(true));
         Assert.Equal(0, ran);
 
         using var during = new CancellationTokenSource();
         var later = 0;
-        var pipeline = new Transformer<string>();
-        pipeline.Transform((value, _) =>
-        {
-            during.Cancel();
-            ran++;
-            return new ValueTask<string>(value);
-        });
-        pipeline.Transform((value, _) =>
-        {
-            later++;
-            return new ValueTask<string>(value);
-        });
+        var pipeline = new Transformer<Customer>();
+        pipeline.RuleFor(customer => customer.Name).Add(
+            TransformerRules.Map<string, string>(name =>
+            {
+                during.Cancel();
+                ran++;
+                return name;
+            }));
+        pipeline.RuleFor(customer => customer.Age).Add(
+            TransformerRules.Map<int, int>(age =>
+            {
+                later++;
+                return age;
+            }));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            async () => await pipeline.TransformAsync("ada", during.Token))
-;
+            async () => await pipeline.TransformAsync(new Customer { Name = "ada", Age = 1 }, during.Token).ConfigureAwait(true));
         Assert.Equal(1, ran);
         Assert.Equal(0, later);
     }
@@ -165,8 +159,7 @@ public class TransformerObjectTests
         var customer = new Customer { Name = "Ada", AgeText = "7", Age = 1 };
 
         var error = await Assert.ThrowsAsync<InvalidOperationException>(
-            async () => await transformer.TransformAsync(customer))
-;
+            async () => await transformer.TransformAsync(customer).ConfigureAwait(true));
 
         Assert.Contains("Into", error.Message, StringComparison.Ordinal);
         Assert.Equal(1, customer.Age);

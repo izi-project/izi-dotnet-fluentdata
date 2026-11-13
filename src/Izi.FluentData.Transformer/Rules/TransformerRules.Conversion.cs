@@ -6,8 +6,7 @@ namespace Izi.FluentData.Transformer;
 
 /// <summary>
 /// Factories for transformation steps. Each method returns a <see cref="TransformerRule{TIn,TOut}"/>
-/// that can be passed to <see cref="Transformer{TIn,TOut}"/> and chained with
-/// <see cref="Transformer{TIn,TOut}.Then{TNext}"/>.
+/// that <see cref="PropertyRule{T, TProperty}"/> and <see cref="PropertyConversion{T, TIn, TOut}"/> run.
 /// </summary>
 /// <remarks>
 /// <para>

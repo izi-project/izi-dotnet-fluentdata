@@ -84,10 +84,9 @@ public class DateTimeConversionTests
         Assert.Equal(1_700_000_000L, await TransformerRules.ToUnixTimeSeconds().TransformAsync(instant));
         Assert.Equal(instant, await TransformerRules.FromUnixTimeSeconds().TransformAsync(1_700_000_000L));
 
-        var pipeline = new Transformer<DateTimeOffset, long>(TransformerRules.ToUnixTimeMilliseconds())
-            .Then(TransformerRules.FromUnixTimeMilliseconds());
         var milliseconds = DateTimeOffset.FromUnixTimeMilliseconds(-1);
-        Assert.Equal(milliseconds, await pipeline.TransformAsync(milliseconds));
+        var unix = await TransformerRules.ToUnixTimeMilliseconds().TransformAsync(milliseconds);
+        Assert.Equal(milliseconds, await TransformerRules.FromUnixTimeMilliseconds().TransformAsync(unix));
 
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             TransformerRules.FromUnixTimeSeconds().TransformAsync(long.MaxValue));
@@ -96,10 +95,8 @@ public class DateTimeConversionTests
     [Fact]
     public async Task An_exact_date_parse_can_feed_a_date_only_conversion()
     {
-        var pipeline = new Transformer<string, DateTime>(
-                TransformerRules.ParseExactDateTime("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture))
-            .Then(TransformerRules.ToDateOnlyFromDateTime());
-
-        Assert.Equal(new DateOnly(2020, 1, 2), await pipeline.TransformAsync("2020-01-02 03:04"));
+        var parsed = await TransformerRules.ParseExactDateTime("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
+            .TransformAsync("2020-01-02 03:04");
+        Assert.Equal(new DateOnly(2020, 1, 2), await TransformerRules.ToDateOnlyFromDateTime().TransformAsync(parsed));
     }
 }
