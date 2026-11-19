@@ -1,205 +1,205 @@
 namespace Izi.FluentData.Transformer;
 
 /// <summary>
-/// Fluent wrappers that append a same-type catalogue rule and return the property rule.
+/// Fluent wrappers that append a same-type catalogue rule and return the property transformer.
 /// </summary>
 
 public static partial class TransformerRuleExtensions
 {
     /// <summary>Appends the catalogue AddYears rule.</summary>
-    public static PropertyRule<T, TProperty> AddYears<T, TProperty>(this PropertyRule<T, TProperty> rule, int years)
+    public static PropertyTransformer<T, TProperty> AddYears<T, TProperty>(this PropertyTransformer<T, TProperty> rule, int years)
         => rule.Add(TransformerRules.AddYears<TProperty>(years));
 
     /// <summary>Appends the catalogue AddMonths rule.</summary>
-    public static PropertyRule<T, TProperty> AddMonths<T, TProperty>(this PropertyRule<T, TProperty> rule, int months)
+    public static PropertyTransformer<T, TProperty> AddMonths<T, TProperty>(this PropertyTransformer<T, TProperty> rule, int months)
         => rule.Add(TransformerRules.AddMonths<TProperty>(months));
 
     /// <summary>Appends the catalogue AddDays rule.</summary>
-    public static PropertyRule<T, TProperty> AddDays<T, TProperty>(this PropertyRule<T, TProperty> rule, double days)
+    public static PropertyTransformer<T, TProperty> AddDays<T, TProperty>(this PropertyTransformer<T, TProperty> rule, double days)
         => rule.Add(TransformerRules.AddDays<TProperty>(days));
 
     /// <summary>Appends the catalogue AddHours rule.</summary>
-    public static PropertyRule<T, TProperty> AddHours<T, TProperty>(this PropertyRule<T, TProperty> rule, double hours)
+    public static PropertyTransformer<T, TProperty> AddHours<T, TProperty>(this PropertyTransformer<T, TProperty> rule, double hours)
         => rule.Add(TransformerRules.AddHours<TProperty>(hours));
 
     /// <summary>Appends the catalogue AddMinutes rule.</summary>
-    public static PropertyRule<T, TProperty> AddMinutes<T, TProperty>(this PropertyRule<T, TProperty> rule, double minutes)
+    public static PropertyTransformer<T, TProperty> AddMinutes<T, TProperty>(this PropertyTransformer<T, TProperty> rule, double minutes)
         => rule.Add(TransformerRules.AddMinutes<TProperty>(minutes));
 
     /// <summary>Appends the catalogue AddSeconds rule.</summary>
-    public static PropertyRule<T, TProperty> AddSeconds<T, TProperty>(this PropertyRule<T, TProperty> rule, double seconds)
+    public static PropertyTransformer<T, TProperty> AddSeconds<T, TProperty>(this PropertyTransformer<T, TProperty> rule, double seconds)
         => rule.Add(TransformerRules.AddSeconds<TProperty>(seconds));
 
     /// <summary>Appends the catalogue AddMilliseconds rule.</summary>
-    public static PropertyRule<T, TProperty> AddMilliseconds<T, TProperty>(this PropertyRule<T, TProperty> rule, double milliseconds)
+    public static PropertyTransformer<T, TProperty> AddMilliseconds<T, TProperty>(this PropertyTransformer<T, TProperty> rule, double milliseconds)
         => rule.Add(TransformerRules.AddMilliseconds<TProperty>(milliseconds));
 
     /// <summary>Appends the catalogue AddTicks rule.</summary>
-    public static PropertyRule<T, TProperty> AddTicks<T, TProperty>(this PropertyRule<T, TProperty> rule, long ticks)
+    public static PropertyTransformer<T, TProperty> AddTicks<T, TProperty>(this PropertyTransformer<T, TProperty> rule, long ticks)
         => rule.Add(TransformerRules.AddTicks<TProperty>(ticks));
 
     /// <summary>Appends the catalogue date or time Add rule.</summary>
-    public static PropertyRule<T, TProperty> Add<T, TProperty>(this PropertyRule<T, TProperty> rule, TimeSpan value)
+    public static PropertyTransformer<T, TProperty> Add<T, TProperty>(this PropertyTransformer<T, TProperty> rule, TimeSpan value)
         => rule.Add(TransformerRules.Add<TProperty>(value));
 
     /// <summary>Appends the catalogue date or time Subtract rule.</summary>
-    public static PropertyRule<T, TProperty> Subtract<T, TProperty>(this PropertyRule<T, TProperty> rule, TimeSpan value)
+    public static PropertyTransformer<T, TProperty> Subtract<T, TProperty>(this PropertyTransformer<T, TProperty> rule, TimeSpan value)
         => rule.Add(TransformerRules.Subtract<TProperty>(value));
 
     /// <summary>Appends the catalogue StartOfDay rule.</summary>
-    public static PropertyRule<T, TProperty> StartOfDay<T, TProperty>(this PropertyRule<T, TProperty> rule)
+    public static PropertyTransformer<T, TProperty> StartOfDay<T, TProperty>(this PropertyTransformer<T, TProperty> rule)
         => rule.Add(DateCache<TProperty>.StartOfDay);
 
     /// <summary>Appends the catalogue EndOfDay rule.</summary>
-    public static PropertyRule<T, TProperty> EndOfDay<T, TProperty>(this PropertyRule<T, TProperty> rule)
+    public static PropertyTransformer<T, TProperty> EndOfDay<T, TProperty>(this PropertyTransformer<T, TProperty> rule)
         => rule.Add(DateCache<TProperty>.EndOfDay);
 
     /// <summary>Appends the catalogue StartOfMonth rule.</summary>
-    public static PropertyRule<T, TProperty> StartOfMonth<T, TProperty>(this PropertyRule<T, TProperty> rule)
+    public static PropertyTransformer<T, TProperty> StartOfMonth<T, TProperty>(this PropertyTransformer<T, TProperty> rule)
         => rule.Add(DateCache<TProperty>.StartOfMonth);
 
     /// <summary>Appends the catalogue EndOfMonth rule.</summary>
-    public static PropertyRule<T, TProperty> EndOfMonth<T, TProperty>(this PropertyRule<T, TProperty> rule)
+    public static PropertyTransformer<T, TProperty> EndOfMonth<T, TProperty>(this PropertyTransformer<T, TProperty> rule)
         => rule.Add(DateCache<TProperty>.EndOfMonth);
 
     /// <summary>Appends the catalogue StartOfQuarter rule.</summary>
-    public static PropertyRule<T, TProperty> StartOfQuarter<T, TProperty>(this PropertyRule<T, TProperty> rule)
+    public static PropertyTransformer<T, TProperty> StartOfQuarter<T, TProperty>(this PropertyTransformer<T, TProperty> rule)
         => rule.Add(DateCache<TProperty>.StartOfQuarter);
 
     /// <summary>Appends the catalogue EndOfQuarter rule.</summary>
-    public static PropertyRule<T, TProperty> EndOfQuarter<T, TProperty>(this PropertyRule<T, TProperty> rule)
+    public static PropertyTransformer<T, TProperty> EndOfQuarter<T, TProperty>(this PropertyTransformer<T, TProperty> rule)
         => rule.Add(DateCache<TProperty>.EndOfQuarter);
 
     /// <summary>Appends the catalogue StartOfYear rule.</summary>
-    public static PropertyRule<T, TProperty> StartOfYear<T, TProperty>(this PropertyRule<T, TProperty> rule)
+    public static PropertyTransformer<T, TProperty> StartOfYear<T, TProperty>(this PropertyTransformer<T, TProperty> rule)
         => rule.Add(DateCache<TProperty>.StartOfYear);
 
     /// <summary>Appends the catalogue EndOfYear rule.</summary>
-    public static PropertyRule<T, TProperty> EndOfYear<T, TProperty>(this PropertyRule<T, TProperty> rule)
+    public static PropertyTransformer<T, TProperty> EndOfYear<T, TProperty>(this PropertyTransformer<T, TProperty> rule)
         => rule.Add(DateCache<TProperty>.EndOfYear);
 
     /// <summary>Appends the catalogue ToUniversalTime rule.</summary>
-    public static PropertyRule<T, TProperty> ToUniversalTime<T, TProperty>(this PropertyRule<T, TProperty> rule)
+    public static PropertyTransformer<T, TProperty> ToUniversalTime<T, TProperty>(this PropertyTransformer<T, TProperty> rule)
         => rule.Add(DateCache<TProperty>.ToUniversalTime);
 
     /// <summary>Appends the catalogue ToLocalTime rule.</summary>
-    public static PropertyRule<T, TProperty> ToLocalTime<T, TProperty>(this PropertyRule<T, TProperty> rule)
+    public static PropertyTransformer<T, TProperty> ToLocalTime<T, TProperty>(this PropertyTransformer<T, TProperty> rule)
         => rule.Add(DateCache<TProperty>.ToLocalTime);
 
     /// <summary>Appends the catalogue StartOfWeek rule.</summary>
-    public static PropertyRule<T, TProperty> StartOfWeek<T, TProperty>(this PropertyRule<T, TProperty> rule, DayOfWeek firstDayOfWeek)
+    public static PropertyTransformer<T, TProperty> StartOfWeek<T, TProperty>(this PropertyTransformer<T, TProperty> rule, DayOfWeek firstDayOfWeek)
         => rule.Add(TransformerRules.StartOfWeek<TProperty>(firstDayOfWeek));
 
     /// <summary>Appends the catalogue EndOfWeek rule.</summary>
-    public static PropertyRule<T, TProperty> EndOfWeek<T, TProperty>(this PropertyRule<T, TProperty> rule, DayOfWeek firstDayOfWeek)
+    public static PropertyTransformer<T, TProperty> EndOfWeek<T, TProperty>(this PropertyTransformer<T, TProperty> rule, DayOfWeek firstDayOfWeek)
         => rule.Add(TransformerRules.EndOfWeek<TProperty>(firstDayOfWeek));
 
     /// <summary>Appends the catalogue RoundTo rule.</summary>
-    public static PropertyRule<T, TProperty> RoundTo<T, TProperty>(this PropertyRule<T, TProperty> rule, TimeSpan interval)
+    public static PropertyTransformer<T, TProperty> RoundTo<T, TProperty>(this PropertyTransformer<T, TProperty> rule, TimeSpan interval)
         => rule.Add(TransformerRules.RoundTo<TProperty>(interval));
 
     /// <summary>Appends the catalogue TruncateTo rule.</summary>
-    public static PropertyRule<T, TProperty> TruncateTo<T, TProperty>(this PropertyRule<T, TProperty> rule, TimeSpan interval)
+    public static PropertyTransformer<T, TProperty> TruncateTo<T, TProperty>(this PropertyTransformer<T, TProperty> rule, TimeSpan interval)
         => rule.Add(TransformerRules.TruncateTo<TProperty>(interval));
 
     /// <summary>Appends the catalogue CeilingTo rule.</summary>
-    public static PropertyRule<T, TProperty> CeilingTo<T, TProperty>(this PropertyRule<T, TProperty> rule, TimeSpan interval)
+    public static PropertyTransformer<T, TProperty> CeilingTo<T, TProperty>(this PropertyTransformer<T, TProperty> rule, TimeSpan interval)
         => rule.Add(TransformerRules.CeilingTo<TProperty>(interval));
 
     /// <summary>Appends the catalogue WithYear rule.</summary>
-    public static PropertyRule<T, TProperty> WithYear<T, TProperty>(this PropertyRule<T, TProperty> rule, int year)
+    public static PropertyTransformer<T, TProperty> WithYear<T, TProperty>(this PropertyTransformer<T, TProperty> rule, int year)
         => rule.Add(TransformerRules.WithYear<TProperty>(year));
 
     /// <summary>Appends the catalogue WithMonth rule.</summary>
-    public static PropertyRule<T, TProperty> WithMonth<T, TProperty>(this PropertyRule<T, TProperty> rule, int month)
+    public static PropertyTransformer<T, TProperty> WithMonth<T, TProperty>(this PropertyTransformer<T, TProperty> rule, int month)
         => rule.Add(TransformerRules.WithMonth<TProperty>(month));
 
     /// <summary>Appends the catalogue WithDay rule.</summary>
-    public static PropertyRule<T, TProperty> WithDay<T, TProperty>(this PropertyRule<T, TProperty> rule, int day)
+    public static PropertyTransformer<T, TProperty> WithDay<T, TProperty>(this PropertyTransformer<T, TProperty> rule, int day)
         => rule.Add(TransformerRules.WithDay<TProperty>(day));
 
     /// <summary>Appends the catalogue WithHour rule.</summary>
-    public static PropertyRule<T, TProperty> WithHour<T, TProperty>(this PropertyRule<T, TProperty> rule, int hour)
+    public static PropertyTransformer<T, TProperty> WithHour<T, TProperty>(this PropertyTransformer<T, TProperty> rule, int hour)
         => rule.Add(TransformerRules.WithHour<TProperty>(hour));
 
     /// <summary>Appends the catalogue WithMinute rule.</summary>
-    public static PropertyRule<T, TProperty> WithMinute<T, TProperty>(this PropertyRule<T, TProperty> rule, int minute)
+    public static PropertyTransformer<T, TProperty> WithMinute<T, TProperty>(this PropertyTransformer<T, TProperty> rule, int minute)
         => rule.Add(TransformerRules.WithMinute<TProperty>(minute));
 
     /// <summary>Appends the catalogue WithSecond rule.</summary>
-    public static PropertyRule<T, TProperty> WithSecond<T, TProperty>(this PropertyRule<T, TProperty> rule, int second)
+    public static PropertyTransformer<T, TProperty> WithSecond<T, TProperty>(this PropertyTransformer<T, TProperty> rule, int second)
         => rule.Add(TransformerRules.WithSecond<TProperty>(second));
 
     /// <summary>Appends the catalogue WithMillisecond rule.</summary>
-    public static PropertyRule<T, TProperty> WithMillisecond<T, TProperty>(this PropertyRule<T, TProperty> rule, int millisecond)
+    public static PropertyTransformer<T, TProperty> WithMillisecond<T, TProperty>(this PropertyTransformer<T, TProperty> rule, int millisecond)
         => rule.Add(TransformerRules.WithMillisecond<TProperty>(millisecond));
 
     /// <summary>Appends the catalogue SetTimeOfDay rule.</summary>
-    public static PropertyRule<T, TProperty> SetTimeOfDay<T, TProperty>(this PropertyRule<T, TProperty> rule, TimeOnly timeOfDay)
+    public static PropertyTransformer<T, TProperty> SetTimeOfDay<T, TProperty>(this PropertyTransformer<T, TProperty> rule, TimeOnly timeOfDay)
         => rule.Add(TransformerRules.SetTimeOfDay<TProperty>(timeOfDay));
 
     /// <summary>Appends the catalogue SetDate rule.</summary>
-    public static PropertyRule<T, TProperty> SetDate<T, TProperty>(this PropertyRule<T, TProperty> rule, DateOnly date)
+    public static PropertyTransformer<T, TProperty> SetDate<T, TProperty>(this PropertyTransformer<T, TProperty> rule, DateOnly date)
         => rule.Add(TransformerRules.SetDate<TProperty>(date));
 
     /// <summary>Appends the catalogue NextDayOfWeek rule.</summary>
-    public static PropertyRule<T, TProperty> NextDayOfWeek<T, TProperty>(this PropertyRule<T, TProperty> rule, DayOfWeek dayOfWeek)
+    public static PropertyTransformer<T, TProperty> NextDayOfWeek<T, TProperty>(this PropertyTransformer<T, TProperty> rule, DayOfWeek dayOfWeek)
         => rule.Add(TransformerRules.NextDayOfWeek<TProperty>(dayOfWeek));
 
     /// <summary>Appends the catalogue PreviousDayOfWeek rule.</summary>
-    public static PropertyRule<T, TProperty> PreviousDayOfWeek<T, TProperty>(this PropertyRule<T, TProperty> rule, DayOfWeek dayOfWeek)
+    public static PropertyTransformer<T, TProperty> PreviousDayOfWeek<T, TProperty>(this PropertyTransformer<T, TProperty> rule, DayOfWeek dayOfWeek)
         => rule.Add(TransformerRules.PreviousDayOfWeek<TProperty>(dayOfWeek));
 
     /// <summary>Appends the catalogue AddBusinessDays rule.</summary>
-    public static PropertyRule<T, TProperty> AddBusinessDays<T, TProperty>(this PropertyRule<T, TProperty> rule, int count, IEnumerable<DateOnly>? holidays = null)
+    public static PropertyTransformer<T, TProperty> AddBusinessDays<T, TProperty>(this PropertyTransformer<T, TProperty> rule, int count, IEnumerable<DateOnly>? holidays = null)
         => rule.Add(TransformerRules.AddBusinessDays<TProperty>(count, holidays));
 
     /// <summary>Appends the catalogue NextBusinessDay rule.</summary>
-    public static PropertyRule<T, TProperty> NextBusinessDay<T, TProperty>(this PropertyRule<T, TProperty> rule, IEnumerable<DateOnly>? holidays = null)
+    public static PropertyTransformer<T, TProperty> NextBusinessDay<T, TProperty>(this PropertyTransformer<T, TProperty> rule, IEnumerable<DateOnly>? holidays = null)
         => rule.Add(TransformerRules.NextBusinessDay<TProperty>(holidays));
 
     /// <summary>Appends the catalogue PreviousBusinessDay rule.</summary>
-    public static PropertyRule<T, TProperty> PreviousBusinessDay<T, TProperty>(this PropertyRule<T, TProperty> rule, IEnumerable<DateOnly>? holidays = null)
+    public static PropertyTransformer<T, TProperty> PreviousBusinessDay<T, TProperty>(this PropertyTransformer<T, TProperty> rule, IEnumerable<DateOnly>? holidays = null)
         => rule.Add(TransformerRules.PreviousBusinessDay<TProperty>(holidays));
 
     /// <summary>Appends the catalogue Negate rule.</summary>
-    public static PropertyRule<T, TimeSpan> Negate<T>(this PropertyRule<T, TimeSpan> rule)
+    public static PropertyTransformer<T, TimeSpan> Negate<T>(this PropertyTransformer<T, TimeSpan> rule)
         => rule.Add(TimeSpanRules.Negate);
 
     /// <summary>Appends the catalogue Duration rule.</summary>
-    public static PropertyRule<T, TimeSpan> Duration<T>(this PropertyRule<T, TimeSpan> rule)
+    public static PropertyTransformer<T, TimeSpan> Duration<T>(this PropertyTransformer<T, TimeSpan> rule)
         => rule.Add(TimeSpanRules.Duration);
 
     /// <summary>Appends the catalogue DateTime Clamp rule.</summary>
-    public static PropertyRule<T, DateTime> Clamp<T>(this PropertyRule<T, DateTime> rule, DateTime min, DateTime max)
+    public static PropertyTransformer<T, DateTime> Clamp<T>(this PropertyTransformer<T, DateTime> rule, DateTime min, DateTime max)
         => rule.Add(TransformerRules.Clamp(min, max));
 
     /// <summary>Appends the catalogue DateTimeOffset Clamp rule.</summary>
-    public static PropertyRule<T, DateTimeOffset> Clamp<T>(this PropertyRule<T, DateTimeOffset> rule, DateTimeOffset min, DateTimeOffset max)
+    public static PropertyTransformer<T, DateTimeOffset> Clamp<T>(this PropertyTransformer<T, DateTimeOffset> rule, DateTimeOffset min, DateTimeOffset max)
         => rule.Add(TransformerRules.Clamp(min, max));
 
     /// <summary>Appends the catalogue TimeSpan Clamp rule.</summary>
-    public static PropertyRule<T, TimeSpan> Clamp<T>(this PropertyRule<T, TimeSpan> rule, TimeSpan min, TimeSpan max)
+    public static PropertyTransformer<T, TimeSpan> Clamp<T>(this PropertyTransformer<T, TimeSpan> rule, TimeSpan min, TimeSpan max)
         => rule.Add(TransformerRules.Clamp(min, max));
 
     /// <summary>Appends the catalogue DateOnly Clamp rule.</summary>
-    public static PropertyRule<T, DateOnly> Clamp<T>(this PropertyRule<T, DateOnly> rule, DateOnly min, DateOnly max)
+    public static PropertyTransformer<T, DateOnly> Clamp<T>(this PropertyTransformer<T, DateOnly> rule, DateOnly min, DateOnly max)
         => rule.Add(TransformerRules.Clamp(min, max));
 
     /// <summary>Appends the catalogue TimeOnly Clamp rule.</summary>
-    public static PropertyRule<T, TimeOnly> Clamp<T>(this PropertyRule<T, TimeOnly> rule, TimeOnly min, TimeOnly max)
+    public static PropertyTransformer<T, TimeOnly> Clamp<T>(this PropertyTransformer<T, TimeOnly> rule, TimeOnly min, TimeOnly max)
         => rule.Add(TransformerRules.Clamp(min, max));
 
     /// <summary>Appends the catalogue SpecifyKind rule.</summary>
-    public static PropertyRule<T, DateTime> SpecifyKind<T>(this PropertyRule<T, DateTime> rule, DateTimeKind kind)
+    public static PropertyTransformer<T, DateTime> SpecifyKind<T>(this PropertyTransformer<T, DateTime> rule, DateTimeKind kind)
         => rule.Add(TransformerRules.SpecifyKind(kind));
 
     /// <summary>Appends the catalogue ToOffset rule.</summary>
-    public static PropertyRule<T, DateTimeOffset> ToOffset<T>(this PropertyRule<T, DateTimeOffset> rule, TimeSpan offset)
+    public static PropertyTransformer<T, DateTimeOffset> ToOffset<T>(this PropertyTransformer<T, DateTimeOffset> rule, TimeSpan offset)
         => rule.Add(TransformerRules.ToOffset(offset));
 
     /// <summary>Appends the catalogue ConvertToTimeZone rule.</summary>
-    public static PropertyRule<T, DateTimeOffset> ConvertToTimeZone<T>(this PropertyRule<T, DateTimeOffset> rule, TimeZoneInfo timeZone)
+    public static PropertyTransformer<T, DateTimeOffset> ConvertToTimeZone<T>(this PropertyTransformer<T, DateTimeOffset> rule, TimeZoneInfo timeZone)
         => rule.Add(TransformerRules.ConvertToTimeZone(timeZone));
 
     private static class DateCache<TProperty>

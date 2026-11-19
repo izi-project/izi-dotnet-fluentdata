@@ -1,3 +1,5 @@
+using Izi.FluentData.Transformer.Exceptions;
+
 namespace Izi.FluentData.Transformer.Tests;
 
 public class TransformerObjectTests
@@ -215,9 +217,10 @@ public class TransformerObjectTests
             });
 
         var addPending = addChain.TransformAsync(new Customer { Name = "  ada  " });
-        var addError = await Assert.ThrowsAsync<InvalidOperationException>(
+        var addError = await Assert.ThrowsAsync<PropertyTransformationException>(
             async () => await addPending.ConfigureAwait(true));
-        Assert.Equal("sync-add:ada", addError.Message);
+        Assert.Equal("Name", addError.PropertyName);
+        Assert.Equal("sync-add:ada", addError.InnerException!.Message);
         Assert.Equal(0, later);
     }
 
@@ -241,9 +244,10 @@ public class TransformerObjectTests
 
         var addPending = addChain.TransformAsync(new Customer { Name = "  ada  " });
         Assert.False(addPending.IsCompletedSuccessfully);
-        var addError = await Assert.ThrowsAsync<InvalidOperationException>(
+        var addError = await Assert.ThrowsAsync<PropertyTransformationException>(
             async () => await addPending.ConfigureAwait(true));
-        Assert.Equal("async-add:ada", addError.Message);
+        Assert.Equal("Name", addError.PropertyName);
+        Assert.Equal("async-add:ada", addError.InnerException!.Message);
         Assert.Equal(0, later);
     }
 

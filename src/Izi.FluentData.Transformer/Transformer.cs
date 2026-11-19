@@ -4,15 +4,15 @@ using System.Reflection;
 namespace Izi.FluentData.Transformer;
 
 /// <summary>
-/// Configures and runs property rules for one object. This is the only transformer type.
+/// Configures and runs property transformers for one object. This is the only transformer type.
 /// </summary>
 /// <typeparam name="T">The object being transformed. Only its properties change.</typeparam>
 /// <remarks>
 /// <para>
-/// Property rules run in the order they were registered. Rules added to the returned
-/// <see cref="PropertyRule{T, TProperty}"/> stay inside that binding.
+/// Property transformers run in the order they were registered. Rules added to the returned
+/// <see cref="PropertyTransformer{T, TProperty}"/> stay inside that binding.
 /// Configuration stays mutable between executions. <see cref="TransformAsync"/> reuses a snapshot of the
-/// step list taken when the configuration last changed. A registration on another thread does not change
+/// property list taken when the configuration last changed. A registration on another thread does not change
 /// a pipeline that is already running, and the next run sees the new rules.
 /// </para>
 /// <para>
@@ -34,56 +34,65 @@ namespace Izi.FluentData.Transformer;
 public sealed class Transformer<T> : ITransformer<T>
 {
     private readonly object _gate = new();
-    private readonly List<ITransformerStep<T>> _steps = [];
-    private ITransformerStep<T>[]? _cachedSteps;
+    private readonly List<IPropertyTransformer<T>> _properties = [];
+    private volatile IPropertyTransformer<T>[]? _cached;
 
     /// <summary>
-    /// Registers a same-type rule for one property. The property is read, the rules run, and the
+    /// Registers a same-type transformer for one property. The property is read, the rules run, and the
     /// result is written back to that property.
     /// </summary>
     /// <typeparam name="TProperty">The property type.</typeparam>
     /// <param name="property">A direct property access, for example <c>customer =&gt; customer.Name</c>.</param>
-    /// <returns>The property rule, so same-type steps can be added.</returns>
+    /// <returns>The property transformer, so same-type steps can be added.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="property"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">
     /// <paramref name="property"/> is not a simple settable property access.
     /// </exception>
-    public PropertyRule<T, TProperty> RuleFor<TProperty>(Expression<Func<T, TProperty>> property)
+    public PropertyTransformer<T, TProperty> RuleFor<TProperty>(Expression<Func<T, TProperty>> property)
     {
-        var (read, write) = PropertyAccess.Compile(property);
-        var rule = new PropertyRule<T, TProperty>(this, read, write);
+        var (name, read, write) = PropertyAccess.Compile(property);
+        var propertyTransformer = new PropertyTransformer<T, TProperty>(this, name, read, write);
         lock (_gate)
         {
-            _steps.Add(rule);
-            _cachedSteps = null;
+            _properties.Add(propertyTransformer);
+            InvalidateSnapshot();
         }
 
-        return rule;
+        return propertyTransformer;
     }
 
-    /// <summary>Runs the registered property rules in registration order.</summary>
+    /// <summary>Runs the registered property transformers in registration order.</summary>
     /// <param name="instance">
     /// The object to transform. A class with settable properties is updated on this instance. A struct is not
     /// mutated, and neither is a record or other object whose properties are init-only: those are cloned and
     /// the clone is returned.
     /// </param>
-    /// <param name="cancellationToken">Checked before the run and between steps.</param>
+    /// <param name="cancellationToken">Checked before the run and between properties and rules.</param>
     /// <returns>
     /// The transformed value. Callers must reassign it (<c>value = await transformer.TransformAsync(value)</c>).
     /// That assignment is required for structs and for records or other init-only properties, because the input
-    /// is not mutated. When every step finishes successfully without waiting, the returned
+    /// is not mutated. When every rule finishes successfully without waiting, the returned
     /// <see cref="ValueTask{TResult}"/> is already completed.
     /// </returns>
     /// <exception cref="OperationCanceledException">
-    /// <paramref name="cancellationToken"/> is cancelled before a step runs.
+    /// <paramref name="cancellationToken"/> is cancelled before a rule runs. Cancellation is not wrapped.
     /// </exception>
+    /// <exception cref="Izi.FluentData.Transformer.Exceptions.PropertyTransformationException">A property rule threw.</exception>
     public ValueTask<T> TransformAsync(T instance, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        ITransformerStep<T>[] steps;
-        lock (_gate)
+        var steps = _cached;
+        if (steps is null)
         {
-            steps = _cachedSteps ??= SnapshotSteps();
+            lock (_gate)
+            {
+                steps = _cached;
+                if (steps is null)
+                {
+                    steps = SnapshotProperties();
+                    _cached = steps;
+                }
+            }
         }
 
         // Successes that are already complete stay on this call. Faulted, cancelled, and incomplete
@@ -94,7 +103,7 @@ public sealed class Transformer<T> : ITransformer<T>
             var pending = steps[i].ApplyAsync(instance, cancellationToken);
             if (!pending.IsCompletedSuccessfully)
             {
-                return ContinueStepsAsync(pending, steps, i + 1, cancellationToken);
+                return ContinueAsync(pending, steps, i + 1, cancellationToken);
             }
 
             instance = pending.Result;
@@ -104,28 +113,30 @@ public sealed class Transformer<T> : ITransformer<T>
     }
 
     /// <summary>Drops the cached pipeline. Callers already hold <see cref="Gate"/>.</summary>
-    internal void InvalidateSnapshot() => _cachedSteps = null;
+    internal void InvalidateSnapshot() => _cached = null;
 
-    private ITransformerStep<T>[] SnapshotSteps()
+    internal object Gate => _gate;
+
+    private IPropertyTransformer<T>[] SnapshotProperties()
     {
-        var count = _steps.Count;
+        var count = _properties.Count;
         if (count == 0)
         {
-            return Array.Empty<ITransformerStep<T>>();
+            return Array.Empty<IPropertyTransformer<T>>();
         }
 
-        var steps = new ITransformerStep<T>[count];
+        var steps = new IPropertyTransformer<T>[count];
         for (var i = 0; i < count; i++)
         {
-            steps[i] = _steps[i].Snapshot();
+            steps[i] = _properties[i].Snapshot();
         }
 
         return steps;
     }
 
-    private static async ValueTask<T> ContinueStepsAsync(
+    private static async ValueTask<T> ContinueAsync(
         ValueTask<T> pending,
-        ITransformerStep<T>[] steps,
+        IPropertyTransformer<T>[] steps,
         int index,
         CancellationToken cancellationToken)
     {
@@ -138,25 +149,22 @@ public sealed class Transformer<T> : ITransformer<T>
 
         return instance;
     }
-
-    internal object Gate => _gate;
-}
-
-internal interface ITransformerStep<T>
-{
-    ValueTask<T> ApplyAsync(T instance, CancellationToken cancellationToken);
-
-    ITransformerStep<T> Snapshot();
 }
 
 internal static class PropertyAccess
 {
     private static readonly Func<object, object> CloneInstance = CreateMemberwiseClone();
 
-    public static (Func<T, TProperty> Read, Func<T, TProperty, T> Write) Compile<T, TProperty>(
+    public static (string Name, Func<T, TProperty> Read, Func<T, TProperty, T> Write) Compile<T, TProperty>(
         Expression<Func<T, TProperty>> property)
     {
         ArgumentNullException.ThrowIfNull(property);
+        if (property.Body is IndexExpression
+            || property.Body is MethodCallExpression { Method: { IsSpecialName: true, Name: "get_Item" } })
+        {
+            throw new ArgumentException("Indexers are not supported.", nameof(property));
+        }
+
         if (property.Body is not MemberExpression { Member: PropertyInfo info, Expression: ParameterExpression })
         {
             throw new ArgumentException(
@@ -189,7 +197,7 @@ internal static class PropertyAccess
         var read = property.Compile();
         if (IsInitOnly(setter))
         {
-            return (read, InitOnlyWrite<T, TProperty>(info));
+            return (info.Name, read, InitOnlyWrite<T, TProperty>(info));
         }
 
         var instance = Expression.Parameter(typeof(T), "instance");
@@ -199,7 +207,7 @@ internal static class PropertyAccess
             Expression.Block(assign, instance),
             instance,
             value).Compile();
-        return (read, write);
+        return (info.Name, read, write);
     }
 
     /// <summary>

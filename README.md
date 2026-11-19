@@ -35,7 +35,7 @@ sealed class Customer
 }
 ```
 
-`Trim`, `ToUpper`, `ToLower`, and `Round` are fluent wrappers over the catalogue in `TransformerRules`. Every step reads and writes the same property type, so the chain stays on that property.
+`Trim`, `ToUpper`, `ToLower`, and `Round` are fluent wrappers over the catalogue in `TransformerRules`. `RuleFor` returns a `PropertyTransformer<T, TProperty>` for that property. Every step reads and writes the same property type, so the chain stays on it.
 
 Conversions are not part of Transformer 2.0. Parse a string, map one property onto another, or change a numeric type in your own code (or in model binding) before you call `TransformAsync`.
 
@@ -60,6 +60,10 @@ sealed class Customer
 ```
 
 `Add` also accepts an `ITransformerRule<TProperty>`, including any `TransformerRules` factory.
+
+## Failures
+
+A rule that throws is reported as `PropertyTransformationException`, which is a `TransformationException`. The message is `Transformation failed for property 'Name'.`, `PropertyName` is that property, and `InnerException` is the original exception. `OperationCanceledException` is not wrapped.
 
 ## Structs and records
 
