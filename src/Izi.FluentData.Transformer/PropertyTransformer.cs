@@ -37,6 +37,9 @@ public sealed class PropertyTransformer<T, TProperty> : IPropertyConfiguration<T
     public PropertyTransformer<T, TProperty> Add(ITransformerRule<TProperty> rule)
     {
         ArgumentNullException.ThrowIfNull(rule);
+
+        // A TransformerRule is stored as-is. Any other implementation is adapted once, here,
+        // so the compiled runner only calls TransformerRule and does not allocate per value.
         if (rule is TransformerRule<TProperty> concrete)
         {
             return AddCore(concrete);
@@ -73,6 +76,7 @@ public sealed class PropertyTransformer<T, TProperty> : IPropertyConfiguration<T
             compiled = _compiled;
             if (compiled is null)
             {
+                // Snapshot the rule list. A later Add replaces _compiled and does not mutate this array.
                 compiled = new ImmutablePropertyTransformer<T, TProperty>(
                     PropertyName,
                     _read,
@@ -92,6 +96,8 @@ public sealed class PropertyTransformer<T, TProperty> : IPropertyConfiguration<T
         lock (_owner.Gate)
         {
             _rules.Add(rule);
+
+            // The object runner embeds this property's runner, so both caches have to be dropped.
             _compiled = null;
             _owner.InvalidateCompiled();
         }
@@ -134,6 +140,9 @@ internal sealed class ImmutablePropertyTransformer<T, TProperty> : ICompiledProp
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var pending = rules[i].TransformAsync(value, cancellationToken);
+
+                // Same split as the object runner: a completed rule is read here, and only a
+                // waiting rule pays for ContinueAsync.
                 if (!pending.IsCompletedSuccessfully)
                 {
                     return ContinueAsync(pending, rules, i + 1, instance, cancellationToken);

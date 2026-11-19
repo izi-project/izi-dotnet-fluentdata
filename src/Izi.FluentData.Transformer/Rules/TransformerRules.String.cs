@@ -206,7 +206,7 @@ public static partial class TransformerRules
 
     /// <summary>
     /// Keeps at most <paramref name="maxLength"/> characters. A null or empty string stays empty.
-    /// A negative length is rejected when the rule is created. The previous catalogue returned empty instead.
+    /// A negative length is rejected when the rule is created.
     /// </summary>
     /// <param name="maxLength">Maximum number of characters to keep. A negative length is rejected.</param>
     /// <returns>The rule that applies this transformation.</returns>
@@ -289,6 +289,8 @@ public static partial class TransformerRules
     private static TransformerRule<string> Text(Func<string, string> map)
         => Same<string>(value => map(value ?? string.Empty));
 
+    // The delegate is captured when the rule is built. A passing call returns a completed ValueTask
+    // and does not allocate a state machine.
     private static TransformerRule<T> Same<T>(Func<T, T> map)
         => new((value, _) => ValueTask.FromResult(map(value)));
 }

@@ -439,7 +439,7 @@ public static partial class TransformerRules
     /// Supports <see cref="DateTime"/>, <see cref="DateTimeOffset"/>, <see cref="TimeOnly"/>, and
     /// <see cref="TimeSpan"/>.
     /// <see cref="TimeOnly"/> wraps into the same day. A non-positive interval is rejected when the rule is created.
-    /// Negative spans are rounded with the same half-up rule, which the previous tick formula got wrong.
+    /// Negative spans use the same half-up rule: an exact half moves toward positive infinity.
     /// </summary>
     /// <typeparam name="T">The type the rule reads and returns.</typeparam>
     /// <param name="interval">Positive duration the result must be a multiple of.</param>

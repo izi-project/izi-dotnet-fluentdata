@@ -5,209 +5,384 @@ namespace Izi.FluentData.Transformer;
 /// <summary>
 /// Fluent wrappers that append a same-type catalogue rule and return the property transformer.
 /// </summary>
-
 public static partial class TransformerRuleExtensions
 {
     /// <summary>Appends the catalogue numeric Add rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="value">Amount added to the property. Integer addition is unchecked.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Add<T, TNumber>(this PropertyTransformer<T, TNumber> rule, TNumber value)
         where TNumber : INumberBase<TNumber>
         => rule.Add(TransformerRules.Add(value));
 
     /// <summary>Appends the catalogue numeric Subtract rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="value">Amount subtracted from the property. Integer subtraction is unchecked.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Subtract<T, TNumber>(this PropertyTransformer<T, TNumber> rule, TNumber value)
         where TNumber : INumberBase<TNumber>
         => rule.Add(TransformerRules.Subtract(value));
 
     /// <summary>Appends the catalogue Multiply rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="value">Factor the property is multiplied by.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Multiply<T, TNumber>(this PropertyTransformer<T, TNumber> rule, TNumber value)
         where TNumber : INumberBase<TNumber>
         => rule.Add(TransformerRules.Multiply(value));
 
     /// <summary>Appends the catalogue Divide rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="value">Divisor.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Divide<T, TNumber>(this PropertyTransformer<T, TNumber> rule, TNumber value)
         where TNumber : INumberBase<TNumber>
         => rule.Add(TransformerRules.Divide(value));
 
     /// <summary>Appends the catalogue Abs rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Abs<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : INumberBase<TNumber>
         => rule.Add(NumberCache<TNumber>.Abs);
 
     /// <summary>Appends the catalogue numeric Clamp rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="min">Inclusive lower bound.</param>
+    /// <param name="max">Inclusive upper bound.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Clamp<T, TNumber>(this PropertyTransformer<T, TNumber> rule, TNumber min, TNumber max)
         where TNumber : INumber<TNumber>
         => rule.Add(TransformerRules.Clamp(min, max));
 
     /// <summary>Appends the catalogue Invert rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Invert<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : INumberBase<TNumber>
         => rule.Add(NumberCache<TNumber>.Invert);
 
     /// <summary>Appends the catalogue Round rule to the nearest integer.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Round<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IFloatingPoint<TNumber>
         => rule.Add(FloatingCache<TNumber>.Round);
 
     /// <summary>Appends the catalogue Round rule for a digit count.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="digits">Number of fractional digits to keep.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Round<T, TNumber>(this PropertyTransformer<T, TNumber> rule, int digits)
         where TNumber : IFloatingPoint<TNumber>
         => rule.Add(TransformerRules.Round<TNumber>(digits));
 
     /// <summary>Appends the catalogue Round rule for a midpoint mode.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="mode">Policy used when a value is exactly halfway between two results.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Round<T, TNumber>(this PropertyTransformer<T, TNumber> rule, MidpointRounding mode)
         where TNumber : IFloatingPoint<TNumber>
         => rule.Add(TransformerRules.Round<TNumber>(mode));
 
     /// <summary>Appends the catalogue Round rule for a digit count and midpoint mode.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="digits">Number of fractional digits to keep.</param>
+    /// <param name="mode">Policy used when a value is exactly halfway between two results.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Round<T, TNumber>(this PropertyTransformer<T, TNumber> rule, int digits, MidpointRounding mode)
         where TNumber : IFloatingPoint<TNumber>
         => rule.Add(TransformerRules.Round<TNumber>(digits, mode));
 
     /// <summary>Appends the catalogue Floor rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Floor<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IFloatingPoint<TNumber>
         => rule.Add(FloatingCache<TNumber>.Floor);
 
     /// <summary>Appends the catalogue Ceiling rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Ceiling<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IFloatingPoint<TNumber>
         => rule.Add(FloatingCache<TNumber>.Ceiling);
 
     /// <summary>Appends the catalogue numeric Truncate rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Truncate<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IFloatingPoint<TNumber>
         => rule.Add(FloatingCache<TNumber>.Truncate);
 
     /// <summary>Appends the catalogue Normalize rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="min">Inclusive lower bound.</param>
+    /// <param name="max">Inclusive upper bound.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Normalize<T, TNumber>(this PropertyTransformer<T, TNumber> rule, TNumber min, TNumber max)
         where TNumber : INumber<TNumber>
         => rule.Add(TransformerRules.Normalize(min, max));
 
     /// <summary>Appends the catalogue Sqrt rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Sqrt<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IRootFunctions<TNumber>
         => rule.Add(RootCache<TNumber>.Sqrt);
 
     /// <summary>Appends the catalogue Cbrt rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Cbrt<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IRootFunctions<TNumber>
         => rule.Add(RootCache<TNumber>.Cbrt);
 
     /// <summary>Appends the catalogue RootN rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="n">Degree of the root.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> RootN<T, TNumber>(this PropertyTransformer<T, TNumber> rule, int n)
         where TNumber : IRootFunctions<TNumber>
         => rule.Add(TransformerRules.RootN<TNumber>(n));
 
     /// <summary>Appends the catalogue Pow rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="exponent">Power the value is raised to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Pow<T, TNumber>(this PropertyTransformer<T, TNumber> rule, TNumber exponent)
         where TNumber : IPowerFunctions<TNumber>
         => rule.Add(TransformerRules.Pow(exponent));
 
     /// <summary>Appends the catalogue Exp rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Exp<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IExponentialFunctions<TNumber>
         => rule.Add(ExpCache<TNumber>.Exp);
 
     /// <summary>Appends the catalogue Exp2 rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Exp2<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IExponentialFunctions<TNumber>
         => rule.Add(ExpCache<TNumber>.Exp2);
 
     /// <summary>Appends the catalogue Exp10 rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Exp10<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IExponentialFunctions<TNumber>
         => rule.Add(ExpCache<TNumber>.Exp10);
 
     /// <summary>Appends the catalogue natural Log rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Log<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : ILogarithmicFunctions<TNumber>
         => rule.Add(LogCache<TNumber>.Log);
 
     /// <summary>Appends the catalogue Log rule for a base.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="newBase">Base of the logarithm.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Log<T, TNumber>(this PropertyTransformer<T, TNumber> rule, TNumber newBase)
         where TNumber : ILogarithmicFunctions<TNumber>
         => rule.Add(TransformerRules.Log(newBase));
 
     /// <summary>Appends the catalogue Log2 rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Log2<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : ILogarithmicFunctions<TNumber>
         => rule.Add(LogCache<TNumber>.Log2);
 
     /// <summary>Appends the catalogue Log10 rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Log10<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : ILogarithmicFunctions<TNumber>
         => rule.Add(LogCache<TNumber>.Log10);
 
     /// <summary>Appends the catalogue Sin rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Sin<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
         => rule.Add(TrigCache<TNumber>.Sin);
 
     /// <summary>Appends the catalogue Cos rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Cos<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
         => rule.Add(TrigCache<TNumber>.Cos);
 
     /// <summary>Appends the catalogue Tan rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Tan<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
         => rule.Add(TrigCache<TNumber>.Tan);
 
     /// <summary>Appends the catalogue Asin rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Asin<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
         => rule.Add(TrigCache<TNumber>.Asin);
 
     /// <summary>Appends the catalogue Acos rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Acos<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
         => rule.Add(TrigCache<TNumber>.Acos);
 
     /// <summary>Appends the catalogue Atan rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Atan<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
         => rule.Add(TrigCache<TNumber>.Atan);
 
     /// <summary>Appends the catalogue DegreesToRadians rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> DegreesToRadians<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
         => rule.Add(TrigCache<TNumber>.DegreesToRadians);
 
     /// <summary>Appends the catalogue RadiansToDegrees rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> RadiansToDegrees<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : ITrigonometricFunctions<TNumber>
         => rule.Add(TrigCache<TNumber>.RadiansToDegrees);
 
     /// <summary>Appends the catalogue Sinh rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Sinh<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
         => rule.Add(HypCache<TNumber>.Sinh);
 
     /// <summary>Appends the catalogue Cosh rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Cosh<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
         => rule.Add(HypCache<TNumber>.Cosh);
 
     /// <summary>Appends the catalogue Tanh rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Tanh<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
         => rule.Add(HypCache<TNumber>.Tanh);
 
     /// <summary>Appends the catalogue Asinh rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Asinh<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
         => rule.Add(HypCache<TNumber>.Asinh);
 
     /// <summary>Appends the catalogue Acosh rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Acosh<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
         => rule.Add(HypCache<TNumber>.Acosh);
 
     /// <summary>Appends the catalogue Atanh rule.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <typeparam name="TNumber">The numeric property type.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
     public static PropertyTransformer<T, TNumber> Atanh<T, TNumber>(this PropertyTransformer<T, TNumber> rule)
         where TNumber : IHyperbolicFunctions<TNumber>
         => rule.Add(HypCache<TNumber>.Atanh);
 
+    // One shared rule per closed numeric type. The fluent methods that take no extra arguments reuse these.
     private static class NumberCache<TNumber>
         where TNumber : INumberBase<TNumber>
     {

@@ -91,6 +91,7 @@ public sealed class Transformer<T> : ITransformer<T>
 
     private ImmutableTransformer<T> Compiled()
     {
+        // The volatile read stays off the lock once a runner has been published.
         var compiled = _compiled;
         if (compiled is not null)
         {
@@ -99,6 +100,7 @@ public sealed class Transformer<T> : ITransformer<T>
 
         lock (_gate)
         {
+            // Another thread may have compiled while this one waited.
             compiled = _compiled;
             if (compiled is null)
             {
@@ -115,9 +117,11 @@ public sealed class Transformer<T> : ITransformer<T>
         var count = _properties.Count;
         if (count == 0)
         {
+            // The empty array is shared. The runner object itself is cached by Compiled.
             return new ImmutableTransformer<T>(Array.Empty<ICompiledPropertyTransformer<T>>());
         }
 
+        // Copy the property list. A registration after this returns does not change the runner.
         var steps = new ICompiledPropertyTransformer<T>[count];
         for (var i = 0; i < count; i++)
         {
@@ -147,6 +151,9 @@ internal sealed class ImmutableTransformer<T>
         {
             cancellationToken.ThrowIfCancellationRequested();
             var pending = steps[i].ApplyAsync(instance, cancellationToken);
+
+            // Read a completed step here. ContinueAsync is separate so the state machine
+            // is built only when a step actually waits.
             if (!pending.IsCompletedSuccessfully)
             {
                 return ContinueAsync(pending, steps, i + 1, cancellationToken);

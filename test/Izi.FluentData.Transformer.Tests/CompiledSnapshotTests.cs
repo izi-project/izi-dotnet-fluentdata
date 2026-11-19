@@ -38,6 +38,7 @@ public class CompiledSnapshotTests
         transformer.RuleFor(customer => customer.Age).Add(1);
         release.SetResult();
 
+        // This run already holds the rules from before ToUpper and Age were registered.
         var updated = await running.ConfigureAwait(true);
         Assert.Equal("ada", updated.Name);
         Assert.Equal(1, updated.Age);
