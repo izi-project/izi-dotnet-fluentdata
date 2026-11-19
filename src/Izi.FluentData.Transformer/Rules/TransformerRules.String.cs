@@ -15,61 +15,61 @@ public static partial class TransformerRules
     /// </summary>
     private static readonly TimeSpan CreatedRegexTimeout = TimeSpan.FromSeconds(1);
 
-    /// <summary>Trims both ends. A null string becomes empty before trimming, so the result is empty.</summary>
+    /// <summary>Trims both ends. A null string stays null.</summary>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<string> Trim() => Text(value => value.Trim());
+    public static TransformerRule<string> Trim() => MapKeepingNull(value => value.Trim());
 
-    /// <summary>Trims the start. A null string becomes empty.</summary>
+    /// <summary>Trims the start. A null string stays null.</summary>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<string> TrimStart() => Text(value => value.TrimStart());
+    public static TransformerRule<string> TrimStart() => MapKeepingNull(value => value.TrimStart());
 
-    /// <summary>Trims the end. A null string becomes empty.</summary>
+    /// <summary>Trims the end. A null string stays null.</summary>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<string> TrimEnd() => Text(value => value.TrimEnd());
+    public static TransformerRule<string> TrimEnd() => MapKeepingNull(value => value.TrimEnd());
 
-    /// <summary>Uppercases with <see cref="CultureInfo.InvariantCulture"/>.</summary>
+    /// <summary>Uppercases with <see cref="CultureInfo.InvariantCulture"/>. A null string stays null.</summary>
     /// <returns>The rule that applies this transformation.</returns>
     public static TransformerRule<string> ToUpper() => ToUpper(CultureInfo.InvariantCulture);
 
-    /// <summary>Uppercases with <paramref name="culture"/>. A null string becomes empty.</summary>
+    /// <summary>Uppercases with <paramref name="culture"/>. A null string stays null.</summary>
     /// <param name="culture">The culture whose casing rules are applied.</param>
     /// <returns>The rule that applies this transformation.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="culture"/> is <see langword="null"/>.</exception>
     public static TransformerRule<string> ToUpper(CultureInfo culture)
     {
         ArgumentNullException.ThrowIfNull(culture);
-        return Text(value => value.ToUpper(culture));
+        return MapKeepingNull(value => value.ToUpper(culture));
     }
 
-    /// <summary>Lowercases with <see cref="CultureInfo.InvariantCulture"/>.</summary>
+    /// <summary>Lowercases with <see cref="CultureInfo.InvariantCulture"/>. A null string stays null.</summary>
     /// <returns>The rule that applies this transformation.</returns>
     public static TransformerRule<string> ToLower() => ToLower(CultureInfo.InvariantCulture);
 
-    /// <summary>Lowercases with <paramref name="culture"/>. A null string becomes empty.</summary>
+    /// <summary>Lowercases with <paramref name="culture"/>. A null string stays null.</summary>
     /// <param name="culture">The culture whose casing rules are applied.</param>
     /// <returns>The rule that applies this transformation.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="culture"/> is <see langword="null"/>.</exception>
     public static TransformerRule<string> ToLower(CultureInfo culture)
     {
         ArgumentNullException.ThrowIfNull(culture);
-        return Text(value => value.ToLower(culture));
+        return MapKeepingNull(value => value.ToLower(culture));
     }
 
     /// <summary>
-    /// Title-cases with <see cref="CultureInfo.InvariantCulture"/>.
+    /// Title-cases with <see cref="CultureInfo.InvariantCulture"/>. A null string stays null.
     /// This is <see cref="TextInfo.ToTitleCase"/>, which does not lowercase characters that are already upper.
     /// </summary>
     /// <returns>The rule that applies this transformation.</returns>
     public static TransformerRule<string> ToTitleCase() => ToTitleCase(CultureInfo.InvariantCulture);
 
-    /// <summary>Title-cases with <paramref name="culture"/>. A null string becomes empty.</summary>
+    /// <summary>Title-cases with <paramref name="culture"/>. A null string stays null.</summary>
     /// <param name="culture">The culture whose casing rules are applied.</param>
     /// <returns>The rule that applies this transformation.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="culture"/> is <see langword="null"/>.</exception>
     public static TransformerRule<string> ToTitleCase(CultureInfo culture)
     {
         ArgumentNullException.ThrowIfNull(culture);
-        return Text(culture.TextInfo.ToTitleCase);
+        return MapKeepingNull(culture.TextInfo.ToTitleCase);
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public static partial class TransformerRules
             throw new ArgumentException("The value to replace must not be empty.", nameof(oldValue));
         }
 
-        return Text(value => value.Replace(oldValue, newValue, StringComparison.Ordinal));
+        return MapOrEmpty(value => value.Replace(oldValue, newValue, StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -105,11 +105,21 @@ public static partial class TransformerRules
     /// <exception cref="ArgumentNullException">
     /// <paramref name="regex"/> or <paramref name="replacement"/> is <see langword="null"/>.
     /// </exception>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="regex"/> has <see cref="Regex.InfiniteMatchTimeout"/>. Set a match timeout.
+    /// </exception>
     public static TransformerRule<string> ReplaceRegex(Regex regex, string replacement)
     {
         ArgumentNullException.ThrowIfNull(regex);
         ArgumentNullException.ThrowIfNull(replacement);
-        return Text(value => regex.Replace(value, replacement));
+        if (regex.MatchTimeout == Regex.InfiniteMatchTimeout)
+        {
+            throw new ArgumentException(
+                "The regular expression must have a match timeout. Set MatchTimeout or pass a timeout to the Regex constructor.",
+                nameof(regex));
+        }
+
+        return MapOrEmpty(value => regex.Replace(value, replacement));
     }
 
     /// <summary>
@@ -149,19 +159,19 @@ public static partial class TransformerRules
     }
 
     /// <summary>
-    /// Removes every whitespace run, including runs in the middle of the text. A null string becomes empty.
+    /// Removes every whitespace run, including runs in the middle of the text. A null string stays null.
     /// </summary>
     /// <returns>The rule that applies this transformation.</returns>
     public static TransformerRule<string> RemoveWhitespace()
-        => Text(value => WhitespacePattern().Replace(value, string.Empty));
+        => MapKeepingNull(value => WhitespacePattern().Replace(value, string.Empty));
 
     /// <summary>
     /// Collapses every whitespace run to a single space. Leading and trailing runs become one space;
-    /// this does not trim. A null string becomes empty.
+    /// this does not trim. A null string stays null.
     /// </summary>
     /// <returns>The rule that applies this transformation.</returns>
     public static TransformerRule<string> CollapseWhitespace()
-        => Text(value => WhitespacePattern().Replace(value, " "));
+        => MapKeepingNull(value => WhitespacePattern().Replace(value, " "));
 
     /// <summary>
     /// Returns the tail starting at <paramref name="startIndex"/>. A null string becomes empty, then the
@@ -179,7 +189,7 @@ public static partial class TransformerRules
             throw new ArgumentOutOfRangeException(nameof(startIndex));
         }
 
-        return Text(value => value[startIndex..]);
+        return MapOrEmpty(value => value[startIndex..]);
     }
 
     /// <summary>
@@ -207,7 +217,7 @@ public static partial class TransformerRules
             throw new ArgumentOutOfRangeException(nameof(length));
         }
 
-        return Text(value => value.Substring(startIndex, length));
+        return MapOrEmpty(value => value.Substring(startIndex, length));
     }
 
     /// <summary>
@@ -226,12 +236,12 @@ public static partial class TransformerRules
             throw new ArgumentOutOfRangeException(nameof(maxLength));
         }
 
-        return Text(value => value.Length <= maxLength ? value : value[..maxLength]);
+        return MapOrEmpty(value => value.Length <= maxLength ? value : value[..maxLength]);
     }
 
     /// <summary>
-    /// Pads on the left. A null string becomes empty. A negative width is rejected when the rule is
-    /// created.
+    /// Pads on the left. A null string becomes empty. There is no maximum width; choosing it is the
+    /// caller's responsibility. A negative width is rejected when the rule is created.
     /// </summary>
     /// <param name="totalWidth">Width of the padded result. A negative width is rejected.</param>
     /// <param name="paddingChar">Character used to fill the extra width.</param>
@@ -246,12 +256,12 @@ public static partial class TransformerRules
             throw new ArgumentOutOfRangeException(nameof(totalWidth));
         }
 
-        return Text(value => value.PadLeft(totalWidth, paddingChar));
+        return MapOrEmpty(value => value.PadLeft(totalWidth, paddingChar));
     }
 
     /// <summary>
-    /// Pads on the right. A null string becomes empty. A negative width is rejected when the rule is
-    /// created.
+    /// Pads on the right. A null string becomes empty. There is no maximum width; choosing it is the
+    /// caller's responsibility. A negative width is rejected when the rule is created.
     /// </summary>
     /// <param name="totalWidth">Width of the padded result. A negative width is rejected.</param>
     /// <param name="paddingChar">Character used to fill the extra width.</param>
@@ -266,7 +276,7 @@ public static partial class TransformerRules
             throw new ArgumentOutOfRangeException(nameof(totalWidth));
         }
 
-        return Text(value => value.PadRight(totalWidth, paddingChar));
+        return MapOrEmpty(value => value.PadRight(totalWidth, paddingChar));
     }
 
     /// <summary>
@@ -277,7 +287,7 @@ public static partial class TransformerRules
     public static TransformerRule<string> Prepend(string? prefix)
     {
         var captured = prefix ?? string.Empty;
-        return Text(value => captured + value);
+        return MapOrEmpty(value => captured + value);
     }
 
     /// <summary>Appends <paramref name="suffix"/>. A null source or suffix is treated as empty.</summary>
@@ -286,13 +296,18 @@ public static partial class TransformerRules
     public static TransformerRule<string> Append(string? suffix)
     {
         var captured = suffix ?? string.Empty;
-        return Text(value => value + captured);
+        return MapOrEmpty(value => value + captured);
     }
 
     [GeneratedRegex(@"\s+", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex WhitespacePattern();
 
-    private static TransformerRule<string> Text(Func<string, string> map)
+    // Null stays null. The map runs only for a non-null string.
+    private static TransformerRule<string> MapKeepingNull(Func<string, string> map)
+        => Same<string>(value => value is null ? null! : map(value));
+
+    // Null becomes empty before the map runs.
+    private static TransformerRule<string> MapOrEmpty(Func<string, string> map)
         => Same<string>(value => map(value ?? string.Empty));
 
     // The delegate is captured when the rule is built. A passing call returns a completed ValueTask

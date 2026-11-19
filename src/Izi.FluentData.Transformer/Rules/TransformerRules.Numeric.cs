@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Reflection;
 
 namespace Izi.FluentData.Transformer;
 
@@ -53,17 +54,14 @@ public static partial class TransformerRules
         => Same<TNumber>(source => source / value);
 
     /// <summary>
-    /// Returns <see cref="INumberBase{TSelf}.Abs"/>. <see cref="int.MinValue"/> throws
-    /// <see cref="OverflowException"/>.
+    /// Returns the absolute value. Signed integer <c>MinValue</c> saturates to <c>MaxValue</c>,
+    /// the same way unchecked integer addition wraps instead of throwing.
     /// </summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    /// <exception cref="OverflowException">
-    /// The value is outside the destination range. Thrown when the value is transformed.
-    /// </exception>
     public static TransformerRule<TNumber> Abs<TNumber>()
         where TNumber : INumberBase<TNumber>
-        => Same<TNumber>(TNumber.Abs);
+        => Same<TNumber>(AbsDispatch<TNumber>.Apply);
 
     /// <summary>
     /// Clamps to the inclusive range. <paramref name="min"/> greater than <paramref name="max"/> throws
@@ -111,11 +109,7 @@ public static partial class TransformerRules
     public static TransformerRule<TNumber> Round<TNumber>(int digits)
         where TNumber : IFloatingPoint<TNumber>
     {
-        if (digits < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(digits));
-        }
-
+        RequireDigits<TNumber>(digits);
         return Same<TNumber>(source => TNumber.Round(source, digits));
     }
 
@@ -138,11 +132,7 @@ public static partial class TransformerRules
     public static TransformerRule<TNumber> Round<TNumber>(int digits, MidpointRounding mode)
         where TNumber : IFloatingPoint<TNumber>
     {
-        if (digits < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(digits));
-        }
-
+        RequireDigits<TNumber>(digits);
         return Same<TNumber>(source => TNumber.Round(source, digits, mode));
     }
 
@@ -171,27 +161,48 @@ public static partial class TransformerRules
         => Same<TNumber>(TNumber.Truncate);
 
     /// <summary>
-    /// Maps <paramref name="min"/> to 0 and <paramref name="max"/> to 1 with <c>(source - min) / (max - min)</c>.
+    /// Maps <paramref name="min"/> to 0 and <paramref name="max"/> to 1.
     /// Equal bounds are rejected when the rule is created. Reversed bounds are kept and produce a reversed scale.
-    /// Integer division truncates toward zero.
+    /// When <c>max - min</c> is not finite, both sides are halved first so the span stays finite.
     /// </summary>
-    /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <param name="min">Value that maps to zero. It must differ from <paramref name="max"/>.</param>
-    /// <param name="max">
-    /// Value that maps to one. It must differ from <paramref name="min"/>. A reversed pair is kept and
-    /// reverses the scale.
-    /// </param>
+    /// <param name="max">Value that maps to one. It must differ from <paramref name="min"/>.</param>
     /// <returns>The rule that applies this transformation.</returns>
     /// <exception cref="ArgumentException">Normalize requires distinct bounds.</exception>
-    public static TransformerRule<TNumber> Normalize<TNumber>(TNumber min, TNumber max)
-        where TNumber : INumber<TNumber>
+    public static TransformerRule<double> Normalize(double min, double max)
     {
-        if (min == max)
-        {
-            throw new ArgumentException("Normalize requires distinct bounds.", nameof(max));
-        }
+        RequireDistinct(min, max);
+        return Same<double>(source => NormalizeFloating(source, min, max));
+    }
 
-        return Same<TNumber>(source => (source - min) / (max - min));
+    /// <summary>
+    /// Maps <paramref name="min"/> to 0 and <paramref name="max"/> to 1.
+    /// Equal bounds are rejected when the rule is created. Reversed bounds are kept and produce a reversed scale.
+    /// When <c>max - min</c> is not finite, both sides are halved first so the span stays finite.
+    /// </summary>
+    /// <param name="min">Value that maps to zero. It must differ from <paramref name="max"/>.</param>
+    /// <param name="max">Value that maps to one. It must differ from <paramref name="min"/>.</param>
+    /// <returns>The rule that applies this transformation.</returns>
+    /// <exception cref="ArgumentException">Normalize requires distinct bounds.</exception>
+    public static TransformerRule<float> Normalize(float min, float max)
+    {
+        RequireDistinct(min, max);
+        return Same<float>(source => NormalizeFloating(source, min, max));
+    }
+
+    /// <summary>
+    /// Maps <paramref name="min"/> to 0 and <paramref name="max"/> to 1.
+    /// Equal bounds are rejected when the rule is created. Reversed bounds are kept and produce a reversed scale.
+    /// A span that overflows <see cref="decimal"/> is computed from the halved bounds.
+    /// </summary>
+    /// <param name="min">Value that maps to zero. It must differ from <paramref name="max"/>.</param>
+    /// <param name="max">Value that maps to one. It must differ from <paramref name="min"/>.</param>
+    /// <returns>The rule that applies this transformation.</returns>
+    /// <exception cref="ArgumentException">Normalize requires distinct bounds.</exception>
+    public static TransformerRule<decimal> Normalize(decimal min, decimal max)
+    {
+        RequireDistinct(min, max);
+        return Same<decimal>(source => NormalizeDecimal(source, min, max));
     }
 
     /// <summary>Square root.</summary>
@@ -208,19 +219,21 @@ public static partial class TransformerRules
         where TNumber : IRootFunctions<TNumber>
         => Same<TNumber>(TNumber.Cbrt);
 
-    /// <summary>
-    /// Nth root. A zero or negative <paramref name="n"/> follows the BCL and can throw when the value is
-    /// transformed.
-    /// </summary>
+    /// <summary>Nth root. Zero is rejected when the rule is created.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
-    /// <param name="n">
-    /// Degree of the root. A zero or negative degree follows the BCL and can throw when the value is
-    /// transformed.
-    /// </param>
+    /// <param name="n">Degree of the root. Zero is rejected when the rule is created.</param>
     /// <returns>The rule that applies this transformation.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is zero.</exception>
     public static TransformerRule<TNumber> RootN<TNumber>(int n)
         where TNumber : IRootFunctions<TNumber>
-        => Same<TNumber>(source => TNumber.RootN(source, n));
+    {
+        if (n == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(n));
+        }
+
+        return Same<TNumber>(source => TNumber.RootN(source, n));
+    }
 
     /// <summary>Raises the value to <paramref name="exponent"/>.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
@@ -377,4 +390,120 @@ public static partial class TransformerRules
     public static TransformerRule<TNumber> Atanh<TNumber>()
         where TNumber : IHyperbolicFunctions<TNumber>
         => Same<TNumber>(TNumber.Atanh);
+
+    private static void RequireDigits<TNumber>(int digits)
+    {
+        // float.Round accepts 0..6 on net8.0 and net10.0. 7 throws from the BCL.
+        var maximum = 15;
+        if (typeof(TNumber) == typeof(float))
+        {
+            maximum = 6;
+        }
+        else if (typeof(TNumber) == typeof(decimal))
+        {
+            maximum = 28;
+        }
+
+        if ((uint)digits > (uint)maximum)
+        {
+            throw new ArgumentOutOfRangeException(nameof(digits));
+        }
+    }
+
+    private static void RequireDistinct<TNumber>(TNumber min, TNumber max)
+        where TNumber : INumber<TNumber>
+    {
+        if (min == max)
+        {
+            throw new ArgumentException("Normalize requires distinct bounds.", nameof(max));
+        }
+    }
+
+    private static double NormalizeFloating(double source, double min, double max)
+    {
+        var span = max - min;
+        if (double.IsFinite(span))
+        {
+            return (source - min) / span;
+        }
+
+        // Halve both sides when the span is not finite. Infinite bounds still produce NaN.
+        return ((source / 2d) - (min / 2d)) / ((max / 2d) - (min / 2d));
+    }
+
+    private static float NormalizeFloating(float source, float min, float max)
+    {
+        var span = max - min;
+        if (float.IsFinite(span))
+        {
+            return (source - min) / span;
+        }
+
+        // Halve both sides when the span is not finite. Infinite bounds still produce NaN.
+        return ((source / 2f) - (min / 2f)) / ((max / 2f) - (min / 2f));
+    }
+
+    private static decimal NormalizeDecimal(decimal source, decimal min, decimal max)
+    {
+        // Halve until max - min fits. One step turns ±decimal.MaxValue into a finite span of MaxValue.
+        for (var attempt = 0; attempt < 8; attempt++)
+        {
+            try
+            {
+                return (source - min) / (max - min);
+            }
+            catch (OverflowException)
+            {
+                source /= 2m;
+                min /= 2m;
+                max /= 2m;
+            }
+        }
+
+        return (source - min) / (max - min);
+    }
+
+    private static class AbsDispatch<TNumber>
+        where TNumber : INumberBase<TNumber>
+    {
+        public static readonly Func<TNumber, TNumber> Apply = Create();
+
+        private static Func<TNumber, TNumber> Create()
+        {
+            if (!typeof(IMinMaxValue<>).MakeGenericType(typeof(TNumber)).IsAssignableFrom(typeof(TNumber)))
+            {
+                return static value => TNumber.Abs(value);
+            }
+
+            // Closed once per numeric type. The returned delegate reads MinValue and MaxValue directly.
+            var bounded = typeof(BoundedAbs<>).MakeGenericType(typeof(TNumber));
+            return (Func<TNumber, TNumber>)bounded
+                .GetField(nameof(BoundedAbs<int>.Apply), BindingFlags.Public | BindingFlags.Static)!
+                .GetValue(null)!;
+        }
+    }
+
+    private static class BoundedAbs<TNumber>
+        where TNumber : INumberBase<TNumber>, IMinMaxValue<TNumber>
+    {
+        public static readonly Func<TNumber, TNumber> Apply = Create();
+
+        private static Func<TNumber, TNumber> Create()
+        {
+            // Probe Abs(MinValue) once per closed type, including Int128. Types that overflow saturate to MaxValue.
+            // The chosen delegate is reused for every later call.
+            var min = TNumber.MinValue;
+            var max = TNumber.MaxValue;
+            try
+            {
+                _ = TNumber.Abs(min);
+            }
+            catch (OverflowException)
+            {
+                return value => value == min ? max : TNumber.Abs(value);
+            }
+
+            return static value => TNumber.Abs(value);
+        }
+    }
 }

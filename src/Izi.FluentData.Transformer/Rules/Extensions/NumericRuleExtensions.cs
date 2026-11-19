@@ -143,15 +143,31 @@ public static partial class TransformerRuleExtensions
         where TNumber : IFloatingPoint<TNumber>
         => rule.Add(FloatingCache<TNumber>.Truncate);
 
-    /// <summary>Appends the catalogue Normalize rule.</summary>
+    /// <summary>Appends the catalogue Normalize rule for a <see cref="double"/> property.</summary>
     /// <typeparam name="T">The object that owns the property.</typeparam>
-    /// <typeparam name="TNumber">The numeric property type.</typeparam>
     /// <param name="rule">The property transformer the rule is appended to.</param>
     /// <param name="min">Inclusive lower bound.</param>
     /// <param name="max">Inclusive upper bound.</param>
     /// <returns>The same property transformer, so another rule can be appended.</returns>
-    public static PropertyTransformer<T, TNumber> Normalize<T, TNumber>(this PropertyTransformer<T, TNumber> rule, TNumber min, TNumber max)
-        where TNumber : INumber<TNumber>
+    public static PropertyTransformer<T, double> Normalize<T>(this PropertyTransformer<T, double> rule, double min, double max)
+        => rule.Add(TransformerRules.Normalize(min, max));
+
+    /// <summary>Appends the catalogue Normalize rule for a <see cref="float"/> property.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="min">Inclusive lower bound.</param>
+    /// <param name="max">Inclusive upper bound.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
+    public static PropertyTransformer<T, float> Normalize<T>(this PropertyTransformer<T, float> rule, float min, float max)
+        => rule.Add(TransformerRules.Normalize(min, max));
+
+    /// <summary>Appends the catalogue Normalize rule for a <see cref="decimal"/> property.</summary>
+    /// <typeparam name="T">The object that owns the property.</typeparam>
+    /// <param name="rule">The property transformer the rule is appended to.</param>
+    /// <param name="min">Inclusive lower bound.</param>
+    /// <param name="max">Inclusive upper bound.</param>
+    /// <returns>The same property transformer, so another rule can be appended.</returns>
+    public static PropertyTransformer<T, decimal> Normalize<T>(this PropertyTransformer<T, decimal> rule, decimal min, decimal max)
         => rule.Add(TransformerRules.Normalize(min, max));
 
     /// <summary>Appends the catalogue Sqrt rule.</summary>

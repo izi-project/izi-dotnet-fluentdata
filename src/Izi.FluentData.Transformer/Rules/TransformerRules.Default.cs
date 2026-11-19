@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Numerics;
+using System.Reflection;
 
 namespace Izi.FluentData.Transformer;
 
@@ -33,10 +34,10 @@ public static partial class TransformerRules
         => DefaultIf(defaultValue, source => source is null);
 
     /// <summary>
-    /// Returns <paramref name="defaultValue"/> for null, an empty string, an empty <see cref="ICollection"/>,
-    /// or an <see cref="IEnumerable"/> with no elements. The enumerator is disposed. Other values pass through.
-    /// A collection that implements <see cref="ICollection"/> uses <see cref="ICollection.Count"/> and
-    /// is not enumerated.
+    /// Returns <paramref name="defaultValue"/> for null, an empty string, or an empty collection.
+    /// Emptiness is taken from <see cref="ICollection"/>, <see cref="ICollection{T}"/>,
+    /// <see cref="IReadOnlyCollection{T}"/>, <see cref="string"/>, or an array. Any other
+    /// <see cref="IEnumerable"/> is treated as not empty and is never enumerated.
     /// </summary>
     /// <typeparam name="TSource">The type flowing through the rule.</typeparam>
     /// <param name="defaultValue">Value returned when the condition matches.</param>
@@ -182,8 +183,6 @@ public static partial class TransformerRules
 
     private static bool IsEmpty<TSource>(TSource source)
     {
-        // string is enumerable, so it has to be answered from its length before the sequence branch.
-        // ICollection.Count avoids moving an enumerator that may throw when it is walked.
         if (source is null)
         {
             return true;
@@ -199,23 +198,89 @@ public static partial class TransformerRules
             return collection.Count == 0;
         }
 
-        if (source is not IEnumerable enumerable)
+        if (source is Array array)
         {
-            return false;
+            return array.Length == 0;
         }
 
-        var enumerator = enumerable.GetEnumerator();
-        try
+        return CountedEmpty<TSource>.IsEmpty(source);
+    }
+
+    /// <summary>
+    /// Resolves <see cref="ICollection{T}"/> or <see cref="IReadOnlyCollection{T}"/> once per source type.
+    /// Later calls only read <c>Count</c>. A type with no count is not empty, so a lazy sequence is never walked.
+    /// </summary>
+    private static class CountedEmpty<TSource>
+    {
+        public static readonly Func<TSource, bool> IsEmpty = Create();
+
+        private static Func<TSource, bool> Create()
         {
-            return !enumerator.MoveNext();
-        }
-        finally
-        {
-            // A non-generic IEnumerator is not disposed by a using declaration.
-            if (enumerator is IDisposable disposable)
+            var counted = FindCountedInterface(typeof(TSource));
+            if (counted is null)
             {
-                disposable.Dispose();
+                return static _ => false;
             }
+
+            var found = counted.Value;
+            var element = found.Interface.GetGenericArguments()[0];
+            var helper = (found.Mutable
+                ? typeof(MutableCounted<,>)
+                : typeof(ReadOnlyCounted<,>)).MakeGenericType(typeof(TSource), element);
+            var method = helper.GetMethod(nameof(ReadOnlyCounted<IReadOnlyCollection<int>, int>.IsEmpty), BindingFlags.Public | BindingFlags.Static)!;
+            return (Func<TSource, bool>)Delegate.CreateDelegate(typeof(Func<TSource, bool>), method);
         }
+
+        private static (Type Interface, bool Mutable)? FindCountedInterface(Type type)
+        {
+            if (TryMatch(type, out var matched))
+            {
+                return matched;
+            }
+
+            foreach (var implemented in type.GetInterfaces())
+            {
+                if (TryMatch(implemented, out matched))
+                {
+                    return matched;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool TryMatch(Type candidate, out (Type Interface, bool Mutable) matched)
+        {
+            if (candidate.IsGenericType)
+            {
+                var definition = candidate.GetGenericTypeDefinition();
+                if (definition == typeof(ICollection<>))
+                {
+                    matched = (candidate, true);
+                    return true;
+                }
+
+                if (definition == typeof(IReadOnlyCollection<>))
+                {
+                    matched = (candidate, false);
+                    return true;
+                }
+            }
+
+            matched = default;
+            return false;
+        }
+    }
+
+    private static class ReadOnlyCounted<TCollection, TElement>
+        where TCollection : IReadOnlyCollection<TElement>
+    {
+        public static bool IsEmpty(TCollection value) => value.Count == 0;
+    }
+
+    private static class MutableCounted<TCollection, TElement>
+        where TCollection : ICollection<TElement>
+    {
+        public static bool IsEmpty(TCollection value) => value.Count == 0;
     }
 }

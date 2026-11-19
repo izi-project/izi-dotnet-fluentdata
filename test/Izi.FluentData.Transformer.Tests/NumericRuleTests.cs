@@ -13,7 +13,8 @@ public class NumericRuleTests
         Assert.Equal(double.PositiveInfinity, await TransformerRules.Divide(0d).TransformAsync(1d));
         Assert.Throws<DivideByZeroException>(() => TransformerRules.Divide(0).TransformAsync(1));
         Assert.Equal(4, await TransformerRules.Abs<int>().TransformAsync(-4));
-        Assert.Throws<OverflowException>(() => TransformerRules.Abs<int>().TransformAsync(int.MinValue));
+        Assert.Equal(int.MaxValue, await TransformerRules.Abs<int>().TransformAsync(int.MinValue));
+        Assert.Equal(long.MaxValue, await TransformerRules.Abs<long>().TransformAsync(long.MinValue));
         Assert.Equal(4, await TransformerRules.Invert<int>().TransformAsync(-4));
         Assert.Equal(3, await TransformerRules.Clamp(1, 3).TransformAsync(9));
         Assert.Equal(1, await TransformerRules.Clamp(1, 3).TransformAsync(0));
@@ -21,12 +22,12 @@ public class NumericRuleTests
     }
 
     [Fact]
-    public async Task Normalize_rejects_equal_bounds_and_truncates_integers()
+    public async Task Normalize_rejects_equal_bounds_and_scales_floating_values()
     {
         Assert.Equal(0.5d, await TransformerRules.Normalize(0d, 10d).TransformAsync(5d));
-        Assert.Equal(0, await TransformerRules.Normalize(0, 10).TransformAsync(5));
         Assert.Equal(-1d, await TransformerRules.Normalize(10d, 0d).TransformAsync(20d));
-        Assert.Throws<ArgumentException>(() => TransformerRules.Normalize(2, 2));
+        Assert.Equal(0.5d, await TransformerRules.Normalize(-double.MaxValue, double.MaxValue).TransformAsync(0d));
+        Assert.Throws<ArgumentException>(() => TransformerRules.Normalize(2d, 2d));
     }
 
     [Fact]

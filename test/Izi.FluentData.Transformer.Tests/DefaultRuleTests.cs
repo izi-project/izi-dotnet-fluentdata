@@ -43,7 +43,7 @@ public class DefaultRuleTests
 
         DisposableSequence.Disposals = 0;
         await TransformerRules.DefaultIfEmpty(new DisposableSequence()).TransformAsync(new DisposableSequence());
-        Assert.Equal(1, DisposableSequence.Disposals);
+        Assert.Equal(0, DisposableSequence.Disposals);
 
         Assert.Equal(8, await TransformerRules.DefaultIfEmpty(4).TransformAsync(8));
     }

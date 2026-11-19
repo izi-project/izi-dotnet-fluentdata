@@ -139,11 +139,11 @@ internal sealed class ImmutablePropertyTransformer<T, TProperty> : ICompiledProp
 
     public ValueTask<T> ApplyAsync(T instance, CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var value = _read(instance);
-        var rules = _rules;
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            var value = _read(instance);
+            var rules = _rules;
             for (var i = 0; i < rules.Length; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -158,14 +158,14 @@ internal sealed class ImmutablePropertyTransformer<T, TProperty> : ICompiledProp
 
                 value = pending.Result;
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            return new ValueTask<T>(_write(instance, value));
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex) when (ShouldWrap(ex))
         {
             throw new PropertyTransformationException(PropertyName, ex);
         }
-
-        cancellationToken.ThrowIfCancellationRequested();
-        return new ValueTask<T>(_write(instance, value));
     }
 
     private async ValueTask<T> ContinueAsync(
@@ -175,23 +175,36 @@ internal sealed class ImmutablePropertyTransformer<T, TProperty> : ICompiledProp
         T instance,
         CancellationToken cancellationToken)
     {
-        TProperty value;
         try
         {
-            value = await pending.ConfigureAwait(false);
+            var value = await pending.ConfigureAwait(false);
             for (; index < rules.Length; index++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 value = await rules[index].TransformAsync(value, cancellationToken).ConfigureAwait(false);
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            return _write(instance, value);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex) when (ShouldWrap(ex))
         {
             throw new PropertyTransformationException(PropertyName, ex);
         }
+    }
 
-        cancellationToken.ThrowIfCancellationRequested();
-        return _write(instance, value);
+    private static bool ShouldWrap(Exception exception)
+        => exception is not OperationCanceledException && !IsFatal(exception);
+
+    private static bool IsFatal(Exception exception)
+    {
+#pragma warning disable CS0618 // Obsolete on .NET: ThreadAbortException is not thrown. A thrown instance is still left unwrapped.
+        return exception is OutOfMemoryException
+            or StackOverflowException
+            or InsufficientExecutionStackException
+            or ThreadAbortException
+            or AccessViolationException;
+#pragma warning restore CS0618
     }
 }
 

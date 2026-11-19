@@ -151,8 +151,9 @@ public class PropertyTransformerTests
         var transformer = new Transformer<Customer>();
         transformer.RuleFor(customer => customer.Name).Trim();
 
-        await Assert.ThrowsAsync<NullReferenceException>(
+        var error = await Assert.ThrowsAsync<ArgumentNullException>(
             async () => await transformer.TransformAsync(null!).ConfigureAwait(true));
+        Assert.Equal("instance", error.ParamName);
     }
 
     [Fact]

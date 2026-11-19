@@ -35,7 +35,7 @@ sealed class Customer
 }
 ```
 
-`Trim`, `ToUpper`, `ToLower`, and `Round` are fluent wrappers over the catalogue in `TransformerRules`. `RuleFor` returns a `PropertyTransformer<T, TProperty>` for that property. Every step reads and writes the same property type, so the chain stays on it.
+`Trim`, `ToUpper`, `ToLower`, and `Round` are fluent wrappers over the catalogue in `TransformerRules`. `RuleFor` returns a `PropertyTransformer<T, TProperty>` for that property. Every step reads and writes the same property type, so the chain stays on it. `Trim`, the other trim and case rules, and the whitespace rules leave a null string null. `Truncate` and `Substring` count UTF-16 code units, so they can split a surrogate pair or an emoji.
 
 Conversions are not part of Transformer 2.0. Parse a string, map one property onto another, or change a numeric type in your own code (or in model binding) before you call `TransformAsync`.
 
@@ -63,11 +63,25 @@ sealed class Customer
 
 ## Failures
 
-A rule that throws is reported as `PropertyTransformationException`, which is a `TransformationException`. The message is `Transformation failed for property 'Name'.`, `PropertyName` is that property, and `InnerException` is the original exception. `OperationCanceledException` is not wrapped.
+A rule, getter, or setter that throws is reported as `PropertyTransformationException`, which is a `TransformationException`. The message is `Transformation failed for property 'Name'.`, `PropertyName` is that property, and `InnerException` is the original exception. `OperationCanceledException` is not wrapped, and neither are fatal exceptions such as `OutOfMemoryException`. `TransformAsync` may throw those directly, including a pre-cancelled token or a failure on the synchronous path, instead of returning a faulted `ValueTask`. Always await it.
+
+`ReplaceRegex` rejects a `Regex` whose `MatchTimeout` is infinite. Set a timeout on the expression. `PadLeft` and `PadRight` do not impose a maximum width.
+
+## Null
+
+A null reference, including a null `int?` passed to `Transformer<int?>`, throws `ArgumentNullException` whether or not any rules are registered.
+
+## Class, struct, and record
+
+A class with ordinary setters is updated in place. If a later property fails, earlier properties on that instance may already have been changed.
+
+A struct is not written back to the caller's variable. Use the returned value.
+
+A record, or any other init-only property, is shallow-cloned once before the first step when the pipeline contains an init-only property. The caller's value is left unchanged.
 
 ## Structs and records
 
-`TransformAsync` returns the updated value. A class with ordinary setters is updated in place and that same instance is returned. A struct is not written back to the caller's variable. A record, or any other init-only property, is cloned and the original is left unchanged. Reassign the result:
+`TransformAsync` returns the updated value. Reassign it. A class with ordinary setters is the same instance, already changed in place. A struct, a record, or an init-only property must be taken from the return value because the caller's value is not changed:
 
 ```csharp
 using Izi.FluentData.Transformer;

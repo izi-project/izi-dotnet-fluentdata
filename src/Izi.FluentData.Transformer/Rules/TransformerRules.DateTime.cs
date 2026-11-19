@@ -55,11 +55,14 @@ public static partial class TransformerRules
     /// <typeparamref name="T"/> is not a type this operation supports. Thrown when the rule is created.
     /// </exception>
     public static TransformerRule<T> AddDays<T>(double days)
-        => Pick<T>(nameof(AddDays),
+    {
+        RequireFinite(days, nameof(days));
+        return Pick<T>(nameof(AddDays),
             dateTime: value => value.AddDays(days),
             dateTimeOffset: value => value.AddDays(days),
             dateOnly: value => value.AddDays((int)days),
             timeSpan: value => value + TimeSpan.FromDays(days));
+    }
 
     /// <summary>
     /// Adds hours. Supports <see cref="DateTime"/>, <see cref="DateTimeOffset"/>, <see cref="TimeOnly"/>,
@@ -76,11 +79,14 @@ public static partial class TransformerRules
     /// <typeparamref name="T"/> is not a type this operation supports. Thrown when the rule is created.
     /// </exception>
     public static TransformerRule<T> AddHours<T>(double hours)
-        => Pick<T>(nameof(AddHours),
+    {
+        RequireFinite(hours, nameof(hours));
+        return Pick<T>(nameof(AddHours),
             dateTime: value => value.AddHours(hours),
             dateTimeOffset: value => value.AddHours(hours),
             timeOnly: value => value.AddHours(hours),
             timeSpan: value => value + TimeSpan.FromHours(hours));
+    }
 
     /// <summary>
     /// Adds minutes. Supports <see cref="DateTime"/>, <see cref="DateTimeOffset"/>, <see cref="TimeOnly"/>,
@@ -95,11 +101,14 @@ public static partial class TransformerRules
     /// <typeparamref name="T"/> is not a type this operation supports. Thrown when the rule is created.
     /// </exception>
     public static TransformerRule<T> AddMinutes<T>(double minutes)
-        => Pick<T>(nameof(AddMinutes),
+    {
+        RequireFinite(minutes, nameof(minutes));
+        return Pick<T>(nameof(AddMinutes),
             dateTime: value => value.AddMinutes(minutes),
             dateTimeOffset: value => value.AddMinutes(minutes),
             timeOnly: value => value.Add(TimeSpan.FromMinutes(minutes)),
             timeSpan: value => value + TimeSpan.FromMinutes(minutes));
+    }
 
     /// <summary>
     /// Adds seconds. Supports <see cref="DateTime"/>, <see cref="DateTimeOffset"/>, <see cref="TimeOnly"/>,
@@ -114,11 +123,14 @@ public static partial class TransformerRules
     /// <typeparamref name="T"/> is not a type this operation supports. Thrown when the rule is created.
     /// </exception>
     public static TransformerRule<T> AddSeconds<T>(double seconds)
-        => Pick<T>(nameof(AddSeconds),
+    {
+        RequireFinite(seconds, nameof(seconds));
+        return Pick<T>(nameof(AddSeconds),
             dateTime: value => value.AddSeconds(seconds),
             dateTimeOffset: value => value.AddSeconds(seconds),
             timeOnly: value => value.Add(TimeSpan.FromSeconds(seconds)),
             timeSpan: value => value + TimeSpan.FromSeconds(seconds));
+    }
 
     /// <summary>
     /// Adds milliseconds. Supports <see cref="DateTime"/>, <see cref="DateTimeOffset"/>,
@@ -133,11 +145,14 @@ public static partial class TransformerRules
     /// <typeparamref name="T"/> is not a type this operation supports. Thrown when the rule is created.
     /// </exception>
     public static TransformerRule<T> AddMilliseconds<T>(double milliseconds)
-        => Pick<T>(nameof(AddMilliseconds),
+    {
+        RequireFinite(milliseconds, nameof(milliseconds));
+        return Pick<T>(nameof(AddMilliseconds),
             dateTime: value => value.AddMilliseconds(milliseconds),
             dateTimeOffset: value => value.AddMilliseconds(milliseconds),
             timeOnly: value => value.Add(TimeSpan.FromMilliseconds(milliseconds)),
             timeSpan: value => value + TimeSpan.FromMilliseconds(milliseconds));
+    }
 
     /// <summary>
     /// Adds ticks. Supports <see cref="DateTime"/>, <see cref="DateTimeOffset"/>, <see cref="TimeOnly"/>,
@@ -901,6 +916,14 @@ public static partial class TransformerRules
         });
     }
 
+    private static void RequireFinite(double amount, string name)
+    {
+        if (!double.IsFinite(amount))
+        {
+            throw new ArgumentOutOfRangeException(name);
+        }
+    }
+
     private static long RequirePositiveInterval(TimeSpan interval)
     {
         if (interval <= TimeSpan.Zero)
@@ -1203,9 +1226,8 @@ public static partial class TransformerRules
             return value;
         }
 
-        // Step off the current day before testing it, so a positive count never stays on the start day.
-        var step = Math.Sign(count);
-        var remaining = Math.Abs(count);
+        var step = count < 0 ? -1 : 1;
+        var remaining = AbsCount(count);
         var result = value;
         while (remaining > 0)
         {
@@ -1226,9 +1248,8 @@ public static partial class TransformerRules
             return value;
         }
 
-        // Step off the current day before testing it, so a positive count never stays on the start day.
-        var step = Math.Sign(count);
-        var remaining = Math.Abs(count);
+        var step = count < 0 ? -1 : 1;
+        var remaining = AbsCount(count);
         var result = value;
         while (remaining > 0)
         {
@@ -1249,9 +1270,8 @@ public static partial class TransformerRules
             return value;
         }
 
-        // Step off the current day before testing it, so a positive count never stays on the start day.
-        var step = Math.Sign(count);
-        var remaining = Math.Abs(count);
+        var step = count < 0 ? -1 : 1;
+        var remaining = AbsCount(count);
         var result = value;
         while (remaining > 0)
         {
@@ -1263,6 +1283,12 @@ public static partial class TransformerRules
         }
 
         return result;
+    }
+
+    private static int AbsCount(int count)
+    {
+        // Negating int.MinValue overflows. That count walks int.MaxValue steps instead.
+        return count == int.MinValue ? int.MaxValue : count < 0 ? -count : count;
     }
 
     private static bool IsBusinessDay(DateOnly date, HashSet<DateOnly>? holidays)

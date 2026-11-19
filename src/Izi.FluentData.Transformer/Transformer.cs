@@ -74,12 +74,23 @@ public sealed class Transformer<T> : ITransformer<T>
     /// is not mutated. When every rule finishes successfully without waiting, the returned
     /// <see cref="ValueTask{TResult}"/> is already completed.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="instance"/> is <see langword="null"/>, including a null
+    /// <see cref="Nullable{T}"/>. Thrown whether or not any rules are registered.
+    /// </exception>
     /// <exception cref="OperationCanceledException">
     /// <paramref name="cancellationToken"/> is cancelled before a rule runs. Cancellation is not wrapped.
+    /// This method may throw that exception directly instead of returning a faulted
+    /// <see cref="ValueTask{TResult}"/>.
     /// </exception>
     /// <exception cref="Izi.FluentData.Transformer.Exceptions.PropertyTransformationException">A property rule threw.</exception>
     public ValueTask<T> TransformAsync(T instance, CancellationToken cancellationToken = default)
     {
+        if (instance is null)
+        {
+            throw new ArgumentNullException(nameof(instance));
+        }
+
         cancellationToken.ThrowIfCancellationRequested();
         return Compiled().TransformAsync(instance, cancellationToken);
     }
@@ -137,33 +148,43 @@ public sealed class Transformer<T> : ITransformer<T>
 internal sealed class ImmutableTransformer<T>
 {
     private readonly ICompiledPropertyTransformer<T>[] _properties;
+    private readonly bool _cloneFirst;
 
     internal ImmutableTransformer(ICompiledPropertyTransformer<T>[] properties)
     {
         _properties = properties;
+        var cloneFirst = false;
+        for (var i = 0; i < properties.Length; i++)
+        {
+            if (properties[i].RequiresClone)
+            {
+                cloneFirst = true;
+                break;
+            }
+        }
+
+        _cloneFirst = cloneFirst;
     }
 
     internal ValueTask<T> TransformAsync(T instance, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (_cloneFirst)
+        {
+            instance = PropertyAccess.ShallowClone(instance);
+        }
+
         var steps = _properties;
-        var cloned = false;
         for (var i = 0; i < steps.Length; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (steps[i].RequiresClone && !cloned)
-            {
-                instance = PropertyAccess.ShallowClone(instance);
-                cloned = true;
-            }
-
             var pending = steps[i].ApplyAsync(instance, cancellationToken);
 
             // Read a completed step here. ContinueAsync is separate so the state machine
             // is built only when a step actually waits.
             if (!pending.IsCompletedSuccessfully)
             {
-                return ContinueAsync(pending, steps, i + 1, cloned, cancellationToken);
+                return ContinueAsync(pending, steps, i + 1, cancellationToken);
             }
 
             instance = pending.Result;
@@ -176,19 +197,12 @@ internal sealed class ImmutableTransformer<T>
         ValueTask<T> pending,
         ICompiledPropertyTransformer<T>[] steps,
         int index,
-        bool cloned,
         CancellationToken cancellationToken)
     {
         var instance = await pending.ConfigureAwait(false);
         for (; index < steps.Length; index++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (steps[index].RequiresClone && !cloned)
-            {
-                instance = PropertyAccess.ShallowClone(instance);
-                cloned = true;
-            }
-
             instance = await steps[index].ApplyAsync(instance, cancellationToken).ConfigureAwait(false);
         }
 
@@ -264,8 +278,12 @@ internal static class PropertyAccess
 
     /// <summary>
     /// Init accessors are ordinary methods. Calling the compiled method avoids PropertyInfo.SetValue,
-    /// which boxes value-type arguments. The runner clones a class once before the first init write.
+    /// which boxes value-type arguments.
     /// </summary>
+    /// <remarks>
+    /// Call this only after <see cref="ImmutableTransformer{T}"/> has shallow-cloned the instance.
+    /// The setter writes that clone and returns it.
+    /// </remarks>
     private static Func<T, TProperty, T> ClassInitWrite<T, TProperty>(MethodInfo setter)
     {
         var assign = CompileSetter<T, TProperty>(setter);

@@ -6,14 +6,14 @@ namespace Izi.FluentData.Transformer.Tests;
 public class StringRuleTests
 {
     [Fact]
-    public async Task Trim_rules_remove_only_the_requested_edge_and_treat_null_as_empty()
+    public async Task Trim_rules_remove_only_the_requested_edge_and_keep_null()
     {
         Assert.Equal("hello", await TransformerRules.Trim().TransformAsync("  hello  "));
         Assert.Equal("hello  ", await TransformerRules.TrimStart().TransformAsync("  hello  "));
         Assert.Equal("  hello", await TransformerRules.TrimEnd().TransformAsync("  hello  "));
-        Assert.Equal(string.Empty, await TransformerRules.Trim().TransformAsync(null!));
-        Assert.Equal(string.Empty, await TransformerRules.TrimStart().TransformAsync(null!));
-        Assert.Equal(string.Empty, await TransformerRules.TrimEnd().TransformAsync(null!));
+        Assert.Null(await TransformerRules.Trim().TransformAsync(null!));
+        Assert.Null(await TransformerRules.TrimStart().TransformAsync(null!));
+        Assert.Null(await TransformerRules.TrimEnd().TransformAsync(null!));
     }
 
     [Fact]
@@ -28,7 +28,9 @@ public class StringRuleTests
         Assert.Equal(
             "Hello World",
             await TransformerRules.ToTitleCase(CultureInfo.GetCultureInfo("en-US")).TransformAsync("hello world"));
-        Assert.Equal(string.Empty, await TransformerRules.ToUpper().TransformAsync(null!));
+        Assert.Null(await TransformerRules.ToUpper().TransformAsync(null!));
+        Assert.Null(await TransformerRules.ToLower().TransformAsync(null!));
+        Assert.Null(await TransformerRules.ToTitleCase().TransformAsync(null!));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.ToUpper(null!));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.ToLower(null!));
         Assert.Throws<ArgumentNullException>(() => TransformerRules.ToTitleCase(null!));
@@ -39,7 +41,7 @@ public class StringRuleTests
     {
         Assert.Equal("h-llo", await TransformerRules.Replace("e", "-").TransformAsync("hello"));
         Assert.Equal(string.Empty, await TransformerRules.Replace("e", "-").TransformAsync(null!));
-        Assert.Equal("h-llo", await TransformerRules.ReplaceRegex(new Regex("e+"), "-").TransformAsync("hello"));
+        Assert.Equal("h-llo", await TransformerRules.ReplaceRegex(new Regex("e+", RegexOptions.None, TimeSpan.FromSeconds(1)), "-").TransformAsync("hello"));
         Assert.Equal("h-llo", await TransformerRules.ReplaceRegex("e+", "-").TransformAsync("hello"));
         Assert.Equal(
             "h-llo",
@@ -64,7 +66,8 @@ public class StringRuleTests
     {
         Assert.Equal("ab", await TransformerRules.RemoveWhitespace().TransformAsync(" a\tb "));
         Assert.Equal(" a b ", await TransformerRules.CollapseWhitespace().TransformAsync("  a \t b\n"));
-        Assert.Equal(string.Empty, await TransformerRules.RemoveWhitespace().TransformAsync(null!));
+        Assert.Null(await TransformerRules.RemoveWhitespace().TransformAsync(null!));
+        Assert.Null(await TransformerRules.CollapseWhitespace().TransformAsync(null!));
     }
 
     [Fact]
