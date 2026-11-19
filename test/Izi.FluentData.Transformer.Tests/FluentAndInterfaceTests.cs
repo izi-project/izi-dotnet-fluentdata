@@ -43,37 +43,6 @@ public class FluentAndInterfaceTests
     }
 
     [Fact]
-    public async Task ParseInt_and_a_later_numeric_rule_write_the_target()
-    {
-        var transformer = new Transformer<Customer>();
-        transformer.RuleFor(customer => customer.AgeText)
-            .Trim()
-            .ParseInt()
-            .Add(1)
-            .Into(customer => customer.Age);
-
-        var updated = await transformer.TransformAsync(new Customer { AgeText = " 41 " });
-
-        Assert.Equal(42, updated.Age);
-        Assert.Equal(" 41 ", updated.AgeText);
-    }
-
-    [Fact]
-    public async Task ConvertChecked_and_a_custom_Add_remain_available()
-    {
-        var transformer = new Transformer<Customer>();
-        transformer.RuleFor(customer => customer.Quantity)
-            .Add(static (value, _) => new ValueTask<int>(value + 1))
-            .ConvertChecked<Customer, int, short>()
-            .Into(customer => customer.QuantitySmall);
-
-        var updated = await transformer.TransformAsync(new Customer { Quantity = 7 });
-
-        Assert.Equal(7, updated.Quantity);
-        Assert.Equal((short)8, updated.QuantitySmall);
-    }
-
-    [Fact]
     public async Task A_rule_added_after_the_first_run_is_used_on_the_next_run()
     {
         var transformer = new Transformer<Customer>();
@@ -101,16 +70,8 @@ public class FluentAndInterfaceTests
 
         public string Email { get; set; } = string.Empty;
 
-        public string AgeText { get; set; } = string.Empty;
-
-        public int Age { get; set; }
-
         public double Price { get; set; }
 
         public DateTime When { get; set; }
-
-        public int Quantity { get; set; }
-
-        public short QuantitySmall { get; set; }
     }
 }

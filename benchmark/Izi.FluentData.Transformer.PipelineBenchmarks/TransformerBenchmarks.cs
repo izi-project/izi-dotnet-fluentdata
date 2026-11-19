@@ -1,4 +1,3 @@
-using System.Globalization;
 using BenchmarkDotNet.Attributes;
 
 namespace Izi.FluentData.Transformer.Benchmarks;
@@ -12,13 +11,11 @@ public class TransformerBenchmarks
 {
     private const string RawName = "  Ada  ";
     private const string RawEmail = "  Ada@Example.COM  ";
-    private const string RawAgeText = "  42 ";
+    private const int RawAge = 41;
     private const string ExpectedName = "Ada";
     private const string ExpectedEmail = "ada@example.com";
     private const int ExpectedAge = 42;
     private const double RoundInput = 3.14159;
-
-    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     private readonly Transformer<PersonClass> _noRules = new();
     private readonly PersonClass _noRulesInput = NewClass();
@@ -30,9 +27,10 @@ public class TransformerBenchmarks
     private readonly PersonRecord _syncRecordInput = NewRecord();
     private readonly Transformer<PersonClass> _mixed = CreateMixed();
     private readonly PersonClass _mixedInput = NewClass();
-    private readonly TransformerRule<string, string> _trim = TransformerRules.Trim();
-    private readonly TransformerRule<string, int> _parse = TransformerRules.Parse<int>(Invariant);
-    private readonly TransformerRule<double, double> _round = TransformerRules.Round<double>(2);
+    private readonly Transformer<PersonClass> _fluent = CreateFluent();
+    private readonly PersonClass _fluentInput = NewClass();
+    private readonly TransformerRule<string> _trim = TransformerRules.Trim();
+    private readonly TransformerRule<double> _round = TransformerRules.Round<double>(2);
 
     /// <summary>Runs every scenario once and throws if a result is wrong.</summary>
     /// <returns>A completed task when every scenario matches the expected values.</returns>
@@ -49,24 +47,25 @@ public class TransformerBenchmarks
         ExpectClass(syncClass, sameInstance: benchmarks._syncClassInput);
 
         var syncStruct = await benchmarks._syncStruct.TransformAsync(benchmarks._syncStructInput).ConfigureAwait(false);
-        ExpectValues(syncStruct.Name, syncStruct.Email, syncStruct.AgeText, syncStruct.Age, "struct");
+        ExpectValues(syncStruct.Name, syncStruct.Email, syncStruct.Age, "struct");
         Expect(benchmarks._syncStructInput.Name == RawName, "Struct transform wrote back to the caller.");
 
         var syncRecord = await benchmarks._syncRecord.TransformAsync(benchmarks._syncRecordInput).ConfigureAwait(false);
-        ExpectValues(syncRecord.Name, syncRecord.Email, syncRecord.AgeText, syncRecord.Age, "record");
+        ExpectValues(syncRecord.Name, syncRecord.Email, syncRecord.Age, "record");
         Expect(!ReferenceEquals(syncRecord, benchmarks._syncRecordInput), "Init-only record was mutated in place.");
         Expect(benchmarks._syncRecordInput.Name == RawName, "Init-only record original Name changed.");
-        Expect(benchmarks._syncRecordInput.Age == 0, "Init-only record original Age changed.");
+        Expect(benchmarks._syncRecordInput.Age == RawAge, "Init-only record original Age changed.");
 
         Reset(benchmarks._mixedInput);
         var mixed = await benchmarks._mixed.TransformAsync(benchmarks._mixedInput).ConfigureAwait(false);
         ExpectClass(mixed, sameInstance: benchmarks._mixedInput);
 
+        Reset(benchmarks._fluentInput);
+        var fluent = await benchmarks._fluent.TransformAsync(benchmarks._fluentInput).ConfigureAwait(false);
+        ExpectClass(fluent, sameInstance: benchmarks._fluentInput);
+
         var trimmed = await benchmarks._trim.TransformAsync(RawName).ConfigureAwait(false);
         Expect(trimmed == ExpectedName, "Trim returned '" + trimmed + "'.");
-
-        var parsed = await benchmarks._parse.TransformAsync("42").ConfigureAwait(false);
-        Expect(parsed == ExpectedAge, "Parse returned " + parsed + ".");
 
         var rounded = await benchmarks._round.TransformAsync(RoundInput).ConfigureAwait(false);
         Expect(rounded == double.Round(RoundInput, 2), "Round returned " + rounded + ".");
@@ -78,7 +77,7 @@ public class TransformerBenchmarks
     [Benchmark(Baseline = true)]
     public ValueTask<PersonClass> NoRules() => _noRules.TransformAsync(_noRulesInput);
 
-    /// <summary>All-sync class: trim Name, trim and lower Email, trim and parse Age.</summary>
+    /// <summary>All-sync class: trim Name, trim and lower Email, add one to Age. Rules are attached with Add.</summary>
     /// <returns>The mutated class.</returns>
     [Benchmark]
     public ValueTask<PersonClass> SyncClass()
@@ -93,7 +92,7 @@ public class TransformerBenchmarks
     public ValueTask<PersonStruct> SyncStruct() => _syncStruct.TransformAsync(_syncStructInput);
 
     /// <summary>The same all-sync rules on a record with init-only properties.</summary>
-    /// <returns>A clone with the converted properties.</returns>
+    /// <returns>A clone with the updated properties.</returns>
     [Benchmark]
     public ValueTask<PersonRecord> SyncRecord() => _syncRecord.TransformAsync(_syncRecordInput);
 
@@ -106,34 +105,35 @@ public class TransformerBenchmarks
         return _mixed.TransformAsync(_mixedInput);
     }
 
+    /// <summary>The same all-sync rules as <see cref="SyncClass"/>, attached with the fluent wrappers.</summary>
+    /// <returns>The mutated class.</returns>
+    [Benchmark]
+    public ValueTask<PersonClass> FluentClass()
+    {
+        Reset(_fluentInput);
+        return _fluent.TransformAsync(_fluentInput);
+    }
+
     /// <summary><see cref="TransformerRules.Trim"/> called directly.</summary>
     /// <returns>The trimmed name.</returns>
     [Benchmark]
     public ValueTask<string> Trim() => _trim.TransformAsync(RawName);
-
-    /// <summary><see cref="TransformerRules.Parse{T}"/> for <see cref="int"/> called directly.</summary>
-    /// <returns>The parsed age.</returns>
-    [Benchmark]
-    public ValueTask<int> ParseInt() => _parse.TransformAsync("42");
 
     /// <summary><see cref="TransformerRules.Round{TNumber}(int)"/> for <see cref="double"/> called directly.</summary>
     /// <returns>The rounded value.</returns>
     [Benchmark]
     public ValueTask<double> Round() => _round.TransformAsync(RoundInput);
 
-    /// <summary>Class with settable properties. Convert reads <see cref="AgeText"/> and writes <see cref="Age"/>.</summary>
+    /// <summary>Class with settable properties. Every rule reads and writes the same property.</summary>
     public sealed class PersonClass
     {
-        /// <summary>Display name. Trimmed by the sync and mixed pipelines.</summary>
+        /// <summary>Display name. Trimmed by the sync, mixed, and fluent pipelines.</summary>
         public string Name { get; set; } = string.Empty;
 
         /// <summary>Email. Trimmed, then lowercased with the invariant culture.</summary>
         public string Email { get; set; } = string.Empty;
 
-        /// <summary>Age text. Trimmed and parsed. The pipeline does not write this property back.</summary>
-        public string AgeText { get; set; } = string.Empty;
-
-        /// <summary>Parsed age.</summary>
+        /// <summary>Age. Incremented by one.</summary>
         public int Age { get; set; }
     }
 
@@ -146,10 +146,7 @@ public class TransformerBenchmarks
         /// <summary>Email.</summary>
         public string Email { get; set; }
 
-        /// <summary>Age text. Not written back.</summary>
-        public string AgeText { get; set; }
-
-        /// <summary>Parsed age.</summary>
+        /// <summary>Age.</summary>
         public int Age { get; set; }
     }
 
@@ -162,10 +159,7 @@ public class TransformerBenchmarks
         /// <summary>Email.</summary>
         public string Email { get; init; } = string.Empty;
 
-        /// <summary>Age text. Not written back.</summary>
-        public string AgeText { get; init; } = string.Empty;
-
-        /// <summary>Parsed age.</summary>
+        /// <summary>Age.</summary>
         public int Age { get; init; }
     }
 
@@ -176,10 +170,7 @@ public class TransformerBenchmarks
         transformer.RuleFor(person => person.Email)
             .Add(TransformerRules.Trim())
             .Add(TransformerRules.ToLower());
-        transformer.RuleFor(person => person.AgeText)
-            .Add(TransformerRules.Trim())
-            .Convert(TransformerRules.Parse<int>(Invariant))
-            .Into(person => person.Age);
+        transformer.RuleFor(person => person.Age).Add(TransformerRules.Add(1));
         return transformer;
     }
 
@@ -190,10 +181,7 @@ public class TransformerBenchmarks
         transformer.RuleFor(person => person.Email)
             .Add(TransformerRules.Trim())
             .Add(TransformerRules.ToLower());
-        transformer.RuleFor(person => person.AgeText)
-            .Add(TransformerRules.Trim())
-            .Convert(TransformerRules.Parse<int>(Invariant))
-            .Into(person => person.Age);
+        transformer.RuleFor(person => person.Age).Add(TransformerRules.Add(1));
         return transformer;
     }
 
@@ -204,10 +192,7 @@ public class TransformerBenchmarks
         transformer.RuleFor(person => person.Email)
             .Add(TransformerRules.Trim())
             .Add(TransformerRules.ToLower());
-        transformer.RuleFor(person => person.AgeText)
-            .Add(TransformerRules.Trim())
-            .Convert(TransformerRules.Parse<int>(Invariant))
-            .Into(person => person.Age);
+        transformer.RuleFor(person => person.Age).Add(TransformerRules.Add(1));
         return transformer;
     }
 
@@ -223,10 +208,16 @@ public class TransformerBenchmarks
                 return email;
             })
             .Add(TransformerRules.ToLower());
-        transformer.RuleFor(person => person.AgeText)
-            .Add(TransformerRules.Trim())
-            .Convert(TransformerRules.Parse<int>(Invariant))
-            .Into(person => person.Age);
+        transformer.RuleFor(person => person.Age).Add(TransformerRules.Add(1));
+        return transformer;
+    }
+
+    private static Transformer<PersonClass> CreateFluent()
+    {
+        var transformer = new Transformer<PersonClass>();
+        transformer.RuleFor(person => person.Name).Trim();
+        transformer.RuleFor(person => person.Email).Trim().ToLower();
+        transformer.RuleFor(person => person.Age).Add(1);
         return transformer;
     }
 
@@ -236,7 +227,7 @@ public class TransformerBenchmarks
         {
             Name = RawName,
             Email = RawEmail,
-            AgeText = RawAgeText,
+            Age = RawAge,
         };
     }
 
@@ -246,7 +237,7 @@ public class TransformerBenchmarks
         {
             Name = RawName,
             Email = RawEmail,
-            AgeText = RawAgeText,
+            Age = RawAge,
         };
     }
 
@@ -256,7 +247,7 @@ public class TransformerBenchmarks
         {
             Name = RawName,
             Email = RawEmail,
-            AgeText = RawAgeText,
+            Age = RawAge,
         };
     }
 
@@ -264,21 +255,19 @@ public class TransformerBenchmarks
     {
         person.Name = RawName;
         person.Email = RawEmail;
-        person.AgeText = RawAgeText;
-        person.Age = 0;
+        person.Age = RawAge;
     }
 
     private static void ExpectClass(PersonClass person, PersonClass sameInstance)
     {
         Expect(ReferenceEquals(person, sameInstance), "Class transform returned a different instance.");
-        ExpectValues(person.Name, person.Email, person.AgeText, person.Age, "class");
+        ExpectValues(person.Name, person.Email, person.Age, "class");
     }
 
-    private static void ExpectValues(string name, string email, string ageText, int age, string kind)
+    private static void ExpectValues(string name, string email, int age, string kind)
     {
         Expect(name == ExpectedName, kind + " Name was '" + name + "'.");
         Expect(email == ExpectedEmail, kind + " Email was '" + email + "'.");
-        Expect(ageText == RawAgeText, kind + " AgeText was written back as '" + ageText + "'.");
         Expect(age == ExpectedAge, kind + " Age was " + age + ".");
     }
 

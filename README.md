@@ -35,32 +35,9 @@ sealed class Customer
 }
 ```
 
-`Trim`, `ToUpper`, `ToLower`, and `Round` are fluent wrappers over the catalogue in `TransformerRules`. Same-type steps stay on the property rule, so they chain.
+`Trim`, `ToUpper`, `ToLower`, and `Round` are fluent wrappers over the catalogue in `TransformerRules`. Every step reads and writes the same property type, so the chain stays on that property.
 
-## Convert into another property
-
-`ParseInt()` reads the string with the invariant culture and starts a conversion. `Into` writes the result. The source property is left as it was.
-
-```csharp
-using Izi.FluentData.Transformer;
-
-var customer = new Customer { AgeText = " 41 " };
-var transformer = new Transformer<Customer>();
-transformer.RuleFor(customer => customer.AgeText)
-    .Trim()
-    .ParseInt()
-    .Into(customer => customer.Age);
-
-customer = await transformer.TransformAsync(customer);
-
-sealed class Customer
-{
-    public string AgeText { get; set; } = "";
-    public int Age { get; set; }
-}
-```
-
-`ParseInt(IFormatProvider)` selects another culture. Other shortcuts include `ParseLong`, `ParseDecimal`, `ParseDouble`, `ParseBool`, `ParseDateTime`, and `ParseGuid`. A type with no shortcut uses `Convert(TransformerRules.Parse<T>(provider))`, where `T` implements `IParsable<T>`. `ConvertChecked<T, TFrom, TTo>()` is the checked numeric conversion, for example `ConvertChecked<Order, int, short>()`.
+Conversions are not part of Transformer 2.0. Parse a string, map one property onto another, or change a numeric type in your own code (or in model binding) before you call `TransformAsync`.
 
 ## Custom rules
 
@@ -82,7 +59,7 @@ sealed class Customer
 }
 ```
 
-`Add` also accepts an `ITransformerRule<TProperty, TProperty>`, including any `TransformerRules` factory.
+`Add` also accepts an `ITransformerRule<TProperty>`, including any `TransformerRules` factory.
 
 ## Structs and records
 
@@ -180,7 +157,7 @@ A short run, useful while changing the library:
 dotnet run -c Release -f net10.0 --project benchmark/Izi.FluentData.Transformer.PipelineBenchmarks -- --job short --filter '*'
 ```
 
-Use `-f net8.0` for the other target. The scenarios cover an empty transformer, a synchronous class, the same rules on a struct and on an init-only record, one yielding step, and direct `Trim`, `Parse<int>`, and `Round` calls.
+Use `-f net8.0` for the other target. The scenarios cover an empty transformer, a synchronous class, the same rules on a struct and on an init-only record, one yielding step, the fluent wrappers against the same rules added with `Add`, and direct `Trim` and `Round` calls.
 
 ## Build and test
 

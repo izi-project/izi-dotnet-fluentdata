@@ -11,7 +11,7 @@ public static partial class TransformerRules
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <param name="value">Amount added to the current value. Integer addition is unchecked and can wrap.</param>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Add<TNumber>(TNumber value)
+    public static TransformerRule<TNumber> Add<TNumber>(TNumber value)
         where TNumber : INumberBase<TNumber>
         => Same<TNumber>(source => source + value);
 
@@ -22,7 +22,7 @@ public static partial class TransformerRules
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <param name="value">Amount subtracted from the current value. Integer subtraction is unchecked.</param>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Subtract<TNumber>(TNumber value)
+    public static TransformerRule<TNumber> Subtract<TNumber>(TNumber value)
         where TNumber : INumberBase<TNumber>
         => Same<TNumber>(source => source - value);
 
@@ -30,7 +30,7 @@ public static partial class TransformerRules
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <param name="value">Factor the current value is multiplied by. Integer multiplication is unchecked.</param>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Multiply<TNumber>(TNumber value)
+    public static TransformerRule<TNumber> Multiply<TNumber>(TNumber value)
         where TNumber : INumberBase<TNumber>
         => Same<TNumber>(source => source * value);
 
@@ -48,7 +48,7 @@ public static partial class TransformerRules
     /// <exception cref="DivideByZeroException">
     /// An integer divisor is zero. Thrown when the value is transformed.
     /// </exception>
-    public static TransformerRule<TNumber, TNumber> Divide<TNumber>(TNumber value)
+    public static TransformerRule<TNumber> Divide<TNumber>(TNumber value)
         where TNumber : INumberBase<TNumber>
         => Same<TNumber>(source => source / value);
 
@@ -61,7 +61,7 @@ public static partial class TransformerRules
     /// <exception cref="OverflowException">
     /// The value is outside the destination range. Thrown when the value is transformed.
     /// </exception>
-    public static TransformerRule<TNumber, TNumber> Abs<TNumber>()
+    public static TransformerRule<TNumber> Abs<TNumber>()
         where TNumber : INumberBase<TNumber>
         => Same<TNumber>(TNumber.Abs);
 
@@ -78,7 +78,7 @@ public static partial class TransformerRules
     /// <exception cref="ArgumentException">
     /// <paramref name="min"/> is greater than <paramref name="max"/>. Thrown when the rule is created.
     /// </exception>
-    public static TransformerRule<TNumber, TNumber> Clamp<TNumber>(TNumber min, TNumber max)
+    public static TransformerRule<TNumber> Clamp<TNumber>(TNumber min, TNumber max)
         where TNumber : INumber<TNumber>
     {
         // INumber<T>.Clamp throws ArgumentException when min is greater than max.
@@ -90,14 +90,14 @@ public static partial class TransformerRules
     /// <summary>Negates with the type's unary minus. Integer overflow follows the unchecked operator.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Invert<TNumber>()
+    public static TransformerRule<TNumber> Invert<TNumber>()
         where TNumber : INumberBase<TNumber>
         => Same<TNumber>(source => -source);
 
     /// <summary>Rounds to the nearest integer with the type's default midpoint policy.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Round<TNumber>()
+    public static TransformerRule<TNumber> Round<TNumber>()
         where TNumber : IFloatingPoint<TNumber>
         => Same<TNumber>(source => TNumber.Round(source));
 
@@ -108,7 +108,7 @@ public static partial class TransformerRules
     /// <exception cref="ArgumentOutOfRangeException">
     /// <paramref name="digits"/> is outside the accepted range.
     /// </exception>
-    public static TransformerRule<TNumber, TNumber> Round<TNumber>(int digits)
+    public static TransformerRule<TNumber> Round<TNumber>(int digits)
         where TNumber : IFloatingPoint<TNumber>
     {
         if (digits < 0)
@@ -123,7 +123,7 @@ public static partial class TransformerRules
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <param name="mode">Policy used when a value is exactly halfway between two results.</param>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Round<TNumber>(MidpointRounding mode)
+    public static TransformerRule<TNumber> Round<TNumber>(MidpointRounding mode)
         where TNumber : IFloatingPoint<TNumber>
         => Same<TNumber>(source => TNumber.Round(source, mode));
 
@@ -135,7 +135,7 @@ public static partial class TransformerRules
     /// <exception cref="ArgumentOutOfRangeException">
     /// <paramref name="digits"/> is outside the accepted range.
     /// </exception>
-    public static TransformerRule<TNumber, TNumber> Round<TNumber>(int digits, MidpointRounding mode)
+    public static TransformerRule<TNumber> Round<TNumber>(int digits, MidpointRounding mode)
         where TNumber : IFloatingPoint<TNumber>
     {
         if (digits < 0)
@@ -149,14 +149,14 @@ public static partial class TransformerRules
     /// <summary>Rounds toward negative infinity.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Floor<TNumber>()
+    public static TransformerRule<TNumber> Floor<TNumber>()
         where TNumber : IFloatingPoint<TNumber>
         => Same<TNumber>(TNumber.Floor);
 
     /// <summary>Rounds toward positive infinity.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Ceiling<TNumber>()
+    public static TransformerRule<TNumber> Ceiling<TNumber>()
         where TNumber : IFloatingPoint<TNumber>
         => Same<TNumber>(TNumber.Ceiling);
 
@@ -166,7 +166,7 @@ public static partial class TransformerRules
     /// </summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Truncate<TNumber>()
+    public static TransformerRule<TNumber> Truncate<TNumber>()
         where TNumber : IFloatingPoint<TNumber>
         => Same<TNumber>(TNumber.Truncate);
 
@@ -183,7 +183,7 @@ public static partial class TransformerRules
     /// </param>
     /// <returns>The rule that applies this transformation.</returns>
     /// <exception cref="ArgumentException">Normalize requires distinct bounds.</exception>
-    public static TransformerRule<TNumber, TNumber> Normalize<TNumber>(TNumber min, TNumber max)
+    public static TransformerRule<TNumber> Normalize<TNumber>(TNumber min, TNumber max)
         where TNumber : INumber<TNumber>
     {
         if (min == max)
@@ -197,14 +197,14 @@ public static partial class TransformerRules
     /// <summary>Square root.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Sqrt<TNumber>()
+    public static TransformerRule<TNumber> Sqrt<TNumber>()
         where TNumber : IRootFunctions<TNumber>
         => Same<TNumber>(TNumber.Sqrt);
 
     /// <summary>Cube root.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Cbrt<TNumber>()
+    public static TransformerRule<TNumber> Cbrt<TNumber>()
         where TNumber : IRootFunctions<TNumber>
         => Same<TNumber>(TNumber.Cbrt);
 
@@ -218,7 +218,7 @@ public static partial class TransformerRules
     /// transformed.
     /// </param>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> RootN<TNumber>(int n)
+    public static TransformerRule<TNumber> RootN<TNumber>(int n)
         where TNumber : IRootFunctions<TNumber>
         => Same<TNumber>(source => TNumber.RootN(source, n));
 
@@ -226,35 +226,35 @@ public static partial class TransformerRules
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <param name="exponent">Power the value is raised to.</param>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Pow<TNumber>(TNumber exponent)
+    public static TransformerRule<TNumber> Pow<TNumber>(TNumber exponent)
         where TNumber : IPowerFunctions<TNumber>
         => Same<TNumber>(source => TNumber.Pow(source, exponent));
 
     /// <summary>e raised to the value.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Exp<TNumber>()
+    public static TransformerRule<TNumber> Exp<TNumber>()
         where TNumber : IExponentialFunctions<TNumber>
         => Same<TNumber>(TNumber.Exp);
 
     /// <summary>2 raised to the value.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Exp2<TNumber>()
+    public static TransformerRule<TNumber> Exp2<TNumber>()
         where TNumber : IExponentialFunctions<TNumber>
         => Same<TNumber>(TNumber.Exp2);
 
     /// <summary>10 raised to the value.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Exp10<TNumber>()
+    public static TransformerRule<TNumber> Exp10<TNumber>()
         where TNumber : IExponentialFunctions<TNumber>
         => Same<TNumber>(TNumber.Exp10);
 
     /// <summary>Natural logarithm.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Log<TNumber>()
+    public static TransformerRule<TNumber> Log<TNumber>()
         where TNumber : ILogarithmicFunctions<TNumber>
         => Same<TNumber>(source => TNumber.Log(source));
 
@@ -262,119 +262,119 @@ public static partial class TransformerRules
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <param name="newBase">Base of the logarithm.</param>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Log<TNumber>(TNumber newBase)
+    public static TransformerRule<TNumber> Log<TNumber>(TNumber newBase)
         where TNumber : ILogarithmicFunctions<TNumber>
         => Same<TNumber>(source => TNumber.Log(source, newBase));
 
     /// <summary>Base-2 logarithm.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Log2<TNumber>()
+    public static TransformerRule<TNumber> Log2<TNumber>()
         where TNumber : ILogarithmicFunctions<TNumber>
         => Same<TNumber>(TNumber.Log2);
 
     /// <summary>Base-10 logarithm.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Log10<TNumber>()
+    public static TransformerRule<TNumber> Log10<TNumber>()
         where TNumber : ILogarithmicFunctions<TNumber>
         => Same<TNumber>(TNumber.Log10);
 
     /// <summary>Sine of an angle in radians.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Sin<TNumber>()
+    public static TransformerRule<TNumber> Sin<TNumber>()
         where TNumber : ITrigonometricFunctions<TNumber>
         => Same<TNumber>(TNumber.Sin);
 
     /// <summary>Cosine of an angle in radians.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Cos<TNumber>()
+    public static TransformerRule<TNumber> Cos<TNumber>()
         where TNumber : ITrigonometricFunctions<TNumber>
         => Same<TNumber>(TNumber.Cos);
 
     /// <summary>Tangent of an angle in radians.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Tan<TNumber>()
+    public static TransformerRule<TNumber> Tan<TNumber>()
         where TNumber : ITrigonometricFunctions<TNumber>
         => Same<TNumber>(TNumber.Tan);
 
     /// <summary>Arcsine, in radians.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Asin<TNumber>()
+    public static TransformerRule<TNumber> Asin<TNumber>()
         where TNumber : ITrigonometricFunctions<TNumber>
         => Same<TNumber>(TNumber.Asin);
 
     /// <summary>Arccosine, in radians.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Acos<TNumber>()
+    public static TransformerRule<TNumber> Acos<TNumber>()
         where TNumber : ITrigonometricFunctions<TNumber>
         => Same<TNumber>(TNumber.Acos);
 
     /// <summary>Arctangent, in radians.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Atan<TNumber>()
+    public static TransformerRule<TNumber> Atan<TNumber>()
         where TNumber : ITrigonometricFunctions<TNumber>
         => Same<TNumber>(TNumber.Atan);
 
     /// <summary>Converts degrees to radians.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> DegreesToRadians<TNumber>()
+    public static TransformerRule<TNumber> DegreesToRadians<TNumber>()
         where TNumber : ITrigonometricFunctions<TNumber>
         => Same<TNumber>(TNumber.DegreesToRadians);
 
     /// <summary>Converts radians to degrees.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> RadiansToDegrees<TNumber>()
+    public static TransformerRule<TNumber> RadiansToDegrees<TNumber>()
         where TNumber : ITrigonometricFunctions<TNumber>
         => Same<TNumber>(TNumber.RadiansToDegrees);
 
     /// <summary>Hyperbolic sine.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Sinh<TNumber>()
+    public static TransformerRule<TNumber> Sinh<TNumber>()
         where TNumber : IHyperbolicFunctions<TNumber>
         => Same<TNumber>(TNumber.Sinh);
 
     /// <summary>Hyperbolic cosine.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Cosh<TNumber>()
+    public static TransformerRule<TNumber> Cosh<TNumber>()
         where TNumber : IHyperbolicFunctions<TNumber>
         => Same<TNumber>(TNumber.Cosh);
 
     /// <summary>Hyperbolic tangent.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Tanh<TNumber>()
+    public static TransformerRule<TNumber> Tanh<TNumber>()
         where TNumber : IHyperbolicFunctions<TNumber>
         => Same<TNumber>(TNumber.Tanh);
 
     /// <summary>Inverse hyperbolic sine.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Asinh<TNumber>()
+    public static TransformerRule<TNumber> Asinh<TNumber>()
         where TNumber : IHyperbolicFunctions<TNumber>
         => Same<TNumber>(TNumber.Asinh);
 
     /// <summary>Inverse hyperbolic cosine.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Acosh<TNumber>()
+    public static TransformerRule<TNumber> Acosh<TNumber>()
         where TNumber : IHyperbolicFunctions<TNumber>
         => Same<TNumber>(TNumber.Acosh);
 
     /// <summary>Inverse hyperbolic tangent.</summary>
     /// <typeparam name="TNumber">The numeric type. It must implement the operation this rule calls.</typeparam>
     /// <returns>The rule that applies this transformation.</returns>
-    public static TransformerRule<TNumber, TNumber> Atanh<TNumber>()
+    public static TransformerRule<TNumber> Atanh<TNumber>()
         where TNumber : IHyperbolicFunctions<TNumber>
         => Same<TNumber>(TNumber.Atanh);
 }

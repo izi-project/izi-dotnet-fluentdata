@@ -1,9 +1,6 @@
 namespace Izi.FluentData.Transformer;
 
-/// <summary>
-/// Same-type rules for one property. <see cref="Convert{TOut}"/> switches the value to another type
-/// and must be finished with <see cref="PropertyConversion{T, TIn, TOut}.Into"/>.
-/// </summary>
+/// <summary>Same-type rules for one property. The property is read, transformed, and written back.</summary>
 /// <typeparam name="T">The object being transformed.</typeparam>
 /// <typeparam name="TProperty">The property type.</typeparam>
 public sealed class PropertyRule<T, TProperty> : ITransformerStep<T>
@@ -11,8 +8,7 @@ public sealed class PropertyRule<T, TProperty> : ITransformerStep<T>
     private readonly Transformer<T> _owner;
     private readonly Func<T, TProperty> _read;
     private readonly Func<T, TProperty, T> _write;
-    private readonly List<ITransformerRule<TProperty, TProperty>> _rules = [];
-    private IPendingConversion<T, TProperty>? _conversion;
+    private readonly List<ITransformerRule<TProperty>> _rules = [];
 
     internal PropertyRule(
         Transformer<T> owner,
@@ -28,18 +24,11 @@ public sealed class PropertyRule<T, TProperty> : ITransformerStep<T>
     /// <param name="rule">The rule to run on the property value.</param>
     /// <returns>This property rule.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="rule"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException"><see cref="Convert{TOut}"/> was already called.</exception>
-    public PropertyRule<T, TProperty> Add(ITransformerRule<TProperty, TProperty> rule)
+    public PropertyRule<T, TProperty> Add(ITransformerRule<TProperty> rule)
     {
         ArgumentNullException.ThrowIfNull(rule);
         lock (_owner.Gate)
         {
-            if (_conversion is not null)
-            {
-                throw new InvalidOperationException(
-                    "Add preprocesses the property before Convert. This property already has a conversion.");
-            }
-
             _rules.Add(rule);
             _owner.InvalidateSnapshot();
         }
@@ -47,81 +36,32 @@ public sealed class PropertyRule<T, TProperty> : ITransformerStep<T>
         return this;
     }
 
-    /// <summary>Appends a same-type delegate, wrapped in a <see cref="TransformerRule{TIn, TOut}"/>.</summary>
+    /// <summary>Appends a same-type delegate, wrapped in a <see cref="TransformerRule{T}"/>.</summary>
     /// <param name="transform">The function that maps the property value.</param>
     /// <returns>This property rule.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="transform"/> is <see langword="null"/>.</exception>
     public PropertyRule<T, TProperty> Add(Func<TProperty, CancellationToken, ValueTask<TProperty>> transform)
     {
-        return Add(new TransformerRule<TProperty, TProperty>(transform));
-    }
-
-    /// <summary>
-    /// Converts the property value. The same-type rules already added become the conversion input and are
-    /// not written back. <see cref="PropertyConversion{T, TIn, TOut}.Into"/> must record the destination
-    /// before <see cref="Transformer{T}.TransformAsync"/>; otherwise that call throws
-    /// <see cref="InvalidOperationException"/> and no step runs.
-    /// </summary>
-    /// <typeparam name="TOut">The converted type.</typeparam>
-    /// <param name="rule">The conversion.</param>
-    /// <returns>The conversion chain.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="rule"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">This property was already converted.</exception>
-    public PropertyConversion<T, TProperty, TOut> Convert<TOut>(ITransformerRule<TProperty, TOut> rule)
-    {
-        ArgumentNullException.ThrowIfNull(rule);
-        lock (_owner.Gate)
-        {
-            if (_conversion is not null)
-            {
-                throw new InvalidOperationException("Convert was already called for this property.");
-            }
-
-            var conversion = new PropertyConversion<T, TProperty, TOut>(
-                _owner,
-                this,
-                (value, token) =>
-                {
-                    token.ThrowIfCancellationRequested();
-                    return rule.TransformAsync(value, token);
-                });
-            _conversion = conversion;
-            _owner.InvalidateSnapshot();
-            return conversion;
-        }
-    }
-
-    internal IPendingConversion<T, TProperty>? CurrentConversion => _conversion;
-
-    internal void ReplaceConversion(IPendingConversion<T, TProperty> conversion)
-    {
-        _conversion = conversion;
-        _owner.InvalidateSnapshot();
+        return Add(new TransformerRule<TProperty>(transform));
     }
 
     /// <summary>Copies the rules configured at this moment.</summary>
-    /// <returns>A step that does not observe later <see cref="Add(ITransformerRule{TProperty, TProperty})"/> calls.</returns>
+    /// <returns>A step that does not observe later <see cref="Add(ITransformerRule{TProperty})"/> calls.</returns>
     internal ITransformerStep<T> Snapshot()
     {
-        var rules = _rules.ToArray();
-        if (_conversion is not null)
-        {
-            return _conversion.Snapshot(_read, rules);
-        }
-
-        return new SameTypeStep(_read, _write, rules);
+        return new SameTypeStep(_read, _write, _rules.ToArray());
     }
 
     private sealed class SameTypeStep : ITransformerStep<T>
     {
         private readonly Func<T, TProperty> _read;
         private readonly Func<T, TProperty, T> _write;
-        private readonly ITransformerRule<TProperty, TProperty>[] _rules;
+        private readonly ITransformerRule<TProperty>[] _rules;
 
         public SameTypeStep(
             Func<T, TProperty> read,
             Func<T, TProperty, T> write,
-            ITransformerRule<TProperty, TProperty>[] rules)
+            ITransformerRule<TProperty>[] rules)
         {
             _read = read;
             _write = write;
@@ -138,7 +78,7 @@ public sealed class PropertyRule<T, TProperty> : ITransformerStep<T>
         T instance,
         Func<T, TProperty> read,
         Func<T, TProperty, T> write,
-        ITransformerRule<TProperty, TProperty>[] rules,
+        ITransformerRule<TProperty>[] rules,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -161,7 +101,7 @@ public sealed class PropertyRule<T, TProperty> : ITransformerStep<T>
 
     private static async ValueTask<T> ContinueRulesAsync(
         ValueTask<TProperty> pending,
-        ITransformerRule<TProperty, TProperty>[] rules,
+        ITransformerRule<TProperty>[] rules,
         int index,
         T instance,
         Func<T, TProperty, T> write,
@@ -187,27 +127,4 @@ public sealed class PropertyRule<T, TProperty> : ITransformerStep<T>
     {
         return Snapshot();
     }
-
-    /// <summary>
-    /// Converts the property with <see cref="TransformerRules.Map{TIn, TOut}"/>.
-    /// Same-type maps stay on <see cref="TransformerRuleExtensions.Map{T, TProperty}(PropertyRule{T, TProperty}, Func{TProperty, TProperty})"/>.
-    /// </summary>
-    /// <typeparam name="TOut">The type the function produces.</typeparam>
-    /// <param name="map">The function that converts the property value.</param>
-    /// <returns>The conversion, so <see cref="PropertyConversion{T, TIn, TOut}.Into"/> can store it.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="map"/> is <see langword="null"/>.</exception>
-    public PropertyConversion<T, TProperty, TOut> MapTo<TOut>(Func<TProperty, TOut> map)
-        => Convert(TransformerRules.Map(map));
-
-    /// <summary>
-    /// Converts the property with <see cref="TransformerRules.MapAsync{TIn, TOut}"/>.
-    /// </summary>
-    /// <typeparam name="TOut">The type the function produces.</typeparam>
-    /// <param name="map">The function that converts the property value.</param>
-    /// <returns>The conversion, so <see cref="PropertyConversion{T, TIn, TOut}.Into"/> can store it.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="map"/> is <see langword="null"/>.</exception>
-    public PropertyConversion<T, TProperty, TOut> MapToAsync<TOut>(
-        Func<TProperty, CancellationToken, ValueTask<TOut>> map)
-        => Convert(TransformerRules.MapAsync(map));
-
 }

@@ -77,10 +77,6 @@ public sealed class Transformer<T> : ITransformer<T>
     /// <exception cref="OperationCanceledException">
     /// <paramref name="cancellationToken"/> is cancelled before a step runs.
     /// </exception>
-    /// <exception cref="InvalidOperationException">
-    /// A <see cref="PropertyRule{T, TProperty}.Convert{TOut}"/> was not finished with
-    /// <see cref="PropertyConversion{T, TIn, TOut}.Into"/>.
-    /// </exception>
     public ValueTask<T> TransformAsync(T instance, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -153,33 +149,6 @@ internal interface ITransformerStep<T>
     ITransformerStep<T> Snapshot();
 }
 
-internal interface IPendingConversion<T, TProperty>
-{
-    ITransformerStep<T> Snapshot(
-        Func<T, TProperty> read,
-        ITransformerRule<TProperty, TProperty>[] sourceRules);
-}
-
-internal sealed class DelegateStep<T> : ITransformerStep<T>
-{
-    private readonly Func<T, CancellationToken, ValueTask<T>> _apply;
-
-    public DelegateStep(Func<T, CancellationToken, ValueTask<T>> apply)
-    {
-        _apply = apply;
-    }
-
-    public ValueTask<T> ApplyAsync(T instance, CancellationToken cancellationToken)
-    {
-        return _apply(instance, cancellationToken);
-    }
-
-    public ITransformerStep<T> Snapshot()
-    {
-        return this;
-    }
-}
-
 internal static class PropertyAccess
 {
     private static readonly Func<object, object> CloneInstance = CreateMemberwiseClone();
@@ -191,7 +160,7 @@ internal static class PropertyAccess
         if (property.Body is not MemberExpression { Member: PropertyInfo info, Expression: ParameterExpression })
         {
             throw new ArgumentException(
-                "RuleFor and Into require a simple property access, for example customer => customer.Name.",
+                "RuleFor requires a simple property access, for example customer => customer.Name.",
                 nameof(property));
         }
 
@@ -213,7 +182,7 @@ internal static class PropertyAccess
         {
             throw new ArgumentException(
                 $"Property '{info.Name}' has no public settable or init accessor. " +
-                "RuleFor and Into need a settable or init property. Transformer<T> only changes properties.",
+                "RuleFor needs a settable or init property. Transformer<T> only changes properties.",
                 nameof(property));
         }
 
