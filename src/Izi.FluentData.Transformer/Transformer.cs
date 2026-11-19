@@ -11,8 +11,8 @@ namespace Izi.FluentData.Transformer;
 /// <para>
 /// Property transformers run in the order they were registered. Rules added to the returned
 /// <see cref="PropertyTransformer{T, TProperty}"/> stay inside that binding.
-/// Configuration stays mutable between executions. <see cref="TransformAsync"/> reuses a snapshot of the
-/// property list taken when the configuration last changed. A registration on another thread does not change
+/// Configuration stays mutable between executions. <see cref="TransformAsync"/> reuses a compiled runner
+/// taken when the configuration last changed. A registration on another thread does not change
 /// a pipeline that is already running, and the next run sees the new rules.
 /// </para>
 /// <para>
@@ -34,8 +34,8 @@ namespace Izi.FluentData.Transformer;
 public sealed class Transformer<T> : ITransformer<T>
 {
     private readonly object _gate = new();
-    private readonly List<IPropertyTransformer<T>> _properties = [];
-    private volatile IPropertyTransformer<T>[]? _cached;
+    private readonly List<IPropertyConfiguration<T>> _properties = [];
+    private volatile ImmutableTransformer<T>? _compiled;
 
     /// <summary>
     /// Registers a same-type transformer for one property. The property is read, the rules run, and the
@@ -55,7 +55,7 @@ public sealed class Transformer<T> : ITransformer<T>
         lock (_gate)
         {
             _properties.Add(propertyTransformer);
-            InvalidateSnapshot();
+            InvalidateCompiled();
         }
 
         return propertyTransformer;
@@ -81,22 +81,68 @@ public sealed class Transformer<T> : ITransformer<T>
     public ValueTask<T> TransformAsync(T instance, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var steps = _cached;
-        if (steps is null)
+        return Compiled().TransformAsync(instance, cancellationToken);
+    }
+
+    /// <summary>Drops the cached runner. Callers already hold <see cref="Gate"/>.</summary>
+    internal void InvalidateCompiled() => _compiled = null;
+
+    internal object Gate => _gate;
+
+    private ImmutableTransformer<T> Compiled()
+    {
+        var compiled = _compiled;
+        if (compiled is not null)
         {
-            lock (_gate)
-            {
-                steps = _cached;
-                if (steps is null)
-                {
-                    steps = SnapshotProperties();
-                    _cached = steps;
-                }
-            }
+            return compiled;
         }
 
-        // Successes that are already complete stay on this call. Faulted, cancelled, and incomplete
-        // tasks are awaited so their exceptions surface from the returned ValueTask.
+        lock (_gate)
+        {
+            compiled = _compiled;
+            if (compiled is null)
+            {
+                compiled = Compile();
+                _compiled = compiled;
+            }
+
+            return compiled;
+        }
+    }
+
+    private ImmutableTransformer<T> Compile()
+    {
+        var count = _properties.Count;
+        if (count == 0)
+        {
+            return new ImmutableTransformer<T>(Array.Empty<ICompiledPropertyTransformer<T>>());
+        }
+
+        var steps = new ICompiledPropertyTransformer<T>[count];
+        for (var i = 0; i < count; i++)
+        {
+            steps[i] = _properties[i].Compile();
+        }
+
+        return new ImmutableTransformer<T>(steps);
+    }
+}
+
+/// <summary>The compiled property runners for one <see cref="Transformer{T}"/> configuration.</summary>
+/// <typeparam name="T">The object being transformed.</typeparam>
+internal sealed class ImmutableTransformer<T>
+{
+    private readonly ICompiledPropertyTransformer<T>[] _properties;
+
+    internal ImmutableTransformer(ICompiledPropertyTransformer<T>[] properties)
+    {
+        _properties = properties;
+    }
+
+    internal ValueTask<T> TransformAsync(T instance, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var steps = _properties;
         for (var i = 0; i < steps.Length; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -112,31 +158,9 @@ public sealed class Transformer<T> : ITransformer<T>
         return new ValueTask<T>(instance);
     }
 
-    /// <summary>Drops the cached pipeline. Callers already hold <see cref="Gate"/>.</summary>
-    internal void InvalidateSnapshot() => _cached = null;
-
-    internal object Gate => _gate;
-
-    private IPropertyTransformer<T>[] SnapshotProperties()
-    {
-        var count = _properties.Count;
-        if (count == 0)
-        {
-            return Array.Empty<IPropertyTransformer<T>>();
-        }
-
-        var steps = new IPropertyTransformer<T>[count];
-        for (var i = 0; i < count; i++)
-        {
-            steps[i] = _properties[i].Snapshot();
-        }
-
-        return steps;
-    }
-
     private static async ValueTask<T> ContinueAsync(
         ValueTask<T> pending,
-        IPropertyTransformer<T>[] steps,
+        ICompiledPropertyTransformer<T>[] steps,
         int index,
         CancellationToken cancellationToken)
     {
