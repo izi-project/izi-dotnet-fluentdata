@@ -35,7 +35,7 @@ sealed class Customer
 }
 ```
 
-`Trim`, `ToUpper`, `ToLower`, and `Round` are fluent wrappers over the catalogue in `TransformerRules`. `RuleFor` returns a `PropertyTransformer<T, TProperty>` for that property. Every step reads and writes the same property type, so the chain stays on it. `Trim`, the other trim and case rules, and the whitespace rules leave a null string null. `Truncate` and `Substring` count UTF-16 code units, so they can split a surrogate pair or an emoji.
+`Trim`, `ToUpper`, `ToLower`, and `Round` are fluent wrappers over the catalogue in `TransformerRules`. `RuleFor` returns a `PropertyTransformer<T, TProperty>` for that property. Every step reads and writes the same property type, so the chain stays on it. A null string stays null for `Trim`, `TrimStart`, `TrimEnd`, `ToUpper`, `ToLower`, `ToTitleCase`, `RemoveWhitespace`, `CollapseWhitespace`, `Replace`, `ReplaceRegex`, `Substring`, `Truncate`, `PadLeft`, `PadRight`, `Prepend`, and `Append`. `Truncate` and `Substring` count UTF-16 code units, so they can split a surrogate pair or an emoji.
 
 Conversions are not part of Transformer 2.0. Parse a string, map one property onto another, or change a numeric type in your own code (or in model binding) before you call `TransformAsync`.
 

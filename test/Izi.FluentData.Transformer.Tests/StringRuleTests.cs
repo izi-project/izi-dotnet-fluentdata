@@ -40,7 +40,7 @@ public class StringRuleTests
     public async Task Replace_and_regex_rules_substitute_text()
     {
         Assert.Equal("h-llo", await TransformerRules.Replace("e", "-").TransformAsync("hello"));
-        Assert.Equal(string.Empty, await TransformerRules.Replace("e", "-").TransformAsync(null!));
+        Assert.Null(await TransformerRules.Replace("e", "-").TransformAsync(null!));
         Assert.Equal("h-llo", await TransformerRules.ReplaceRegex(new Regex("e+", RegexOptions.None, TimeSpan.FromSeconds(1)), "-").TransformAsync("hello"));
         Assert.Equal("h-llo", await TransformerRules.ReplaceRegex("e+", "-").TransformAsync("hello"));
         Assert.Equal(
@@ -71,17 +71,17 @@ public class StringRuleTests
     }
 
     [Fact]
-    public async Task Slice_pad_and_affix_rules_validate_configuration_and_coalesce_null()
+    public async Task Slice_pad_and_affix_rules_validate_configuration_and_keep_null()
     {
         Assert.Equal("llo", await TransformerRules.Substring(2).TransformAsync("hello"));
         Assert.Equal("el", await TransformerRules.Substring(1, 2).TransformAsync("hello"));
         Assert.Equal("he", await TransformerRules.Truncate(2).TransformAsync("hello"));
-        Assert.Equal(string.Empty, await TransformerRules.Truncate(2).TransformAsync(null!));
+        Assert.Null(await TransformerRules.Truncate(2).TransformAsync(null!));
         Assert.Equal("**hi", await TransformerRules.PadLeft(4, '*').TransformAsync("hi"));
         Assert.Equal("hi**", await TransformerRules.PadRight(4, '*').TransformAsync("hi"));
         Assert.Equal("prehi", await TransformerRules.Prepend("pre").TransformAsync("hi"));
         Assert.Equal("hi", await TransformerRules.Prepend(null!).TransformAsync("hi"));
-        Assert.Equal("post", await TransformerRules.Append("post").TransformAsync(null!));
+        Assert.Null(await TransformerRules.Append("post").TransformAsync(null!));
         Assert.Equal("hipost", await TransformerRules.Append("post").TransformAsync("hi"));
 
         Assert.Throws<ArgumentOutOfRangeException>(() => TransformerRules.Substring(-1));
@@ -89,7 +89,16 @@ public class StringRuleTests
         Assert.Throws<ArgumentOutOfRangeException>(() => TransformerRules.Truncate(-1));
         Assert.Throws<ArgumentOutOfRangeException>(() => TransformerRules.PadLeft(-1, ' '));
         Assert.Throws<ArgumentOutOfRangeException>(() => TransformerRules.PadRight(-1, ' '));
-        Assert.Throws<ArgumentOutOfRangeException>(() => TransformerRules.Substring(1).TransformAsync(null!));
+        Assert.Null(await TransformerRules.Substring(1).TransformAsync(null!));
+        Assert.Null(await TransformerRules.Substring(1, 2).TransformAsync(null!));
+        Assert.Null(await TransformerRules.PadLeft(4, '*').TransformAsync(null!));
+        Assert.Null(await TransformerRules.PadRight(4, '*').TransformAsync(null!));
+        Assert.Null(await TransformerRules.Prepend("pre").TransformAsync(null!));
+        Assert.Null(await TransformerRules.Append(null).TransformAsync(null!));
+        var timed = new Regex("e+", RegexOptions.None, TimeSpan.FromSeconds(1));
+        Assert.Null(await TransformerRules.ReplaceRegex(timed, "-").TransformAsync(null!));
+        Assert.Null(await TransformerRules.ReplaceRegex("e+", "-").TransformAsync(null!));
+        Assert.Null(await TransformerRules.ReplaceRegex("E+", "-", RegexOptions.IgnoreCase).TransformAsync(null!));
     }
 
     [Fact]

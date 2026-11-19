@@ -73,8 +73,7 @@ public static partial class TransformerRules
     }
 
     /// <summary>
-    /// Replaces every <paramref name="oldValue"/> with <paramref name="newValue"/>. A null string becomes
-    /// empty.
+    /// Replaces every <paramref name="oldValue"/> with <paramref name="newValue"/>. A null string stays null.
     /// </summary>
     /// <param name="oldValue">Text to replace. Comparison is ordinal.</param>
     /// <param name="newValue">Text written in place of each match.</param>
@@ -92,12 +91,12 @@ public static partial class TransformerRules
             throw new ArgumentException("The value to replace must not be empty.", nameof(oldValue));
         }
 
-        return MapOrEmpty(value => value.Replace(oldValue, newValue, StringComparison.Ordinal));
+        return MapKeepingNull(value => value.Replace(oldValue, newValue, StringComparison.Ordinal));
     }
 
     /// <summary>
     /// Replaces matches of a caller-supplied <paramref name="regex"/>. That regex keeps its own timeout and
-    /// options.
+    /// options. A null string stays null.
     /// </summary>
     /// <param name="regex">Caller-supplied regular expression. Its timeout and options are left unchanged.</param>
     /// <param name="replacement">Text written in place of each match.</param>
@@ -119,12 +118,12 @@ public static partial class TransformerRules
                 nameof(regex));
         }
 
-        return MapOrEmpty(value => regex.Replace(value, replacement));
+        return MapKeepingNull(value => regex.Replace(value, replacement));
     }
 
     /// <summary>
     /// Compiles <paramref name="pattern"/> with a one-second match timeout and replaces its matches.
-    /// A null string becomes empty.
+    /// A null string stays null.
     /// </summary>
     /// <param name="pattern">Regular expression pattern. It is compiled with a one-second match timeout.</param>
     /// <param name="replacement">Text written in place of each match.</param>
@@ -174,8 +173,8 @@ public static partial class TransformerRules
         => MapKeepingNull(value => WhitespacePattern().Replace(value, " "));
 
     /// <summary>
-    /// Returns the tail starting at <paramref name="startIndex"/>. A null string becomes empty, then the
-    /// range is applied.
+    /// Returns the tail starting at <paramref name="startIndex"/>. A null string stays null.
+    /// The range counts UTF-16 code units and can split a surrogate pair.
     /// </summary>
     /// <param name="startIndex">Zero-based index of the first character to keep. A negative index is rejected.</param>
     /// <returns>The rule that applies this transformation.</returns>
@@ -189,12 +188,12 @@ public static partial class TransformerRules
             throw new ArgumentOutOfRangeException(nameof(startIndex));
         }
 
-        return MapOrEmpty(value => value[startIndex..]);
+        return MapKeepingNull(value => value[startIndex..]);
     }
 
     /// <summary>
-    /// Returns <paramref name="length"/> characters from <paramref name="startIndex"/>. A null string
-    /// becomes empty first.
+    /// Returns <paramref name="length"/> characters from <paramref name="startIndex"/>. A null string stays null.
+    /// The range counts UTF-16 code units and can split a surrogate pair.
     /// </summary>
     /// <param name="startIndex">Zero-based index of the first character to keep. A negative index is rejected.</param>
     /// <param name="length">Number of characters to keep. A negative length is rejected.</param>
@@ -217,11 +216,12 @@ public static partial class TransformerRules
             throw new ArgumentOutOfRangeException(nameof(length));
         }
 
-        return MapOrEmpty(value => value.Substring(startIndex, length));
+        return MapKeepingNull(value => value.Substring(startIndex, length));
     }
 
     /// <summary>
-    /// Keeps at most <paramref name="maxLength"/> characters. A null or empty string stays empty.
+    /// Keeps at most <paramref name="maxLength"/> characters. A null string stays null.
+    /// Characters are UTF-16 code units, so a cut can split a surrogate pair.
     /// A negative length is rejected when the rule is created.
     /// </summary>
     /// <param name="maxLength">Maximum number of characters to keep. A negative length is rejected.</param>
@@ -236,11 +236,11 @@ public static partial class TransformerRules
             throw new ArgumentOutOfRangeException(nameof(maxLength));
         }
 
-        return MapOrEmpty(value => value.Length <= maxLength ? value : value[..maxLength]);
+        return MapKeepingNull(value => value.Length <= maxLength ? value : value[..maxLength]);
     }
 
     /// <summary>
-    /// Pads on the left. A null string becomes empty. There is no maximum width; choosing it is the
+    /// Pads on the left. A null string stays null. There is no maximum width; choosing it is the
     /// caller's responsibility. A negative width is rejected when the rule is created.
     /// </summary>
     /// <param name="totalWidth">Width of the padded result. A negative width is rejected.</param>
@@ -256,11 +256,11 @@ public static partial class TransformerRules
             throw new ArgumentOutOfRangeException(nameof(totalWidth));
         }
 
-        return MapOrEmpty(value => value.PadLeft(totalWidth, paddingChar));
+        return MapKeepingNull(value => value.PadLeft(totalWidth, paddingChar));
     }
 
     /// <summary>
-    /// Pads on the right. A null string becomes empty. There is no maximum width; choosing it is the
+    /// Pads on the right. A null string stays null. There is no maximum width; choosing it is the
     /// caller's responsibility. A negative width is rejected when the rule is created.
     /// </summary>
     /// <param name="totalWidth">Width of the padded result. A negative width is rejected.</param>
@@ -276,27 +276,28 @@ public static partial class TransformerRules
             throw new ArgumentOutOfRangeException(nameof(totalWidth));
         }
 
-        return MapOrEmpty(value => value.PadRight(totalWidth, paddingChar));
+        return MapKeepingNull(value => value.PadRight(totalWidth, paddingChar));
     }
 
     /// <summary>
-    /// Inserts <paramref name="prefix"/> before the text. A null source or prefix is treated as empty.
+    /// Inserts <paramref name="prefix"/> before the text. A null source stays null.
+    /// A null prefix is treated as empty.
     /// </summary>
     /// <param name="prefix">Text inserted in front. Null is treated as empty.</param>
     /// <returns>The rule that applies this transformation.</returns>
     public static TransformerRule<string> Prepend(string? prefix)
     {
         var captured = prefix ?? string.Empty;
-        return MapOrEmpty(value => captured + value);
+        return MapKeepingNull(value => captured + value);
     }
 
-    /// <summary>Appends <paramref name="suffix"/>. A null source or suffix is treated as empty.</summary>
+    /// <summary>Appends <paramref name="suffix"/>. A null source stays null. A null suffix is treated as empty.</summary>
     /// <param name="suffix">Text appended. Null is treated as empty.</param>
     /// <returns>The rule that applies this transformation.</returns>
     public static TransformerRule<string> Append(string? suffix)
     {
         var captured = suffix ?? string.Empty;
-        return MapOrEmpty(value => value + captured);
+        return MapKeepingNull(value => value + captured);
     }
 
     [GeneratedRegex(@"\s+", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
@@ -305,10 +306,6 @@ public static partial class TransformerRules
     // Null stays null. The map runs only for a non-null string.
     private static TransformerRule<string> MapKeepingNull(Func<string, string> map)
         => Same<string>(value => value is null ? null! : map(value));
-
-    // Null becomes empty before the map runs.
-    private static TransformerRule<string> MapOrEmpty(Func<string, string> map)
-        => Same<string>(value => map(value ?? string.Empty));
 
     // The delegate is captured when the rule is built. A passing call returns a completed ValueTask
     // and does not allocate a state machine.
