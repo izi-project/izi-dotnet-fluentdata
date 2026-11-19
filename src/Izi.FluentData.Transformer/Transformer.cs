@@ -50,8 +50,8 @@ public sealed class Transformer<T> : ITransformer<T>
     /// </exception>
     public PropertyTransformer<T, TProperty> RuleFor<TProperty>(Expression<Func<T, TProperty>> property)
     {
-        var (name, read, write) = PropertyAccess.Compile(property);
-        var propertyTransformer = new PropertyTransformer<T, TProperty>(this, name, read, write);
+        var (name, read, write, requiresClone) = PropertyAccess.Compile(property);
+        var propertyTransformer = new PropertyTransformer<T, TProperty>(this, name, read, write, requiresClone);
         lock (_gate)
         {
             _properties.Add(propertyTransformer);
@@ -147,16 +147,23 @@ internal sealed class ImmutableTransformer<T>
     {
         cancellationToken.ThrowIfCancellationRequested();
         var steps = _properties;
+        var cloned = false;
         for (var i = 0; i < steps.Length; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (steps[i].RequiresClone && !cloned)
+            {
+                instance = PropertyAccess.ShallowClone(instance);
+                cloned = true;
+            }
+
             var pending = steps[i].ApplyAsync(instance, cancellationToken);
 
             // Read a completed step here. ContinueAsync is separate so the state machine
             // is built only when a step actually waits.
             if (!pending.IsCompletedSuccessfully)
             {
-                return ContinueAsync(pending, steps, i + 1, cancellationToken);
+                return ContinueAsync(pending, steps, i + 1, cloned, cancellationToken);
             }
 
             instance = pending.Result;
@@ -169,12 +176,19 @@ internal sealed class ImmutableTransformer<T>
         ValueTask<T> pending,
         ICompiledPropertyTransformer<T>[] steps,
         int index,
+        bool cloned,
         CancellationToken cancellationToken)
     {
         var instance = await pending.ConfigureAwait(false);
         for (; index < steps.Length; index++)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (steps[index].RequiresClone && !cloned)
+            {
+                instance = PropertyAccess.ShallowClone(instance);
+                cloned = true;
+            }
+
             instance = await steps[index].ApplyAsync(instance, cancellationToken).ConfigureAwait(false);
         }
 
@@ -186,7 +200,9 @@ internal static class PropertyAccess
 {
     private static readonly Func<object, object> CloneInstance = CreateMemberwiseClone();
 
-    public static (string Name, Func<T, TProperty> Read, Func<T, TProperty, T> Write) Compile<T, TProperty>(
+    internal static T ShallowClone<T>(T instance) => (T)CloneInstance(instance!);
+
+    public static (string Name, Func<T, TProperty> Read, Func<T, TProperty, T> Write, bool RequiresClone) Compile<T, TProperty>(
         Expression<Func<T, TProperty>> property)
     {
         ArgumentNullException.ThrowIfNull(property);
@@ -228,7 +244,12 @@ internal static class PropertyAccess
         var read = property.Compile();
         if (IsInitOnly(setter))
         {
-            return (info.Name, read, InitOnlyWrite<T, TProperty>(info));
+            if (typeof(T).IsValueType)
+            {
+                return (info.Name, read, StructInitWrite<T, TProperty>(setter), false);
+            }
+
+            return (info.Name, read, ClassInitWrite<T, TProperty>(setter), true);
         }
 
         var instance = Expression.Parameter(typeof(T), "instance");
@@ -238,29 +259,42 @@ internal static class PropertyAccess
             Expression.Block(assign, instance),
             instance,
             value).Compile();
-        return (info.Name, read, write);
+        return (info.Name, read, write, false);
     }
 
     /// <summary>
-    /// Init-only properties cannot be assigned in an expression tree.
-    /// Classes, including records, are shallow-cloned and then set so the caller's instance is left
-    /// unchanged. Structs are boxed, set, and unboxed, which returns the updated copy.
+    /// Init accessors are ordinary methods. Calling the compiled method avoids PropertyInfo.SetValue,
+    /// which boxes value-type arguments. The runner clones a class once before the first init write.
     /// </summary>
-    private static Func<T, TProperty, T> InitOnlyWrite<T, TProperty>(PropertyInfo property)
+    private static Func<T, TProperty, T> ClassInitWrite<T, TProperty>(MethodInfo setter)
     {
+        var assign = CompileSetter<T, TProperty>(setter);
         return (instance, value) =>
         {
-            if (typeof(T).IsValueType)
-            {
-                object box = instance!;
-                property.SetValue(box, value);
-                return (T)box;
-            }
-
-            var clone = (T)CloneInstance(instance!);
-            property.SetValue(clone, value);
-            return clone;
+            assign(instance!, value);
+            return instance;
         };
+    }
+
+    private static Func<T, TProperty, T> StructInitWrite<T, TProperty>(MethodInfo setter)
+    {
+        var instance = Expression.Parameter(typeof(T), "instance");
+        var value = Expression.Parameter(typeof(TProperty), "value");
+        var copy = Expression.Variable(typeof(T), "copy");
+        var body = Expression.Block(
+            [copy],
+            Expression.Assign(copy, instance),
+            Expression.Call(copy, setter, value),
+            copy);
+        return Expression.Lambda<Func<T, TProperty, T>>(body, instance, value).Compile();
+    }
+
+    private static Action<T, TProperty> CompileSetter<T, TProperty>(MethodInfo setter)
+    {
+        var instance = Expression.Parameter(typeof(T), "instance");
+        var value = Expression.Parameter(typeof(TProperty), "value");
+        var call = Expression.Call(instance, setter, value);
+        return Expression.Lambda<Action<T, TProperty>>(call, instance, value).Compile();
     }
 
     private static bool IsInitOnly(MethodInfo setter)

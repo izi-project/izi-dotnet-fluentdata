@@ -277,8 +277,8 @@ public static partial class TransformerRules
     /// </exception>
     public static TransformerRule<T> EndOfDay<T>()
         => Pick<T>(nameof(EndOfDay),
-            dateTime: value => value.Date.AddDays(1).AddTicks(-1),
-            dateTimeOffset: value => new DateTimeOffset(value.Date, value.Offset).AddDays(1).AddTicks(-1));
+            dateTime: EndOfDay,
+            dateTimeOffset: EndOfDay);
 
     /// <summary>
     /// Moves back to <paramref name="firstDayOfWeek"/>, or stays when already on that day. Supports
@@ -315,13 +315,9 @@ public static partial class TransformerRules
     /// </exception>
     public static TransformerRule<T> EndOfWeek<T>(DayOfWeek firstDayOfWeek)
         => Pick<T>(nameof(EndOfWeek),
-            dateTime: value =>
-                value.Date.AddDays(-DaysSince(value.DayOfWeek, firstDayOfWeek, includeSameDay: true) + 7).AddTicks(-1),
-            dateTimeOffset: value =>
-                new DateTimeOffset(value.Date, value.Offset)
-                    .AddDays(-DaysSince(value.DayOfWeek, firstDayOfWeek, includeSameDay: true) + 7)
-                    .AddTicks(-1),
-            dateOnly: value => value.AddDays(-DaysSince(value.DayOfWeek, firstDayOfWeek, includeSameDay: true) + 6));
+            dateTime: value => EndOfWeek(value, firstDayOfWeek),
+            dateTimeOffset: value => EndOfWeek(value, firstDayOfWeek),
+            dateOnly: value => EndOfWeek(value, firstDayOfWeek));
 
     /// <summary>
     /// Moves to the first day of the month, keeping kind or offset. Supports <see cref="DateTime"/>,
@@ -353,9 +349,8 @@ public static partial class TransformerRules
     /// </exception>
     public static TransformerRule<T> EndOfMonth<T>()
         => Pick<T>(nameof(EndOfMonth),
-            dateTime: value => new DateTime(value.Year, value.Month, 1, 0, 0, 0, value.Kind).AddMonths(1).AddTicks(-1),
-            dateTimeOffset: value =>
-                new DateTimeOffset(value.Year, value.Month, 1, 0, 0, 0, value.Offset).AddMonths(1).AddTicks(-1),
+            dateTime: EndOfMonth,
+            dateTimeOffset: EndOfMonth,
             dateOnly: value => EndOfMonth(value));
 
     /// <summary>
@@ -389,14 +384,8 @@ public static partial class TransformerRules
     /// </exception>
     public static TransformerRule<T> EndOfQuarter<T>()
         => Pick<T>(nameof(EndOfQuarter),
-            dateTime: value =>
-                new DateTime(value.Year, QuarterStartMonth(value.Month), 1, 0, 0, 0, value.Kind)
-                    .AddMonths(3)
-                    .AddTicks(-1),
-            dateTimeOffset: value =>
-                new DateTimeOffset(value.Year, QuarterStartMonth(value.Month), 1, 0, 0, 0, value.Offset)
-                    .AddMonths(3)
-                    .AddTicks(-1),
+            dateTime: EndOfQuarter,
+            dateTimeOffset: EndOfQuarter,
             dateOnly: value => EndOfMonth(new DateOnly(value.Year, QuarterStartMonth(value.Month), 1).AddMonths(2)));
 
     /// <summary>
@@ -429,9 +418,8 @@ public static partial class TransformerRules
     /// </exception>
     public static TransformerRule<T> EndOfYear<T>()
         => Pick<T>(nameof(EndOfYear),
-            dateTime: value => new DateTime(value.Year, 1, 1, 0, 0, 0, value.Kind).AddYears(1).AddTicks(-1),
-            dateTimeOffset: value =>
-                new DateTimeOffset(value.Year, 1, 1, 0, 0, 0, value.Offset).AddYears(1).AddTicks(-1),
+            dateTime: EndOfYear,
+            dateTimeOffset: EndOfYear,
             dateOnly: value => new DateOnly(value.Year, 12, 31));
 
     /// <summary>
@@ -550,15 +538,16 @@ public static partial class TransformerRules
     /// </exception>
     public static TransformerRule<T> WithHour<T>(int hour)
     {
+        var rule = Pick<T>(nameof(WithHour),
+            dateTime: value => WithTime(value, hour, value.Minute, value.Second, value.Millisecond),
+            dateTimeOffset: value => WithTime(value, hour, value.Minute, value.Second, value.Millisecond),
+            timeOnly: value => WithTime(value, hour, value.Minute, value.Second, value.Millisecond));
         if (hour is < 0 or > 23)
         {
             throw new ArgumentOutOfRangeException(nameof(hour));
         }
 
-        return Pick<T>(nameof(WithHour),
-            dateTime: value => WithTime(value, hour, value.Minute, value.Second, value.Millisecond),
-            dateTimeOffset: value => WithTime(value, hour, value.Minute, value.Second, value.Millisecond),
-            timeOnly: value => WithTime(value, hour, value.Minute, value.Second, value.Millisecond));
+        return rule;
     }
 
     /// <summary>
@@ -578,15 +567,16 @@ public static partial class TransformerRules
     /// </exception>
     public static TransformerRule<T> WithMinute<T>(int minute)
     {
+        var rule = Pick<T>(nameof(WithMinute),
+            dateTime: value => WithTime(value, value.Hour, minute, value.Second, value.Millisecond),
+            dateTimeOffset: value => WithTime(value, value.Hour, minute, value.Second, value.Millisecond),
+            timeOnly: value => WithTime(value, value.Hour, minute, value.Second, value.Millisecond));
         if (minute is < 0 or > 59)
         {
             throw new ArgumentOutOfRangeException(nameof(minute));
         }
 
-        return Pick<T>(nameof(WithMinute),
-            dateTime: value => WithTime(value, value.Hour, minute, value.Second, value.Millisecond),
-            dateTimeOffset: value => WithTime(value, value.Hour, minute, value.Second, value.Millisecond),
-            timeOnly: value => WithTime(value, value.Hour, minute, value.Second, value.Millisecond));
+        return rule;
     }
 
     /// <summary>
@@ -606,15 +596,16 @@ public static partial class TransformerRules
     /// </exception>
     public static TransformerRule<T> WithSecond<T>(int second)
     {
+        var rule = Pick<T>(nameof(WithSecond),
+            dateTime: value => WithTime(value, value.Hour, value.Minute, second, value.Millisecond),
+            dateTimeOffset: value => WithTime(value, value.Hour, value.Minute, second, value.Millisecond),
+            timeOnly: value => WithTime(value, value.Hour, value.Minute, second, value.Millisecond));
         if (second is < 0 or > 59)
         {
             throw new ArgumentOutOfRangeException(nameof(second));
         }
 
-        return Pick<T>(nameof(WithSecond),
-            dateTime: value => WithTime(value, value.Hour, value.Minute, second, value.Millisecond),
-            dateTimeOffset: value => WithTime(value, value.Hour, value.Minute, second, value.Millisecond),
-            timeOnly: value => WithTime(value, value.Hour, value.Minute, second, value.Millisecond));
+        return rule;
     }
 
     /// <summary>
@@ -634,15 +625,16 @@ public static partial class TransformerRules
     /// </exception>
     public static TransformerRule<T> WithMillisecond<T>(int millisecond)
     {
+        var rule = Pick<T>(nameof(WithMillisecond),
+            dateTime: value => WithTime(value, value.Hour, value.Minute, value.Second, millisecond),
+            dateTimeOffset: value => WithTime(value, value.Hour, value.Minute, value.Second, millisecond),
+            timeOnly: value => WithTime(value, value.Hour, value.Minute, value.Second, millisecond));
         if (millisecond is < 0 or > 999)
         {
             throw new ArgumentOutOfRangeException(nameof(millisecond));
         }
 
-        return Pick<T>(nameof(WithMillisecond),
-            dateTime: value => WithTime(value, value.Hour, value.Minute, value.Second, millisecond),
-            dateTimeOffset: value => WithTime(value, value.Hour, value.Minute, value.Second, millisecond),
-            timeOnly: value => WithTime(value, value.Hour, value.Minute, value.Second, millisecond));
+        return rule;
     }
 
     /// <summary>
@@ -694,9 +686,9 @@ public static partial class TransformerRules
     /// </exception>
     public static TransformerRule<T> NextDayOfWeek<T>(DayOfWeek dayOfWeek)
         => Pick<T>(nameof(NextDayOfWeek),
-            dateTime: value => value.AddDays(DaysUntil(value.DayOfWeek, dayOfWeek)),
-            dateTimeOffset: value => value.AddDays(DaysUntil(value.DayOfWeek, dayOfWeek)),
-            dateOnly: value => value.AddDays(DaysUntil(value.DayOfWeek, dayOfWeek)));
+            dateTime: value => NextDayOfWeek(value, dayOfWeek),
+            dateTimeOffset: value => NextDayOfWeek(value, dayOfWeek),
+            dateOnly: value => NextDayOfWeek(value, dayOfWeek));
 
     /// <summary>
     /// Moves strictly backward to the previous <paramref name="dayOfWeek"/>. Supports
@@ -832,11 +824,12 @@ public static partial class TransformerRules
 
     private static TransformerRule<T> Quantize<T>(string operation, long unit, Func<long, long, long> quantize)
         => Pick<T>(operation,
-            dateTime: value => new DateTime(quantize(value.Ticks, unit), value.Kind),
-            dateTimeOffset: value =>
-                new DateTimeOffset(
-                    new DateTime(quantize(value.DateTime.Ticks, unit), DateTimeKind.Unspecified),
-                    value.Offset),
+            dateTime: value => new DateTime(
+                Clamp(quantize(value.Ticks, unit), 0, DateTime.MaxValue.Ticks),
+                value.Kind),
+            dateTimeOffset: value => AtOffset(
+                quantize(value.DateTime.Ticks, unit),
+                value.Offset),
             timeOnly: value => new TimeOnly(WrapDay(quantize(value.Ticks, unit))),
             timeSpan: value => new TimeSpan(quantize(value.Ticks, unit)));
 
@@ -921,7 +914,7 @@ public static partial class TransformerRules
     private static long TruncateTowardZero(long ticks, long unit)
     {
         var quotient = Math.DivRem(ticks, unit, out _);
-        return quotient * unit;
+        return SaturatingProduct(quotient, unit);
     }
 
     private static long CeilingTowardPositiveInfinity(long ticks, long unit)
@@ -932,31 +925,217 @@ public static partial class TransformerRules
             return ticks;
         }
 
-        return remainder > 0 ? (quotient + 1) * unit : quotient * unit;
+        return remainder > 0 ? SaturatingProduct(quotient + 1, unit) : SaturatingProduct(quotient, unit);
     }
 
     private static long RoundHalfUp(long ticks, long unit)
     {
         // DivRem truncates toward zero, so the remainder carries the sign of the original ticks.
         // An exact half moves toward positive infinity.
+        // Compare the remainder with unit - remainder so the half test does not multiply.
         var quotient = Math.DivRem(ticks, unit, out var remainder);
         if (remainder == 0)
         {
             return ticks;
         }
 
-        var absoluteRemainder = Math.Abs(remainder);
-        if (absoluteRemainder * 2 < unit)
+        var absoluteRemainder = remainder < 0 ? -remainder : remainder;
+        var otherSide = unit - absoluteRemainder;
+        if (absoluteRemainder < otherSide)
         {
-            return quotient * unit;
+            return SaturatingProduct(quotient, unit);
         }
 
-        if (absoluteRemainder * 2 > unit)
+        if (absoluteRemainder > otherSide)
         {
-            return remainder > 0 ? (quotient + 1) * unit : (quotient - 1) * unit;
+            return remainder > 0
+                ? SaturatingProduct(quotient + 1, unit)
+                : SaturatingProduct(quotient - 1, unit);
         }
 
-        return remainder > 0 ? (quotient + 1) * unit : quotient * unit;
+        return remainder > 0
+            ? SaturatingProduct(quotient + 1, unit)
+            : SaturatingProduct(quotient, unit);
+    }
+
+    private static long SaturatingProduct(long left, long right)
+    {
+        try
+        {
+            return checked(left * right);
+        }
+        catch (OverflowException)
+        {
+            return (left > 0) == (right > 0) ? long.MaxValue : long.MinValue;
+        }
+    }
+
+    private static long Clamp(long value, long min, long max)
+    {
+        if (value < min)
+        {
+            return min;
+        }
+
+        if (value > max)
+        {
+            return max;
+        }
+
+        return value;
+    }
+
+    private static DateTimeOffset AtOffset(long ticks, TimeSpan offset)
+    {
+        var maxTicks = DateTime.MaxValue.Ticks + offset.Ticks;
+        if (maxTicks > DateTime.MaxValue.Ticks)
+        {
+            maxTicks = DateTime.MaxValue.Ticks;
+        }
+
+        var minTicks = offset.Ticks;
+        if (minTicks < 0)
+        {
+            minTicks = 0;
+        }
+
+        if (ticks > maxTicks)
+        {
+            ticks = maxTicks;
+        }
+        else if (ticks < minTicks)
+        {
+            ticks = minTicks;
+        }
+
+        return new DateTimeOffset(ticks, offset);
+    }
+
+    private static DateTime EndOfDay(DateTime value)
+    {
+        if (value.Year == 9999 && value.Month == 12 && value.Day == 31)
+        {
+            return DateTime.SpecifyKind(DateTime.MaxValue, value.Kind);
+        }
+
+        return value.Date.AddDays(1).AddTicks(-1);
+    }
+
+    private static DateTimeOffset EndOfDay(DateTimeOffset value)
+        => AtOffset(value.Date.Ticks + TimeSpan.TicksPerDay - 1, value.Offset);
+
+    private static DateTime EndOfWeek(DateTime value, DayOfWeek firstDayOfWeek)
+    {
+        var daysFromStart = DaysSince(value.DayOfWeek, firstDayOfWeek, includeSameDay: true);
+        var start = value.Date.AddDays(-daysFromStart);
+        if (start > DateTime.MaxValue.AddDays(-7))
+        {
+            return DateTime.SpecifyKind(DateTime.MaxValue, value.Kind);
+        }
+
+        return start.AddDays(7).AddTicks(-1);
+    }
+
+    private static DateTimeOffset EndOfWeek(DateTimeOffset value, DayOfWeek firstDayOfWeek)
+    {
+        var daysFromStart = DaysSince(value.DayOfWeek, firstDayOfWeek, includeSameDay: true);
+        var startTicks = value.Date.Ticks - (daysFromStart * TimeSpan.TicksPerDay);
+        return AtOffset(startTicks + (7 * TimeSpan.TicksPerDay) - 1, value.Offset);
+    }
+
+    private static DateOnly EndOfWeek(DateOnly value, DayOfWeek firstDayOfWeek)
+    {
+        var days = -DaysSince(value.DayOfWeek, firstDayOfWeek, includeSameDay: true) + 6;
+        if (days > DateOnly.MaxValue.DayNumber - value.DayNumber)
+        {
+            return DateOnly.MaxValue;
+        }
+
+        return value.AddDays(days);
+    }
+
+    private static DateTime EndOfMonth(DateTime value)
+    {
+        if (value.Year == 9999 && value.Month == 12)
+        {
+            return DateTime.SpecifyKind(DateTime.MaxValue, value.Kind);
+        }
+
+        return new DateTime(value.Year, value.Month, 1, 0, 0, 0, value.Kind).AddMonths(1).AddTicks(-1);
+    }
+
+    private static DateTimeOffset EndOfMonth(DateTimeOffset value)
+    {
+        long endTicks = value.Year == 9999 && value.Month == 12
+            ? DateTime.MaxValue.Ticks
+            : new DateTime(value.Year, value.Month, 1).AddMonths(1).Ticks - 1;
+        return AtOffset(endTicks, value.Offset);
+    }
+
+    private static DateTime EndOfQuarter(DateTime value)
+    {
+        var month = QuarterStartMonth(value.Month);
+        if (value.Year == 9999 && month > 9)
+        {
+            return DateTime.SpecifyKind(DateTime.MaxValue, value.Kind);
+        }
+
+        return new DateTime(value.Year, month, 1, 0, 0, 0, value.Kind).AddMonths(3).AddTicks(-1);
+    }
+
+    private static DateTimeOffset EndOfQuarter(DateTimeOffset value)
+    {
+        var month = QuarterStartMonth(value.Month);
+        long endTicks = value.Year == 9999 && month > 9
+            ? DateTime.MaxValue.Ticks
+            : new DateTime(value.Year, month, 1).AddMonths(3).Ticks - 1;
+        return AtOffset(endTicks, value.Offset);
+    }
+
+    private static DateTime EndOfYear(DateTime value)
+    {
+        if (value.Year == 9999)
+        {
+            return DateTime.SpecifyKind(DateTime.MaxValue, value.Kind);
+        }
+
+        return new DateTime(value.Year, 1, 1, 0, 0, 0, value.Kind).AddYears(1).AddTicks(-1);
+    }
+
+    private static DateTimeOffset EndOfYear(DateTimeOffset value)
+    {
+        long endTicks = value.Year == 9999
+            ? DateTime.MaxValue.Ticks
+            : new DateTime(value.Year, 1, 1).AddYears(1).Ticks - 1;
+        return AtOffset(endTicks, value.Offset);
+    }
+
+    private static DateTime NextDayOfWeek(DateTime value, DayOfWeek dayOfWeek)
+    {
+        var days = DaysUntil(value.DayOfWeek, dayOfWeek);
+        if (value > DateTime.MaxValue.AddDays(-days))
+        {
+            return DateTime.SpecifyKind(DateTime.MaxValue, value.Kind);
+        }
+
+        return value.AddDays(days);
+    }
+
+    private static DateTimeOffset NextDayOfWeek(DateTimeOffset value, DayOfWeek dayOfWeek)
+    {
+        var days = DaysUntil(value.DayOfWeek, dayOfWeek);
+        return AtOffset(value.DateTime.Ticks + (days * TimeSpan.TicksPerDay), value.Offset);
+    }
+
+    private static DateOnly NextDayOfWeek(DateOnly value, DayOfWeek dayOfWeek)
+    {
+        var days = DaysUntil(value.DayOfWeek, dayOfWeek);
+        if (days > DateOnly.MaxValue.DayNumber - value.DayNumber)
+        {
+            return DateOnly.MaxValue;
+        }
+
+        return value.AddDays(days);
     }
 
     private static long WrapDay(long ticks)

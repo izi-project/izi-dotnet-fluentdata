@@ -12,6 +12,7 @@ public sealed class PropertyTransformer<T, TProperty> : IPropertyConfiguration<T
     private readonly Transformer<T> _owner;
     private readonly Func<T, TProperty> _read;
     private readonly Func<T, TProperty, T> _write;
+    private readonly bool _requiresClone;
     private readonly List<TransformerRule<TProperty>> _rules = [];
     private volatile ImmutablePropertyTransformer<T, TProperty>? _compiled;
 
@@ -19,12 +20,14 @@ public sealed class PropertyTransformer<T, TProperty> : IPropertyConfiguration<T
         Transformer<T> owner,
         string propertyName,
         Func<T, TProperty> read,
-        Func<T, TProperty, T> write)
+        Func<T, TProperty, T> write,
+        bool requiresClone)
     {
         _owner = owner;
         PropertyName = propertyName;
         _read = read;
         _write = write;
+        _requiresClone = requiresClone;
     }
 
     /// <summary>The property this transformer reads and writes.</summary>
@@ -81,6 +84,7 @@ public sealed class PropertyTransformer<T, TProperty> : IPropertyConfiguration<T
                     PropertyName,
                     _read,
                     _write,
+                    _requiresClone,
                     _rules.ToArray());
                 _compiled = compiled;
             }
@@ -119,15 +123,19 @@ internal sealed class ImmutablePropertyTransformer<T, TProperty> : ICompiledProp
         string propertyName,
         Func<T, TProperty> read,
         Func<T, TProperty, T> write,
+        bool requiresClone,
         TransformerRule<TProperty>[] rules)
     {
         PropertyName = propertyName;
         _read = read;
         _write = write;
+        RequiresClone = requiresClone;
         _rules = rules;
     }
 
     internal string PropertyName { get; }
+
+    public bool RequiresClone { get; }
 
     public ValueTask<T> ApplyAsync(T instance, CancellationToken cancellationToken)
     {
@@ -201,5 +209,7 @@ internal interface IPropertyConfiguration<T>
 /// <typeparam name="T">The object being transformed.</typeparam>
 internal interface ICompiledPropertyTransformer<T>
 {
+    bool RequiresClone { get; }
+
     ValueTask<T> ApplyAsync(T instance, CancellationToken cancellationToken);
 }

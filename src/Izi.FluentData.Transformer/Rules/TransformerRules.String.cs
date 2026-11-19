@@ -82,10 +82,16 @@ public static partial class TransformerRules
     /// <exception cref="ArgumentNullException">
     /// <paramref name="oldValue"/> or <paramref name="newValue"/> is <see langword="null"/>.
     /// </exception>
+    /// <exception cref="ArgumentException"><paramref name="oldValue"/> is empty.</exception>
     public static TransformerRule<string> Replace(string oldValue, string newValue)
     {
         ArgumentNullException.ThrowIfNull(oldValue);
         ArgumentNullException.ThrowIfNull(newValue);
+        if (oldValue.Length == 0)
+        {
+            throw new ArgumentException("The value to replace must not be empty.", nameof(oldValue));
+        }
+
         return Text(value => value.Replace(oldValue, newValue, StringComparison.Ordinal));
     }
 
