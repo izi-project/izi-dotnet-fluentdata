@@ -1,11 +1,15 @@
+using Izi.FluentData.Transformer.Exceptions;
+
 namespace Izi.FluentData.Transformer;
 
 /// <summary>A same-type transformation step backed by a delegate.</summary>
 /// <typeparam name="T">The type the step reads and returns.</typeparam>
 /// <remarks>
-/// <see cref="TransformAsync"/> checks the token once, then returns the delegate's
-/// <see cref="ValueTask{TResult}"/> directly. A delegate that finishes synchronously does not allocate
-/// an async state machine inside this type.
+/// <see cref="TransformAsync"/> checks the token once. A delegate that finishes successfully is returned
+/// without an async state machine. A failure becomes <see cref="TransformationRuleException"/>, except
+/// cancellation and fatal exceptions, which propagate unchanged. A delegate that throws before returning
+/// a <see cref="ValueTask{TResult}"/> throws here. A faulted <see cref="ValueTask{TResult}"/> is returned
+/// faulted, so the caller still awaits it.
 /// </remarks>
 public sealed class TransformerRule<T> : ITransformerRule<T>
 {
@@ -27,11 +31,57 @@ public sealed class TransformerRule<T> : ITransformerRule<T>
     /// <param name="cancellationToken">Checked once before the delegate runs, then passed to the delegate.</param>
     /// <returns>The delegate's result.</returns>
     /// <exception cref="OperationCanceledException">
-    /// <paramref name="cancellationToken"/> is already cancelled.
+    /// <paramref name="cancellationToken"/> is already cancelled, or the delegate was cancelled.
     /// </exception>
+    /// <exception cref="TransformationRuleException">The delegate failed for another reason.</exception>
     public ValueTask<T> TransformAsync(T value, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return _transform(value, cancellationToken);
+        ValueTask<T> pending;
+        try
+        {
+            pending = _transform(value, cancellationToken);
+        }
+        catch (Exception ex) when (ExceptionClassification.ShouldWrap(ex))
+        {
+            throw new TransformationRuleException(ex.Message, ex);
+        }
+
+        if (pending.IsCompletedSuccessfully)
+        {
+            return pending;
+        }
+
+        if (!pending.IsCompleted)
+        {
+            return ObserveAsync(pending);
+        }
+
+        try
+        {
+            pending.GetAwaiter().GetResult();
+        }
+        catch (Exception ex) when (ExceptionClassification.ShouldWrap(ex))
+        {
+            return ValueTask.FromException<T>(new TransformationRuleException(ex.Message, ex));
+        }
+        catch (Exception ex)
+        {
+            return ValueTask.FromException<T>(ex);
+        }
+
+        return pending;
+    }
+
+    private static async ValueTask<T> ObserveAsync(ValueTask<T> pending)
+    {
+        try
+        {
+            return await pending.ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ExceptionClassification.ShouldWrap(ex))
+        {
+            throw new TransformationRuleException(ex.Message, ex);
+        }
     }
 }

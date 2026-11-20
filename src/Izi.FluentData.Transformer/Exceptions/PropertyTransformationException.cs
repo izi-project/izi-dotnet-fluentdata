@@ -1,6 +1,9 @@
 namespace Izi.FluentData.Transformer.Exceptions;
 
-/// <summary>A rule failed while transforming one property.</summary>
+/// <summary>
+/// A property transformation failed. <see cref="Exception.InnerException"/> is the
+/// <see cref="TransformationRuleException"/> from a rule, or the original getter or setter exception.
+/// </summary>
 public sealed class PropertyTransformationException : TransformationException
 {
     /// <summary>

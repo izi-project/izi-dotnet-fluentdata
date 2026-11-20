@@ -193,19 +193,7 @@ internal sealed class ImmutablePropertyTransformer<T, TProperty> : ICompiledProp
         }
     }
 
-    private static bool ShouldWrap(Exception exception)
-        => exception is not OperationCanceledException && !IsFatal(exception);
-
-    private static bool IsFatal(Exception exception)
-    {
-#pragma warning disable CS0618 // Obsolete on .NET: ThreadAbortException is not thrown. A thrown instance is still left unwrapped.
-        return exception is OutOfMemoryException
-            or StackOverflowException
-            or InsufficientExecutionStackException
-            or ThreadAbortException
-            or AccessViolationException;
-#pragma warning restore CS0618
-    }
+    private static bool ShouldWrap(Exception exception) => ExceptionClassification.ShouldWrap(exception);
 }
 
 /// <summary>

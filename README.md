@@ -63,7 +63,7 @@ sealed class Customer
 
 ## Failures
 
-A rule, getter, or setter that throws is reported as `PropertyTransformationException`, which is a `TransformationException`. The message is `Transformation failed for property 'Name'.`, `PropertyName` is that property, and `InnerException` is the original exception. `OperationCanceledException` is not wrapped, and neither are fatal exceptions such as `OutOfMemoryException`. `TransformAsync` may throw those directly, including a pre-cancelled token or a failure on the synchronous path, instead of returning a faulted `ValueTask`. Always await it.
+A rule that throws becomes `TransformationRuleException`, a `TransformationException` whose message is the failure and whose `InnerException` is the original exception. The property runner then wraps that rule exception, or a getter or setter exception, in `PropertyTransformationException`. The message is `Transformation failed for property 'Name'.` and `PropertyName` is that property. `InnerException` is the `TransformationRuleException` for a rule, or the original exception for a getter or setter. `OperationCanceledException` is not wrapped at either level, and neither are fatal exceptions such as `OutOfMemoryException`. `TransformAsync` may throw those directly, including a pre-cancelled token or a failure on the synchronous path, instead of returning a faulted `ValueTask`. Always await it.
 
 `ReplaceRegex` rejects a `Regex` whose `MatchTimeout` is infinite. Set a timeout on the expression. `PadLeft` and `PadRight` do not impose a maximum width.
 

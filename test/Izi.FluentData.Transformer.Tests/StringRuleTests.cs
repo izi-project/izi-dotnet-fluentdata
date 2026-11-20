@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Izi.FluentData.Transformer.Exceptions;
 
 namespace Izi.FluentData.Transformer.Tests;
 
@@ -58,7 +59,8 @@ public class StringRuleTests
         var regex = new Regex("(a+)+$", RegexOptions.None, TimeSpan.FromMilliseconds(1));
         var rule = TransformerRules.ReplaceRegex(regex, "x");
 
-        Assert.Throws<RegexMatchTimeoutException>(() => rule.TransformAsync(new string('a', 28) + "!"));
+        var timeout = Assert.Throws<TransformationRuleException>(() => rule.TransformAsync(new string('a', 28) + "!"));
+        Assert.IsType<RegexMatchTimeoutException>(timeout.InnerException);
     }
 
     [Fact]

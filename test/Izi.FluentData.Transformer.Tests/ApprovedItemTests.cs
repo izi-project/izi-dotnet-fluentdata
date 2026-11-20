@@ -15,6 +15,7 @@ public class ApprovedItemTests
         var readError = await Assert.ThrowsAsync<PropertyTransformationException>(
             async () => await reading.TransformAsync(new Exploding(explodeOnGet: true)).ConfigureAwait(true));
         Assert.Equal("Name", readError.PropertyName);
+        Assert.IsType<InvalidOperationException>(readError.InnerException);
         Assert.Equal("get", readError.InnerException!.Message);
         Assert.IsAssignableFrom<TransformationException>(readError);
 
@@ -23,6 +24,7 @@ public class ApprovedItemTests
         var writeError = await Assert.ThrowsAsync<PropertyTransformationException>(
             async () => await writing.TransformAsync(new Exploding(explodeOnSet: true)).ConfigureAwait(true));
         Assert.Equal("Name", writeError.PropertyName);
+        Assert.IsType<InvalidOperationException>(writeError.InnerException);
         Assert.Equal("set", writeError.InnerException!.Message);
 
         var cancelled = new Transformer<Exploding>();
@@ -66,6 +68,8 @@ public class ApprovedItemTests
             async () => await transformer.TransformAsync(customer).ConfigureAwait(true));
 
         Assert.Equal("Age", error.PropertyName);
+        var rule = Assert.IsType<TransformationRuleException>(error.InnerException);
+        Assert.IsType<InvalidOperationException>(rule.InnerException);
         Assert.Equal("ada", customer.Name);
         Assert.Equal(1, customer.Age);
     }
@@ -112,9 +116,9 @@ public class ApprovedItemTests
         Assert.Equal(0.5m, await TransformerRules.Normalize(-decimal.MaxValue, decimal.MaxValue).TransformAsync(0m));
 
         var nearStart = DateTime.MinValue.AddDays(10);
-        var error = Assert.Throws<ArgumentOutOfRangeException>(
+        var error = Assert.Throws<TransformationRuleException>(
             () => TransformerRules.AddBusinessDays<DateTime>(int.MinValue).TransformAsync(nearStart));
-        Assert.IsNotType<OverflowException>(error);
+        Assert.IsType<ArgumentOutOfRangeException>(error.InnerException);
     }
 
     [Fact]

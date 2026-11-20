@@ -1,3 +1,5 @@
+using Izi.FluentData.Transformer.Exceptions;
+
 namespace Izi.FluentData.Transformer.Tests;
 
 public class NumericRuleTests
@@ -11,7 +13,8 @@ public class NumericRuleTests
         Assert.Equal(42, await TransformerRules.Multiply(7).TransformAsync(6));
         Assert.Equal(4, await TransformerRules.Divide(3).TransformAsync(12));
         Assert.Equal(double.PositiveInfinity, await TransformerRules.Divide(0d).TransformAsync(1d));
-        Assert.Throws<DivideByZeroException>(() => TransformerRules.Divide(0).TransformAsync(1));
+        var divideByZero = Assert.Throws<TransformationRuleException>(() => TransformerRules.Divide(0).TransformAsync(1));
+        Assert.IsType<DivideByZeroException>(divideByZero.InnerException);
         Assert.Equal(4, await TransformerRules.Abs<int>().TransformAsync(-4));
         Assert.Equal(int.MaxValue, await TransformerRules.Abs<int>().TransformAsync(int.MinValue));
         Assert.Equal(long.MaxValue, await TransformerRules.Abs<long>().TransformAsync(long.MinValue));

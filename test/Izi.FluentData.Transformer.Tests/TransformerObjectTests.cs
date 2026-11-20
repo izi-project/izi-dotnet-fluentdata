@@ -220,7 +220,8 @@ public class TransformerObjectTests
         var addError = await Assert.ThrowsAsync<PropertyTransformationException>(
             async () => await addPending.ConfigureAwait(true));
         Assert.Equal("Name", addError.PropertyName);
-        Assert.Equal("sync-add:ada", addError.InnerException!.Message);
+        var syncRule = Assert.IsType<TransformationRuleException>(addError.InnerException);
+        Assert.Equal("sync-add:ada", syncRule.InnerException!.Message);
         Assert.Equal(0, later);
     }
 
@@ -247,7 +248,8 @@ public class TransformerObjectTests
         var addError = await Assert.ThrowsAsync<PropertyTransformationException>(
             async () => await addPending.ConfigureAwait(true));
         Assert.Equal("Name", addError.PropertyName);
-        Assert.Equal("async-add:ada", addError.InnerException!.Message);
+        var asyncRule = Assert.IsType<TransformationRuleException>(addError.InnerException);
+        Assert.Equal("async-add:ada", asyncRule.InnerException!.Message);
         Assert.Equal(0, later);
     }
 

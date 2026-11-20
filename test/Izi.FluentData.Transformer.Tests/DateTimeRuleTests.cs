@@ -1,3 +1,5 @@
+using Izi.FluentData.Transformer.Exceptions;
+
 namespace Izi.FluentData.Transformer.Tests;
 
 public class DateTimeRuleTests
@@ -21,8 +23,9 @@ public class DateTimeRuleTests
             TimeSpan.FromDays(1.5),
             await TransformerRules.AddDays<TimeSpan>(1.5).TransformAsync(TimeSpan.Zero));
         Assert.Throws<NotSupportedException>(() => TransformerRules.AddYears<TimeSpan>(1));
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        var pastMax = Assert.Throws<TransformationRuleException>(() =>
             TransformerRules.AddYears<DateTime>(1).TransformAsync(DateTime.MaxValue));
+        Assert.IsType<ArgumentOutOfRangeException>(pastMax.InnerException);
     }
 
     [Fact]
@@ -50,7 +53,8 @@ public class DateTimeRuleTests
             await TransformerRules.Subtract<TimeOnly>(TimeSpan.FromHours(1)).TransformAsync(new TimeOnly(10, 30)));
         Assert.Equal(TimeSpan.FromHours(-2), await TransformerRules.Negate().TransformAsync(TimeSpan.FromHours(2)));
         Assert.Equal(TimeSpan.FromHours(2), await TransformerRules.Duration().TransformAsync(TimeSpan.FromHours(-2)));
-        Assert.Throws<OverflowException>(() => TransformerRules.Negate().TransformAsync(TimeSpan.MinValue));
+        var negate = Assert.Throws<TransformationRuleException>(() => TransformerRules.Negate().TransformAsync(TimeSpan.MinValue));
+        Assert.IsType<OverflowException>(negate.InnerException);
     }
 
     [Fact]
@@ -111,8 +115,9 @@ public class DateTimeRuleTests
         Assert.Equal(
             new DateTimeOffset(2020, 5, 1, 10, 30, 40, TimeSpan.FromHours(2)),
             await TransformerRules.WithDay<DateTimeOffset>(1).TransformAsync(SampleOffset));
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        var shortMonth = Assert.Throws<TransformationRuleException>(() =>
             TransformerRules.WithDay<DateTime>(31).TransformAsync(new DateTime(2020, 2, 1)));
+        Assert.IsType<ArgumentOutOfRangeException>(shortMonth.InnerException);
 
         var withTicks = new DateTime(2020, 5, 15, 10, 30, 40, 50, DateTimeKind.Utc).AddTicks(25);
         var replacedHour = await TransformerRules.WithHour<DateTime>(8).TransformAsync(withTicks);
@@ -342,8 +347,9 @@ public class DateTimeRuleTests
         Assert.Equal(
             new DateOnly(2021, 2, 28),
             await TransformerRules.AddYears<DateOnly>(1).TransformAsync(new DateOnly(2020, 2, 29)));
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        var lostDay = Assert.Throws<TransformationRuleException>(() =>
             TransformerRules.WithYear<DateOnly>(2019).TransformAsync(new DateOnly(2020, 2, 29)));
+        Assert.IsType<ArgumentOutOfRangeException>(lostDay.InnerException);
     }
 
     [Fact]

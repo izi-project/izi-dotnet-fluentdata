@@ -46,11 +46,26 @@ public class PropertyTransformerTests
         Assert.IsAssignableFrom<TransformationException>(error);
         Assert.Equal("Name", error.PropertyName);
         Assert.Equal("Transformation failed for property 'Name'.", error.Message);
-        var inner = Assert.IsType<InvalidOperationException>(error.InnerException);
+        var rule = Assert.IsType<TransformationRuleException>(error.InnerException);
+        var inner = Assert.IsType<InvalidOperationException>(rule.InnerException);
         Assert.Equal("boom", inner.Message);
         Assert.Equal(0, later);
         Assert.Equal("  ada  ", customer.Name);
         Assert.Equal(4, customer.Age);
+    }
+
+    [Fact]
+    public async Task A_built_in_rule_failure_is_a_property_exception_wrapping_a_rule_exception()
+    {
+        var transformer = new Transformer<Customer>();
+        transformer.RuleFor(customer => customer.Name).Add(TransformerRules.Substring(5));
+
+        var error = await Assert.ThrowsAsync<PropertyTransformationException>(
+            async () => await transformer.TransformAsync(new Customer { Name = "hi" }).ConfigureAwait(true));
+
+        Assert.Equal("Name", error.PropertyName);
+        var rule = Assert.IsType<TransformationRuleException>(error.InnerException);
+        Assert.IsType<ArgumentOutOfRangeException>(rule.InnerException);
     }
 
     [Fact]
@@ -73,7 +88,8 @@ public class PropertyTransformerTests
         Assert.IsAssignableFrom<TransformationException>(error);
         Assert.Equal("Age", error.PropertyName);
         Assert.Equal("Transformation failed for property 'Age'.", error.Message);
-        var inner = Assert.IsType<InvalidOperationException>(error.InnerException);
+        var rule = Assert.IsType<TransformationRuleException>(error.InnerException);
+        var inner = Assert.IsType<InvalidOperationException>(rule.InnerException);
         Assert.Equal("age:4", inner.Message);
         Assert.Equal("ada", customer.Name);
         Assert.Equal(4, customer.Age);
