@@ -54,7 +54,7 @@ public sealed class TransformerRule<T> : ITransformerRule<T>
 
         if (!pending.IsCompleted)
         {
-            return ObserveAsync(pending);
+            return TransformSlowAsync(pending);
         }
 
         try
@@ -73,7 +73,7 @@ public sealed class TransformerRule<T> : ITransformerRule<T>
         return pending;
     }
 
-    private static async ValueTask<T> ObserveAsync(ValueTask<T> pending)
+    private static async ValueTask<T> TransformSlowAsync(ValueTask<T> pending)
     {
         try
         {
