@@ -187,7 +187,42 @@ dotnet test test/Izi.FluentData.Transformer.Tests/Izi.FluentData.Transformer.Tes
 
 ## Validation
 
-The 2.0 validator is not implemented in this branch. Do not use the 1.x `Validator<T>` samples against this tree. They will return when `src/Izi.FluentData.Validation` has an API.
+`Validator<T>` checks properties and returns a `ValidationResult`. Invalid data is a result, not an exception. `ValidateAsync(null)` throws `ArgumentNullException`. A cancelled token throws `OperationCanceledException`.
+
+```csharp
+var validator = new Validator<Person>();
+validator.RuleFor(person => person.Name).NotEmpty().MaxLength(50);
+var result = await validator.ValidateAsync(person);
+```
+
+Rule messages never name the property. `MaxLength(50)` says "Must be at most 50 characters." `WithMessage` replaces the last rule's message verbatim. `ToString` prints `Name: Must not be empty.`
+
+`Matches` and `NotMatches` compile a pattern with a one-second timeout. A caller-supplied `Regex` must already have a finite timeout. If a match exceeds that timeout, `RegexMatchTimeoutException` propagates. It is a processing failure, not a validation result. `Email` and `CreditCard` anchor the pattern with `\z`, so a trailing newline does not pass. `CreditCard` checks the shape only.
+
+Ordering and range rules (`LessThan`, `LessThanOrEqual`, `GreaterThan`, `GreaterThanOrEqual`, `Range`, `NotRange`) fail when the value is null or NaN. A NaN bound is rejected when the rule is created. Strings are compared with ordinal order, so the result does not depend on the current culture. `Equal` and `NotEqual` use the default equality comparer: `Equal(null)` passes for null, and `NotEqual(null)` fails for null.
+
+Null matrix:
+
+| Input | Result |
+| --- | --- |
+| `NotNull`, `NotEmpty`, length, ordering, range, `Matches`, `Email`, `CreditCard`, ISO rules | fail |
+| `Null`, `Empty` | pass |
+| `Equal(null)` | pass |
+| `NotEqual(null)`, `NotMatches` | pass for null, fail for a real match |
+| null child passed to `SetValidator` | skipped |
+| null collection passed to `RuleForEach` | skipped |
+| null item inside a collection | that item's rules run, and its child validator is skipped |
+| null parent on a path such as `Address.Street` | one message, `Address: Must not be null.`, and the leaf rules do not run |
+
+`When` applies to the whole property. A second `When` is combined with AND. A false condition skips the property, including a null parent. `SetValidator` prefixes child names (`Address.Street`). The child does not run when the property's own rules fail, or when the value is null. Add `NotNull` when a child or a collection is required.
+
+`ScalePrecision(scale, precision)` keeps the 1.x meaning. Precision is the number of digits before the decimal point, not the SQL total. `12345.67` has precision 5 and scale 2. Values below 1 count as one integer digit. A non-decimal fails.
+
+`Include` merges another validator. Including a `Validator<T>` in a cycle throws `InvalidOperationException` when the validator is configured. A child that walks cyclic data, including a custom `IValidator<T>` that wraps a `Validator<T>`, stops after 128 levels with `InvalidOperationException` ("Validation nested more than 128 levels..."). If the thread is nearly out of stack first, the message is "Insufficient execution stack to continue validation." On a run that has not yet waited, that exception may be thrown directly instead of a faulted `ValueTask`. Each custom `IValidator<T>` child costs about 192 B. A tree of 128 levels needs a stack of about 384 KB.
+
+`MustAsync` takes a `Task<bool>` delegate, with or without a `CancellationToken`. These all compile: `async (s, ct) => await repo.ExistsAsync(s, ct)`, `(s, ct) => repo.ExistsAsync(s, ct)`, `(s, ct) => Task.FromResult(true)`, a `Task<bool>` method group, and `async s => ...`. A `ValueTask<bool>` predicate is passed to the `ValidatorRule<T>` constructor and then to `AddRule`. `Unless` is not part of this version; write `When(value => !condition)`.
+
+`ValidationRuleResult.Failed` is public, so a custom `IValidatorRule<T>` can report a failure.
 
 ## License
 

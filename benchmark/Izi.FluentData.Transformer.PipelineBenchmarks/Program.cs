@@ -11,6 +11,7 @@ public static class Program
     public static async Task<int> Main(string[] args)
     {
         await TransformerBenchmarks.VerifyAsync().ConfigureAwait(false);
+        ValidationBenchmarks.Verify();
         var summaries = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
         foreach (var summary in summaries)
         {

@@ -8,30 +8,48 @@ public sealed class PropertyValidationResult
     /// <param name="errors">The messages. They do not repeat the property name.</param>
     internal PropertyValidationResult(string propertyName, ValidationError errors)
     {
-        _ = propertyName;
-        _ = errors;
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(propertyName);
+        ArgumentNullException.ThrowIfNull(errors);
+        PropertyName = propertyName;
+        Errors = errors;
     }
 
     /// <summary>The property that was validated.</summary>
-    public string PropertyName => throw new NotImplementedException();
+    public string PropertyName { get; }
 
     /// <summary>True when the property produced no messages.</summary>
-    public bool IsValid => throw new NotImplementedException();
+    public bool IsValid => Errors.Count == 0;
 
     /// <summary>The messages for this property.</summary>
-    public ValidationError Errors => throw new NotImplementedException();
+    public ValidationError Errors { get; }
 
     /// <summary>Prints one <c>PropertyName: message</c> line per message.</summary>
     /// <returns>The lines joined with a new line.</returns>
-    public override string ToString() => throw new NotImplementedException();
+    public override string ToString() => ToString(Environment.NewLine);
 
     /// <summary>Prints one <c>PropertyName: message</c> line per message.</summary>
     /// <param name="separator">The text placed between lines.</param>
     /// <returns>The lines joined with <paramref name="separator"/>.</returns>
     public string ToString(string separator)
     {
-        _ = separator;
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(separator);
+        var count = Errors.Count;
+        if (count == 0)
+        {
+            return string.Empty;
+        }
+
+        if (count == 1)
+        {
+            return PropertyName + ": " + Errors[0];
+        }
+
+        var lines = new string[count];
+        for (var i = 0; i < count; i++)
+        {
+            lines[i] = PropertyName + ": " + Errors[i];
+        }
+
+        return string.Join(separator, lines);
     }
 }

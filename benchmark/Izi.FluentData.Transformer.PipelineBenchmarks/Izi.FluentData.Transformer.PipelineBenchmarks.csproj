@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Izi.FluentData.Transformer\Izi.FluentData.Transformer.csproj" />
+    <ProjectReference Include="..\..\src\Izi.FluentData.Validation\Izi.FluentData.Validation.csproj" />
   </ItemGroup>
 
 </Project>
