@@ -1,7 +1,7 @@
 using BenchmarkDotNet.Attributes;
 using Izi.FluentData.Validation;
 
-namespace Izi.FluentData.Transformer.Benchmarks;
+namespace Izi.FluentData.Validation.Benchmarks;
 
 /// <summary>
 /// Measures a compiled <see cref="Validator{T}"/>. The valid run is the allocation-free path.

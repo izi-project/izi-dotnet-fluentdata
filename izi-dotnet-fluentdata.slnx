@@ -9,5 +9,6 @@
   </Folder>
   <Folder Name="/benchmark/">
     <Project Path="benchmark/Izi.FluentData.Transformer.PipelineBenchmarks/Izi.FluentData.Transformer.PipelineBenchmarks.csproj" />
+    <Project Path="benchmark/Izi.FluentData.Validation.Benchmarks/Izi.FluentData.Validation.Benchmarks.csproj" />
   </Folder>
 </Solution>

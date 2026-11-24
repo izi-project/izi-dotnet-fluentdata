@@ -163,7 +163,9 @@ A rule that waits should watch the same token. Synchronous rules finish on the c
 
 ## Benchmarks
 
-The benchmark project is `benchmark/Izi.FluentData.Transformer.PipelineBenchmarks`. Release mode is required. It checks the scenario results, then runs BenchmarkDotNet.
+Release mode is required. Each project checks its scenario results, then runs BenchmarkDotNet.
+
+Transformer pipelines live in `benchmark/Izi.FluentData.Transformer.PipelineBenchmarks`:
 
 ```bash
 dotnet run -c Release -f net10.0 --project benchmark/Izi.FluentData.Transformer.PipelineBenchmarks -- --filter '*'
@@ -175,7 +177,14 @@ A short run, useful while changing the library:
 dotnet run -c Release -f net10.0 --project benchmark/Izi.FluentData.Transformer.PipelineBenchmarks -- --job short --filter '*'
 ```
 
-Use `-f net8.0` for the other target. The scenarios cover an empty transformer, a synchronous class, the same rules on a struct and on an init-only record, one yielding step, the fluent wrappers against the same rules added with `Add`, and direct `Trim` and `Round` calls.
+Validation lives in `benchmark/Izi.FluentData.Validation.Benchmarks`:
+
+```bash
+dotnet run -c Release -f net10.0 --project benchmark/Izi.FluentData.Validation.Benchmarks -- --filter '*'
+dotnet run -c Release -f net10.0 --project benchmark/Izi.FluentData.Validation.Benchmarks -- --job short --filter '*'
+```
+
+Use `-f net8.0` for the other target. The transformer scenarios cover an empty transformer, a synchronous class, the same rules on a struct and on an init-only record, one yielding step, the fluent wrappers against the same rules added with `Add`, and direct `Trim` and `Round` calls. The validation scenarios measure a valid run and an invalid run of a compiled `Validator<T>`.
 
 ## Build and test
 
